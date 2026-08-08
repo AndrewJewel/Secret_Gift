@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+
+  <!-- Sin esta etiqueta el navegador móvil asume un ancho de ~980px y
+       escala la página entera. Faltaba por completo.
+
+       NO se usa interactive-widget=resizes-content: se probó y empeora
+       el problema del teclado en Chrome de Android. Ese valor encoge el
+       viewport de MAQUETACIÓN al abrirse el teclado, y al cerrarse la
+       vista se queda pequeña hasta recargar — medio pantallazo en
+       blanco. Con el comportamiento por defecto el viewport de
+       maquetación nunca encoge: el teclado se superpone y Flutter lo
+       compensa leyendo visualViewport. Si nunca encoge, no hay nada que
+       recuperar.
+
+       Sin maximum-scale ni user-scalable=no a propósito: bloquear el
+       zoom rompe la accesibilidad de quien necesita acercar. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta name="description" content="Secret Gift — Secret Friend and Secret Santa for your group.">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      /* Si por lo que sea queda una franja sin cubrir, que salga del
+         color de la app y no blanca. */
+      background-color: #F3E3E5;
+    }
+  </style>
+
+  <script>
+    // ARREGLO DEL TECLADO EN MOVIL.
+    //
+    // Medido en un Samsung con Chrome, en tres momentos:
+    //
+    //                      visualViewport   alto de <flutter-view>
+    //   teclado oculto          724                 724   correcto
+    //   teclado abierto         380                 724   correcto
+    //   al CERRAR el teclado    724                 380   <-- roto
+    //
+    // Flutter no se encoge mientras el teclado tapa: se encoge JUSTO AL
+    // CERRARSE, y al valor que el viewport tenia mientras estaba abierto.
+    // Es una carrera dentro del motor: recibe el aviso de "cambio el
+    // tamano", lee un valor ya caducado, lo aplica, y como despues no
+    // llega ningun aviso mas se queda asi para siempre.
+    //
+    // La cura es volver a avisarle cuando el viewport YA se estabilizo.
+    // La referencia correcta es innerHeight, que el teclado no altera
+    // (medido: 723 en los tres estados). Comparar contra visualViewport
+    // era usar como referencia justo el valor envenenado.
+    (function () {
+      var vv = window.visualViewport;
+      if (!vv) return;
+
+      // Contador visible en el diagnóstico: si se queda en 0, el arreglo
+      // ni siquiera se está ejecutando y hay que mirar otra cosa.
+      var intentos = 0;
+      window.__correcciones = function () { return intentos; };
+
+      // Devuelve true cuando ya no hay nada que corregir.
+      function intentarCorregir() {
+        var vista = document.querySelector('flutter-view');
+        if (!vista) return false;
+
+        // Con el teclado todavia tapando no se toca nada: ahi el motor
+        // esta bien y avisarle solo lo confundiria.
+        if (Math.abs(vv.height - window.innerHeight) > 40) return false;
+
+        var real = Math.round(vista.getBoundingClientRect().height);
+        if (Math.abs(real - window.innerHeight) <= 2) return true;
+
+        // El evento va sobre el visualViewport, NO sobre window.
+        //
+        // Es la clave y me costo la noche entera: cuando el navegador
+        // tiene visualViewport —todos los moviles modernos— el motor de
+        // Flutter se suscribe al resize DE ESE OBJETO, no al de la
+        // ventana. Despachar en window no lo oye nadie.
+        //
+        // Ahora el viewport ya informa la altura buena, asi que al
+        // releerla el motor se recoloca solo.
+        vv.dispatchEvent(new Event('resize'));
+        window.dispatchEvent(new Event('resize'));
+
+        // Y ademas se le cambia el alto al elemento a mano. No es por
+        // terquedad: el motor observa el tamano de su propio elemento, y
+        // tocarlo lo obliga a remedirse aunque el evento no le llegara.
+        // Ademas repinta la franja de abajo, donde ahora se ven pixeles
+        // viejos de la pantalla anterior porque el motor cree que esa
+        // zona no existe y no la borra.
+        vista.style.setProperty('height', window.innerHeight + 'px', 'important');
+        intentos++;
+        return false;
+      }
+
+      var repaso;
+      function insistir() {
+        clearInterval(repaso);
+        var vueltas = 0;
+        // Se insiste hasta 2s porque el teclado se recoge con animacion y
+        // el viewport tarda en dar su medida definitiva. Para en cuanto
+        // queda bien, asi que en uso normal apenas hace nada.
+        repaso = setInterval(function () {
+          if (intentarCorregir() || ++vueltas > 20) clearInterval(repaso);
+        }, 100);
+      }
+
+      vv.addEventListener('resize', insistir);
+      window.addEventListener('resize', insistir);
+      // El teclado a veces se cierra sin disparar el evento del viewport.
+      window.addEventListener('focusout', insistir, true);
+    })();
+  </script>
+
+  <script>
+    // Diagnóstico bajo demanda: solo con ?diag=1 en la URL.
+    (function () {
+      if (!new URLSearchParams(location.search).has('diag')) return;
+      var caja = document.createElement('div');
+      caja.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;' +
+        'background:rgba(0,0,0,.8);color:#0f0;font:11px monospace;' +
+        'padding:6px 8px;white-space:pre;pointer-events:none';
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.appendChild(caja);
+      });
+      setInterval(function () {
+        var vv = window.visualViewport;
+        var fv = document.querySelector('flutter-view');
+        var r = fv ? fv.getBoundingClientRect() : null;
+        caja.textContent =
+          'innerH      ' + window.innerHeight + '\n' +
+          'visualH     ' + (vv ? Math.round(vv.height) : '-') + '\n' +
+          'scrollY     ' + Math.round(window.scrollY) + '\n' +
+          'fv alto     ' + (r ? Math.round(r.height) : '-') + '\n' +
+          'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)') + '\n' +
+          // Si esto se queda en 0, el arreglo no se está ejecutando.
+          'correcciones ' + (window.__correcciones ? window.__correcciones() : '-');
+      }, 250);
+    })();
+  </script>
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Secret Gift">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!-- Estos textos son estáticos: se sirven antes de que arranque
+       Flutter, así que no pueden seguir al idioma que elija la persona.
+       Van en inglés, que es el idioma por defecto de la app. -->
+  <title>Secret Gift</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

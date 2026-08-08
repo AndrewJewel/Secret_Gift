@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Regalo Sorpresa (Amigo Secreto / Santa Secreto) — reglas de acceso.
+//
+// grupos/{codigo}: ocasion + valorMinimo + fecha. Lectura pública (hace
+// falta para "unirse con un código" y mostrar el valor mínimo); escritura
+// SIEMPRE a través de las Cloud Functions (Admin SDK, ignoran estas
+// reglas), nunca directo desde el cliente.
+//
+// grupos/{codigo}/privado/data: el PIN maestro del grupo. Cero acceso de
+// cliente en cualquier dirección.
+//
+// grupos/{codigo}/participantes/{id}: nombre + fecha + tieneAmigo (bandera
+// pública, sin revelar a quién). Lectura pública, escritura solo por
+// Cloud Functions.
+//
+// grupos/{codigo}/participantes/{id}/privado/data: PIN del participante,
+// su lista de deseos, y a quién le regala. Cero acceso de cliente.
+//
+// usuarios/{nickname}: cuentas (nickname + hash de contraseña + grupos
+// vinculados). Cero acceso de cliente en cualquier dirección — solo las
+// Cloud Functions (registrarCuenta/iniciarSesionCuenta) lo tocan.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /grupos/{codigo} {
+      allow read: if true;
+      allow write: if false;
+
+      match /privado/{doc} {
+        allow read, write: if false;
+      }
+
+      // Chat grupal anónimo. Cada mensaje lleva SOLO el número de
+      // máscara, nunca el id de quien lo escribió: la relación
+      // máscara↔persona vive en participantes/{id}/privado/data, que
+      // está cerrado a cero. Lectura pública (el chat es del grupo),
+      // escritura solo por Cloud Function previa verificación del PIN.
+      match /chat/{mensaje} {
+        allow read: if true;
+        allow write: if false;
+      }
+
+      match /participantes/{id} {
+        allow read: if true;
+        allow write: if false;
+
+        match /privado/{doc} {
+          allow read, write: if false;
+        }
+      }
+    }
+
+    match /usuarios/{nickname} {
+      allow read, write: if false;
+    }
+  }
+}

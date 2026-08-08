@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Avatares de participantes: avatares/{codigoGrupo}/{participanteId}.jpg
+//
+// Lectura pública: son las caras (o los personajes) que ve todo el grupo
+// en la lista, y la app no usa Firebase Auth, así que no hay identidad de
+// cliente con la que restringir la lectura.
+//
+// Escritura CERRADA a cero desde el cliente. Las imágenes entran solo por
+// las Cloud Functions (Admin SDK, que ignora estas reglas), previa
+// verificación del PIN — igual que todo lo demás en esta app. Sin esto,
+// un bucket sin Auth quedaría abierto a que cualquiera suba lo que
+// quiera con solo conocer la URL.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /avatares/{codigo}/{archivo} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Cualquier otra ruta, cerrada por completo.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

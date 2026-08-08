@@ -1,0 +1,14 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions para Santa Secreto — sorteo, login y borrado protegidos",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.0"
+  },
+  "private": true
+}
