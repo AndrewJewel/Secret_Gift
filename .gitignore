@@ -65,3 +65,7 @@ firestore-debug.log*
 
 # Binarios distribuibles (se sirven desde Firebase Hosting, no desde git)
 web/descargas/*.apk
+
+# Claude Code: las skills SÍ van al repo (son configuración del proyecto y
+# deben viajar con él). Los ajustes locales no: son de cada máquina.
+.claude/settings.local.json
