@@ -513,11 +513,26 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
         ocasion: _info.ocasion,
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          // El teclado NO encoge el Scaffold: en web eso hace que el
-          // motor recoloque toda la escena y deja franjas al cerrarse.
-          // En su lugar el propio scroll se aparta, con el hueco del
-          // teclado como relleno inferior (ver el padding de abajo).
-          resizeToAvoidBottomInset: false,
+          // El teclado SÍ encoge el Scaffold (comportamiento por defecto).
+          //
+          // Aquí estuvo `resizeToAvoidBottomInset: false` con un relleno
+          // inferior del alto del teclado puesto a mano. Se hizo para
+          // esquivar las franjas blancas que dejaba el motor en web al
+          // cerrarse el teclado — que resultaron ser flutter#175074, una
+          // regresión del engine, corregida al subir a 3.38.10.
+          //
+          // Ese apaño tenía un efecto secundario peor que el problema:
+          // el relleno daba SITIO para subir, pero nada subía. Flutter
+          // desplaza el campo enfocado comparándolo contra el viewport, y
+          // con el Scaffold sin encoger el viewport seguía midiendo la
+          // pantalla entera. Un campo a 600px "ya era visible" aunque el
+          // teclado lo tapara desde los 344. Resultado: escribías a
+          // ciegas.
+          //
+          // Al dejar que el Scaffold encoja, el viewport mide lo que de
+          // verdad se ve y el desplazamiento automático funciona solo.
+          // NO volver a poner el relleno manual: contaría el teclado dos
+          // veces y dejaría un hueco enorme abajo.
           appBar: GlassAppBar(
             color: _color,
             title: Text(_info.nombreGrupo.isNotEmpty
@@ -549,9 +564,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           // dejaba de caber y se desbordaba por abajo.
           body: SafeArea(
             child: ListView(
-              // El relleno inferior crece con el teclado, así el campo
-              // enfocado siempre puede subir por encima de él.
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

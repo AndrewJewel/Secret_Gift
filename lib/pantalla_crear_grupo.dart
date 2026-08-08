@@ -127,15 +127,14 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
         ocasion: _ocasion,
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          // Ver la nota en pantalla_registro.dart: el teclado no encoge
-          // el Scaffold, se aparta el scroll.
-          resizeToAvoidBottomInset: false,
+          // Ver la nota en pantalla_registro.dart: el teclado encoge el
+          // Scaffold y el campo enfocado sube solo. Nada de rellenos
+          // manuales con viewInsets: contarían el teclado dos veces.
           appBar: GlassAppBar(title: Text(t.crearTitulo), color: _color),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: ListView(
-              padding: EdgeInsets.only(
-                  top: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+              padding: const EdgeInsets.only(top: 20, bottom: 20),
               children: [
                 GlassCard(
                   color: _color,

@@ -159,13 +159,12 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
         ocasion: widget.ocasion,
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          // Ver la nota en pantalla_registro.dart.
-          resizeToAvoidBottomInset: false,
+          // Ver la nota en pantalla_registro.dart: el teclado encoge el
+          // Scaffold y el campo enfocado sube solo.
           appBar: GlassAppBar(title: Text(t.editarTitulo), color: _color),
           body: SafeArea(
             child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                  20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
               children: [
                 GlassTextField(
                   color: _color,

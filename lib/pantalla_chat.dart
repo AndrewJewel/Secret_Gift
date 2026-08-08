@@ -209,11 +209,12 @@ class _PantallaChatState extends State<PantallaChat> {
         ocasion: widget.ocasion,
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          // Ver la nota en pantalla_registro.dart: el teclado no encoge
-          // el Scaffold. Aquí el redactor no puede apartarse con scroll
-          // —tiene que quedar SOBRE el teclado—, así que se levanta con
-          // un relleno del alto del teclado (más abajo).
-          resizeToAvoidBottomInset: false,
+          // Ver la nota en pantalla_registro.dart. Aquí el redactor no se
+          // aparta con scroll: tiene que quedar SOBRE el teclado. Antes
+          // se levantaba con un relleno inferior puesto a mano; ahora lo
+          // hace el propio Scaffold al encoger, que es lo mismo pero sin
+          // duplicar la cuenta del teclado. La Column sigue igual: la
+          // lista en Expanded y el redactor al fondo del hueco visible.
           appBar: GlassAppBar(
             title: Text(t.chatTitulo),
             color: _color,
@@ -227,21 +228,16 @@ class _PantallaChatState extends State<PantallaChat> {
             ],
           ),
           body: SafeArea(
-            child: Padding(
-              // Levanta la conversación entera justo lo que mide el
-              // teclado, para que el redactor quede encima y no debajo.
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-              child: Column(
-                children: [
-                  if (_miMascara != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: _tarjetaMiMascara(t),
-                    ),
-                  Expanded(child: _listaMensajes(t)),
-                  _redactor(t),
-                ],
-              ),
+            child: Column(
+              children: [
+                if (_miMascara != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _tarjetaMiMascara(t),
+                  ),
+                Expanded(child: _listaMensajes(t)),
+                _redactor(t),
+              ],
             ),
           ),
         ),

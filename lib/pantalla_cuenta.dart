@@ -95,16 +95,15 @@ class _PantallaCuentaState extends State<PantallaCuenta> {
       child: FondoNeutro(
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          // Ver la nota en pantalla_registro.dart.
-          resizeToAvoidBottomInset: false,
+          // Ver la nota en pantalla_registro.dart: el teclado encoge el
+          // Scaffold y el campo enfocado sube solo.
           appBar: GlassAppBar(
               title: Text(_modoCrear ? t.cuentaCrearTitulo : t.cuentaEntrarTitulo),
               color: colorNeutro),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: ListView(
-              padding: EdgeInsets.only(
-                  top: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+              padding: const EdgeInsets.only(top: 20, bottom: 20),
               children: [
                 GlassTextField(
                   color: colorNeutro,

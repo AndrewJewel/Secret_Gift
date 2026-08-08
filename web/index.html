@@ -47,88 +47,37 @@
     }
   </style>
 
-  <script>
-    // ARREGLO DEL TECLADO EN MOVIL.
-    //
-    // Medido en un Samsung con Chrome, en tres momentos:
-    //
-    //                      visualViewport   alto de <flutter-view>
-    //   teclado oculto          724                 724   correcto
-    //   teclado abierto         380                 724   correcto
-    //   al CERRAR el teclado    724                 380   <-- roto
-    //
-    // Flutter no se encoge mientras el teclado tapa: se encoge JUSTO AL
-    // CERRARSE, y al valor que el viewport tenia mientras estaba abierto.
-    // Es una carrera dentro del motor: recibe el aviso de "cambio el
-    // tamano", lee un valor ya caducado, lo aplica, y como despues no
-    // llega ningun aviso mas se queda asi para siempre.
-    //
-    // La cura es volver a avisarle cuando el viewport YA se estabilizo.
-    // La referencia correcta es innerHeight, que el teclado no altera
-    // (medido: 723 en los tres estados). Comparar contra visualViewport
-    // era usar como referencia justo el valor envenenado.
-    (function () {
-      var vv = window.visualViewport;
-      if (!vv) return;
+  <!--
+    EL BUG DEL TECLADO EN MÓVIL: resuelto subiendo Flutter, no con JS.
 
-      // Contador visible en el diagnóstico: si se queda en 0, el arreglo
-      // ni siquiera se está ejecutando y hay que mirar otra cosa.
-      var intentos = 0;
-      window.__correcciones = function () { return intentos; };
+    Síntoma: al cerrar el teclado con el botón atrás quedaba una franja
+    blanca abajo. <flutter-view> se quedaba con el alto que tenía el
+    viewport MIENTRAS el teclado tapaba, y ya no se recuperaba.
 
-      // Devuelve true cuando ya no hay nada que corregir.
-      function intentarCorregir() {
-        var vista = document.querySelector('flutter-view');
-        if (!vista) return false;
+                          visualViewport   alto de <flutter-view>
+      teclado oculto           724                 724   correcto
+      teclado abierto          380                 724   correcto
+      al CERRAR el teclado     724                 380   <-- roto
 
-        // Con el teclado todavia tapando no se toca nada: ahi el motor
-        // esta bien y avisarle solo lo confundiria.
-        if (Math.abs(vv.height - window.innerHeight) > 40) return false;
+    No era nuestro código: es flutter/flutter#175074, una regresión P1
+    del engine ("[Android Web] resizeToAvoidBottomInset broken on
+    Android"), presente desde 3.37 y corregida en 3.38.6. Este proyecto
+    estaba en 3.38.5, justo la última versión afectada. Eso explica lo
+    que ninguna otra hipótesis explicaba: que fallara IGUAL en todos los
+    navegadores. El culpable era el engine, no el navegador.
 
-        var real = Math.round(vista.getBoundingClientRect().height);
-        if (Math.abs(real - window.innerHeight) <= 2) return true;
+    Aquí vivía un parche de JavaScript que forzaba
+    `height: innerHeight px !important` sobre <flutter-view> a base de
+    reintentos. Se retiró al subir a 3.38.10: si el engine ya mide bien,
+    ese `!important` inline solo puede estorbar (gana sobre cualquier
+    hoja de estilos y congela el alto).
 
-        // El evento va sobre el visualViewport, NO sobre window.
-        //
-        // Es la clave y me costo la noche entera: cuando el navegador
-        // tiene visualViewport —todos los moviles modernos— el motor de
-        // Flutter se suscribe al resize DE ESE OBJETO, no al de la
-        // ventana. Despachar en window no lo oye nadie.
-        //
-        // Ahora el viewport ya informa la altura buena, asi que al
-        // releerla el motor se recoloca solo.
-        vv.dispatchEvent(new Event('resize'));
-        window.dispatchEvent(new Event('resize'));
-
-        // Y ademas se le cambia el alto al elemento a mano. No es por
-        // terquedad: el motor observa el tamano de su propio elemento, y
-        // tocarlo lo obliga a remedirse aunque el evento no le llegara.
-        // Ademas repinta la franja de abajo, donde ahora se ven pixeles
-        // viejos de la pantalla anterior porque el motor cree que esa
-        // zona no existe y no la borra.
-        vista.style.setProperty('height', window.innerHeight + 'px', 'important');
-        intentos++;
-        return false;
-      }
-
-      var repaso;
-      function insistir() {
-        clearInterval(repaso);
-        var vueltas = 0;
-        // Se insiste hasta 2s porque el teclado se recoge con animacion y
-        // el viewport tarda en dar su medida definitiva. Para en cuanto
-        // queda bien, asi que en uso normal apenas hace nada.
-        repaso = setInterval(function () {
-          if (intentarCorregir() || ++vueltas > 20) clearInterval(repaso);
-        }, 100);
-      }
-
-      vv.addEventListener('resize', insistir);
-      window.addEventListener('resize', insistir);
-      // El teclado a veces se cierra sin disparar el evento del viewport.
-      window.addEventListener('focusout', insistir, true);
-    })();
-  </script>
+    ANTES DE VOLVER A PARCHEAR ESTO CON JS O CSS: comprobar la versión
+    de Flutter. Callejones sin salida ya recorridos, no repetirlos:
+      - interactive-widget=resizes-content -> empeora (ver arriba).
+      - CSS con !important -> NO gana sobre un estilo inline que
+        también lleva !important. La precedencia es al revés.
+  -->
 
   <script>
     // Diagnóstico bajo demanda: solo con ?diag=1 en la URL.
@@ -150,9 +99,10 @@
           'visualH     ' + (vv ? Math.round(vv.height) : '-') + '\n' +
           'scrollY     ' + Math.round(window.scrollY) + '\n' +
           'fv alto     ' + (r ? Math.round(r.height) : '-') + '\n' +
-          'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)') + '\n' +
-          // Si esto se queda en 0, el arreglo no se está ejecutando.
-          'correcciones ' + (window.__correcciones ? window.__correcciones() : '-');
+          // Con el engine ya corregido esto debe quedar SIEMPRE en
+          // "(vacio)": nadie escribe el alto a mano. Si vuelve a salir un
+          // valor en px, es que algo lo está forzando otra vez.
+          'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)');
       }, 250);
     })();
   </script>
