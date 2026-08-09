@@ -110,47 +110,37 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
-    // Material envuelve todo el contenido, con tipo transparencia (sin
-    // relleno ni elevación propios: el color ya lo pone el Container de
-    // abajo). `mostrar()` la abre con showModalBottomSheet, que ya trae su
-    // propio Material — pero este widget de test la pinta directo como
-    // `home:` de un MaterialApp, sin Scaffold ni hoja real encima. Sin este
-    // Material, CampoIdioma (que usa DropdownButtonFormField, un widget de
-    // Material) truena con "No Material widget found".
-    return Material(
-      type: MaterialType.transparency,
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorNeutro.shade50,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(t.configuracion,
-                  textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
-              const SizedBox(height: 20),
-              const CampoIdioma(),
-              const SizedBox(height: 16),
-              GlassOutlineButton(
-                color: colorNeutro,
-                icon: Icons.pin_outlined,
-                label: t.configuracionCambiarPin,
-                onPressed: _cambiandoPin ? null : _cambiarPin,
-              ),
-              const SizedBox(height: 16),
-              GlassOutlineButton(
-                color: colorNeutro,
-                icon: Icons.logout,
-                label: t.misGruposCerrarSesion,
-                onPressed: widget.alCerrarSesion,
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorNeutro.shade50,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(t.configuracion,
+                textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
+            const SizedBox(height: 20),
+            const CampoIdioma(),
+            const SizedBox(height: 16),
+            GlassOutlineButton(
+              color: colorNeutro,
+              icon: Icons.pin_outlined,
+              label: t.configuracionCambiarPin,
+              onPressed: _cambiandoPin ? null : _cambiarPin,
+            ),
+            const SizedBox(height: 16),
+            GlassOutlineButton(
+              color: colorNeutro,
+              icon: Icons.logout,
+              label: t.misGruposCerrarSesion,
+              onPressed: widget.alCerrarSesion,
+            ),
+          ],
         ),
       ),
     );

@@ -7,7 +7,10 @@ Widget _envoltorio(Widget hijo) => MaterialApp(
       locale: const Locale('en'),
       supportedLocales: const [Locale('en'), Locale('es')],
       localizationsDelegates: Textos.localizationsDelegates,
-      home: hijo,
+      // El Scaffold es lo que aporta el Material que DropdownButtonFormField
+      // necesita. En producción lo pone showModalBottomSheet; aquí, que la hoja
+      // se pinta suelta, lo pone el test. Mismo patrón que selector_idioma_test.
+      home: Scaffold(body: hijo),
     );
 
 void main() {
