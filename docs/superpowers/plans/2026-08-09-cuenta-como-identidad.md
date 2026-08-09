@@ -2101,6 +2101,10 @@ Añadir a `test/arb_paridad_test.dart`, dentro de `main()`:
       'chatQuienEres',
       'chatQuienEresTexto',
       'chatCambiarPersona',
+      // Estas dos murieron en la Task 7, al borrar los botones "¿No eres tú?"
+      // y "Ya me registré en otro dispositivo" con la hoja de identidad.
+      'grupoNoEresTu',
+      'grupoYaEstoyDentro',
     ]) {
       expect(en.contains(muerta), isFalse, reason: '$muerta debería estar borrada');
     }
@@ -2116,7 +2120,9 @@ Expected: FAIL — `crearPinMaestro debería estar borrada`.
 
 En `lib/l10n/app_en.arb` y `lib/l10n/app_es.arb`, borrar estas claves **y sus bloques `@clave` de metadatos si los tienen**:
 
-`crearPinMaestro`, `crearPinMaestroAyuda`, `registroPin`, `registroPinAyuda`, `registroTuPin`, `organizadorPinTexto`, `organizadorPinCampo`, `organizadorEntrar`, `organizadorSalir`, `organizadorActivado`, `organizadorDesactivado`, `loginTitulo`, `loginHola`, `chatQuienEres`, `chatQuienEresTexto`, `chatCambiarPersona`.
+`crearPinMaestro`, `crearPinMaestroAyuda`, `registroPin`, `registroPinAyuda`, `registroTuPin`, `organizadorPinTexto`, `organizadorPinCampo`, `organizadorEntrar`, `organizadorSalir`, `organizadorActivado`, `organizadorDesactivado`, `loginTitulo`, `loginHola`, `chatQuienEres`, `chatQuienEresTexto`, `chatCambiarPersona`, `grupoNoEresTu`, `grupoYaEstoyDentro`.
+
+Son **18**, no 16: las dos últimas murieron en la Task 7, al borrar con la hoja de identidad los botones *"¿No eres tú?"* y *"Ya me registré en otro dispositivo"*. Lo detectó el implementador de esa tarea.
 
 - [ ] **Step 4: Regenerar, y comprobar que no las usaba nadie**
 
