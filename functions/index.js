@@ -110,6 +110,17 @@ function participantePrivadoRef(codigo, participanteId) {
 
 const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
+// El PIN es la SEGUNDA barrera, no la primera: la cuenta ya demostró
+// quién eres. Este protege de que alguien con tu teléfono desbloqueado
+// vea tu asignación, que es lo único irreversible de la app.
+const REGEX_PIN = /^\d{4}$/;
+
+function validarPin(pin) {
+  if (!REGEX_PIN.test(pin || "")) {
+    throw new HttpsError("invalid-argument", "El PIN debe ser de 4 dígitos exactos.", {clave: "pin_formato"});
+  }
+}
+
 function normalizarNickname(nickname) {
   return (nickname || "").trim().toLowerCase();
 }
@@ -138,13 +149,20 @@ exports.registrarCuenta = onCall(async (request) => {
   }
   validarPassword(password);
 
+  const pin = (request.data?.pin || "").trim();
+  validarPin(pin);
+
   const hash = bcrypt.hashSync(password, 10);
   try {
     await usuarioRef(clave).create({
       nickname,
       hash,
+      // Con bcrypt igual que la contraseña. Son 10.000 combinaciones: este
+      // rediseño existe justamente para sacar secretos en claro de
+      // Firestore, no para meter uno nuevo.
+      pinHash: bcrypt.hashSync(pin, 10),
       fecha: admin.firestore.FieldValue.serverTimestamp(),
-      grupos: [],
+      grupos: {},
     });
   } catch (e) {
     if (e.code === 6 || e.code === "already-exists") {
@@ -153,6 +171,26 @@ exports.registrarCuenta = onCall(async (request) => {
     throw e;
   }
   return {ok: true, nickname};
+});
+
+// Cambiar el PIN pide la contraseña de la cuenta. No es burocracia: es la
+// ÚNICA salida si lo olvidas. Sin ella, cuatro dígitos olvidados te
+// dejarían sin ver tu amigo secreto para siempre — y esta app tampoco
+// tiene recuperación de contraseña.
+exports.cambiarPin = onCall(async (request) => {
+  const clave = normalizarNickname(request.data?.nickname);
+  const password = request.data?.password || "";
+  const pinNuevo = (request.data?.pinNuevo || "").trim();
+
+  validarPin(pinNuevo);
+
+  const snap = await usuarioRef(clave).get();
+  if (!snap.exists || !bcrypt.compareSync(password, snap.data().hash)) {
+    throw new HttpsError("unauthenticated", "La contraseña no es correcta.", {clave: "password_incorrecta"});
+  }
+
+  await usuarioRef(clave).update({pinHash: bcrypt.hashSync(pinNuevo, 10)});
+  return {ok: true};
 });
 
 exports.iniciarSesionCuenta = onCall(async (request) => {
