@@ -19,6 +19,7 @@ class InvitacionPendiente {
 
 const _claveCodigo = 'invitacion_codigo';
 const _claveNombre = 'invitacion_nombre';
+const _claveConsumidas = 'invitaciones_consumidas';
 
 Future<void> guardarInvitacion(String codigo, String nombreGrupo) async {
   try {
@@ -50,5 +51,37 @@ Future<void> borrarInvitacion() async {
     await prefs.remove(_claveNombre);
   } catch (_) {
     // Nada que hacer.
+  }
+}
+
+/// Borrar la invitación no basta en web: la URL de la pestaña NUNCA
+/// cambia —es el enlace que compartieron por QR o WhatsApp— así que al
+/// recargar se vuelve a leer el mismo `?codigo=`, se vuelve a guardar la
+/// invitación y esa persona vuelve a entrar a ese grupo para siempre.
+///
+/// Por eso se lleva una lista de códigos ya gastados: la marca sobrevive
+/// a la recarga y el portero ni siquiera consulta Firestore por ellos.
+Future<void> marcarInvitacionConsumida(String codigo) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final consumidas = prefs.getStringList(_claveConsumidas) ?? const <String>[];
+    // Sin duplicar: la lista crece con cada grupo al que se entra por
+    // enlace y vive en disco para siempre.
+    if (consumidas.contains(codigo)) return;
+    await prefs.setStringList(_claveConsumidas, [...consumidas, codigo]);
+  } catch (_) {
+    // Sin almacenamiento no hay memoria de nada; se acepta el riesgo de
+    // volver a capturar el código antes que tumbar la app.
+  }
+}
+
+Future<bool> invitacionYaConsumida(String codigo) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_claveConsumidas) ?? const <String>[]).contains(codigo);
+  } catch (_) {
+    // Ante la duda se responde que no: bloquear una invitación buena es
+    // peor que repetir una consulta.
+    return false;
   }
 }
