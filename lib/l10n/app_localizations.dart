@@ -439,18 +439,6 @@ abstract class Textos {
   /// **'e.g. The Smiths, Office 2026'**
   String get crearNombreGrupoPista;
 
-  /// No description provided for @crearPinMaestro.
-  ///
-  /// In en, this message translates to:
-  /// **'Group master PIN'**
-  String get crearPinMaestro;
-
-  /// No description provided for @crearPinMaestroAyuda.
-  ///
-  /// In en, this message translates to:
-  /// **'You will need it to draw names and to edit the group. You choose it.'**
-  String get crearPinMaestroAyuda;
-
   /// No description provided for @crearValorMinimo.
   ///
   /// In en, this message translates to:
@@ -762,18 +750,6 @@ abstract class Textos {
   /// **'Nobody knows who you are, so this is the only clue your gift giver will have.'**
   String get registroDeseosAyudaPersonaje;
 
-  /// No description provided for @registroPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Secret PIN'**
-  String get registroPin;
-
-  /// No description provided for @registroPinAyuda.
-  ///
-  /// In en, this message translates to:
-  /// **'With this PIN you will see who you have to give a gift to.'**
-  String get registroPinAyuda;
-
   /// No description provided for @registroBoton.
   ///
   /// In en, this message translates to:
@@ -816,53 +792,11 @@ abstract class Textos {
   /// **'Leave the group (with your PIN)'**
   String get registroSalirGrupo;
 
-  /// No description provided for @registroTuPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Your secret PIN'**
-  String get registroTuPin;
-
   /// No description provided for @registroVerAmigo.
   ///
   /// In en, this message translates to:
   /// **'SEE MY SECRET FRIEND'**
   String get registroVerAmigo;
-
-  /// No description provided for @organizadorEntrar.
-  ///
-  /// In en, this message translates to:
-  /// **'Organizer mode'**
-  String get organizadorEntrar;
-
-  /// No description provided for @organizadorSalir.
-  ///
-  /// In en, this message translates to:
-  /// **'Exit organizer mode'**
-  String get organizadorSalir;
-
-  /// No description provided for @organizadorPinTexto.
-  ///
-  /// In en, this message translates to:
-  /// **'Type the master PIN you chose when you created the group. It is asked only once.'**
-  String get organizadorPinTexto;
-
-  /// No description provided for @organizadorPinCampo.
-  ///
-  /// In en, this message translates to:
-  /// **'Master PIN'**
-  String get organizadorPinCampo;
-
-  /// No description provided for @organizadorActivado.
-  ///
-  /// In en, this message translates to:
-  /// **'Organizer mode on'**
-  String get organizadorActivado;
-
-  /// No description provided for @organizadorDesactivado.
-  ///
-  /// In en, this message translates to:
-  /// **'Organizer mode off'**
-  String get organizadorDesactivado;
 
   /// No description provided for @organizadorEditarGrupo.
   ///
@@ -1019,18 +953,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Group deleted'**
   String get editarEliminado;
-
-  /// No description provided for @loginTitulo.
-  ///
-  /// In en, this message translates to:
-  /// **'Who are you?'**
-  String get loginTitulo;
-
-  /// No description provided for @loginHola.
-  ///
-  /// In en, this message translates to:
-  /// **'Hi {nombre}'**
-  String loginHola(String nombre);
 
   /// No description provided for @verAmigoPinTitulo.
   ///
@@ -1224,18 +1146,6 @@ abstract class Textos {
   /// **'Your entry is saved. Nobody has to sign up twice.'**
   String get grupoYaDentroAyuda;
 
-  /// No description provided for @grupoYaEstoyDentro.
-  ///
-  /// In en, this message translates to:
-  /// **'I already signed up on another device'**
-  String get grupoYaEstoyDentro;
-
-  /// No description provided for @grupoNoEresTu.
-  ///
-  /// In en, this message translates to:
-  /// **'Not you?'**
-  String get grupoNoEresTu;
-
   /// No description provided for @grupoTuEtiqueta.
   ///
   /// In en, this message translates to:
@@ -1272,18 +1182,6 @@ abstract class Textos {
   /// **'Send'**
   String get chatEnviar;
 
-  /// No description provided for @chatQuienEres.
-  ///
-  /// In en, this message translates to:
-  /// **'Who are you?'**
-  String get chatQuienEres;
-
-  /// No description provided for @chatQuienEresTexto.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick your name and type your PIN. It is asked only once on this device.'**
-  String get chatQuienEresTexto;
-
   /// No description provided for @chatTuMascara.
   ///
   /// In en, this message translates to:
@@ -1313,12 +1211,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'It disappears for the whole group. You will not find out who wrote it.'**
   String get chatBorrarTexto;
-
-  /// No description provided for @chatCambiarPersona.
-  ///
-  /// In en, this message translates to:
-  /// **'I am someone else'**
-  String get chatCambiarPersona;
 
   /// No description provided for @errorMensajeVacio.
   ///

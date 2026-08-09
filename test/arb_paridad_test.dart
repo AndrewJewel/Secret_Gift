@@ -38,4 +38,34 @@ void main() {
       expect(es.contains(nueva), isTrue, reason: 'falta $nueva en español');
     }
   });
+
+  test('no quedan claves de los PIN por grupo', () {
+    final en = _clavesDe('lib/l10n/app_en.arb');
+    // Los PIN por participante y el PIN maestro desaparecieron. Si alguna
+    // de estas reaparece, es que se resucitó código muerto con ella.
+    for (final muerta in const [
+      'crearPinMaestro',
+      'crearPinMaestroAyuda',
+      'registroPin',
+      'registroPinAyuda',
+      'registroTuPin',
+      'organizadorPinTexto',
+      'organizadorPinCampo',
+      'organizadorEntrar',
+      'organizadorSalir',
+      'organizadorActivado',
+      'organizadorDesactivado',
+      'loginTitulo',
+      'loginHola',
+      'chatQuienEres',
+      'chatQuienEresTexto',
+      'chatCambiarPersona',
+      // Estas dos murieron en la Task 7, al borrar los botones "¿No eres tú?"
+      // y "Ya me registré en otro dispositivo" con la hoja de identidad.
+      'grupoNoEresTu',
+      'grupoYaEstoyDentro',
+    ]) {
+      expect(en.contains(muerta), isFalse, reason: '$muerta debería estar borrada');
+    }
+  });
 }

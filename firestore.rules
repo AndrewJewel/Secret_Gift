@@ -7,19 +7,23 @@ rules_version = '2';
 // SIEMPRE a través de las Cloud Functions (Admin SDK, ignoran estas
 // reglas), nunca directo desde el cliente.
 //
-// grupos/{codigo}/privado/data: el PIN maestro del grupo. Cero acceso de
-// cliente en cualquier dirección.
+// grupos/{codigo}/privado/data: las máscaras ya repartidas en el chat.
+// Cero acceso de cliente en cualquier dirección. El PIN maestro que vivía
+// aquí desapareció: ser organizador lo dice tu cuenta.
 //
 // grupos/{codigo}/participantes/{id}: nombre + fecha + tieneAmigo (bandera
 // pública, sin revelar a quién). Lectura pública, escritura solo por
 // Cloud Functions.
 //
-// grupos/{codigo}/participantes/{id}/privado/data: PIN del participante,
-// su lista de deseos, y a quién le regala. Cero acceso de cliente.
+// grupos/{codigo}/participantes/{id}/privado/data: de qué cuenta es esta
+// plaza, la lista de deseos, a quién le regala y su máscara del chat.
+// Cero acceso de cliente. El PIN del participante que vivía aquí
+// desapareció.
 //
-// usuarios/{nickname}: cuentas (nickname + hash de contraseña + grupos
-// vinculados). Cero acceso de cliente en cualquier dirección — solo las
-// Cloud Functions (registrarCuenta/iniciarSesionCuenta) lo tocan.
+// usuarios/{nickname}: cuentas (nickname + hash de contraseña + hash del
+// PIN de 4 dígitos + grupos vinculados). Cero acceso de cliente en
+// cualquier dirección — solo las Cloud Functions
+// (registrarCuenta/iniciarSesionCuenta) lo tocan.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /grupos/{codigo} {

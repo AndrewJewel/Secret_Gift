@@ -196,13 +196,6 @@ class TextosEs extends Textos {
   String get crearNombreGrupoPista => 'Ej: Familia Pérez, Oficina 2026';
 
   @override
-  String get crearPinMaestro => 'PIN maestro del grupo';
-
-  @override
-  String get crearPinMaestroAyuda =>
-      'Lo necesitarás para el sorteo y para editar el grupo. Elígelo tú.';
-
-  @override
   String get crearValorMinimo => 'Valor mínimo del regalo (opcional)';
 
   @override
@@ -378,13 +371,6 @@ class TextosEs extends Textos {
       'Nadie sabe quién eres, así que esta es la única pista que tendrá quien te regale.';
 
   @override
-  String get registroPin => 'PIN secreto';
-
-  @override
-  String get registroPinAyuda =>
-      'Con este PIN verás a quién te toca regalarle.';
-
-  @override
   String get registroBoton => 'AGREGAR A LA LISTA';
 
   @override
@@ -406,29 +392,7 @@ class TextosEs extends Textos {
   String get registroSalirGrupo => 'Salir del grupo (con tu PIN)';
 
   @override
-  String get registroTuPin => 'Tu PIN secreto';
-
-  @override
   String get registroVerAmigo => 'VER MI AMIGO SECRETO';
-
-  @override
-  String get organizadorEntrar => 'Modo organizador';
-
-  @override
-  String get organizadorSalir => 'Salir del modo organizador';
-
-  @override
-  String get organizadorPinTexto =>
-      'Escribe el PIN maestro que elegiste al crear el grupo. Se pide una sola vez.';
-
-  @override
-  String get organizadorPinCampo => 'PIN maestro';
-
-  @override
-  String get organizadorActivado => 'Modo organizador activado';
-
-  @override
-  String get organizadorDesactivado => 'Modo organizador cerrado';
 
   @override
   String get organizadorEditarGrupo => 'Editar el grupo';
@@ -517,14 +481,6 @@ class TextosEs extends Textos {
 
   @override
   String get editarEliminado => 'Grupo eliminado';
-
-  @override
-  String get loginTitulo => '¿Quién eres?';
-
-  @override
-  String loginHola(String nombre) {
-    return 'Hola $nombre';
-  }
 
   @override
   String get verAmigoPinTitulo => 'Escribe tu PIN';
@@ -632,12 +588,6 @@ class TextosEs extends Textos {
       'Tu entrada quedó guardada. Nadie tiene que registrarse dos veces.';
 
   @override
-  String get grupoYaEstoyDentro => 'Ya me registré en otro dispositivo';
-
-  @override
-  String get grupoNoEresTu => '¿No eres tú?';
-
-  @override
   String get grupoTuEtiqueta => 'tú';
 
   @override
@@ -657,13 +607,6 @@ class TextosEs extends Textos {
   String get chatEnviar => 'Enviar';
 
   @override
-  String get chatQuienEres => '¿Quién eres?';
-
-  @override
-  String get chatQuienEresTexto =>
-      'Elige tu nombre y escribe tu PIN. Se pide una sola vez en este dispositivo.';
-
-  @override
   String chatTuMascara(String mascara) {
     return 'En el chat eres $mascara. Nadie puede ver quién hay detrás — ni siquiera el organizador.';
   }
@@ -680,9 +623,6 @@ class TextosEs extends Textos {
   @override
   String get chatBorrarTexto =>
       'Desaparece para todo el grupo. No vas a enterarte de quién lo escribió.';
-
-  @override
-  String get chatCambiarPersona => 'Soy otra persona';
 
   @override
   String get errorMensajeVacio => 'El mensaje está vacío.';

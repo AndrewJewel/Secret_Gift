@@ -195,13 +195,6 @@ class TextosEn extends Textos {
   String get crearNombreGrupoPista => 'e.g. The Smiths, Office 2026';
 
   @override
-  String get crearPinMaestro => 'Group master PIN';
-
-  @override
-  String get crearPinMaestroAyuda =>
-      'You will need it to draw names and to edit the group. You choose it.';
-
-  @override
   String get crearValorMinimo => 'Minimum gift value (optional)';
 
   @override
@@ -376,13 +369,6 @@ class TextosEn extends Textos {
       'Nobody knows who you are, so this is the only clue your gift giver will have.';
 
   @override
-  String get registroPin => 'Secret PIN';
-
-  @override
-  String get registroPinAyuda =>
-      'With this PIN you will see who you have to give a gift to.';
-
-  @override
   String get registroBoton => 'ADD TO THE LIST';
 
   @override
@@ -404,29 +390,7 @@ class TextosEn extends Textos {
   String get registroSalirGrupo => 'Leave the group (with your PIN)';
 
   @override
-  String get registroTuPin => 'Your secret PIN';
-
-  @override
   String get registroVerAmigo => 'SEE MY SECRET FRIEND';
-
-  @override
-  String get organizadorEntrar => 'Organizer mode';
-
-  @override
-  String get organizadorSalir => 'Exit organizer mode';
-
-  @override
-  String get organizadorPinTexto =>
-      'Type the master PIN you chose when you created the group. It is asked only once.';
-
-  @override
-  String get organizadorPinCampo => 'Master PIN';
-
-  @override
-  String get organizadorActivado => 'Organizer mode on';
-
-  @override
-  String get organizadorDesactivado => 'Organizer mode off';
 
   @override
   String get organizadorEditarGrupo => 'Edit the group';
@@ -515,14 +479,6 @@ class TextosEn extends Textos {
 
   @override
   String get editarEliminado => 'Group deleted';
-
-  @override
-  String get loginTitulo => 'Who are you?';
-
-  @override
-  String loginHola(String nombre) {
-    return 'Hi $nombre';
-  }
 
   @override
   String get verAmigoPinTitulo => 'Type your PIN';
@@ -631,12 +587,6 @@ class TextosEn extends Textos {
       'Your entry is saved. Nobody has to sign up twice.';
 
   @override
-  String get grupoYaEstoyDentro => 'I already signed up on another device';
-
-  @override
-  String get grupoNoEresTu => 'Not you?';
-
-  @override
   String get grupoTuEtiqueta => 'you';
 
   @override
@@ -656,13 +606,6 @@ class TextosEn extends Textos {
   String get chatEnviar => 'Send';
 
   @override
-  String get chatQuienEres => 'Who are you?';
-
-  @override
-  String get chatQuienEresTexto =>
-      'Pick your name and type your PIN. It is asked only once on this device.';
-
-  @override
   String chatTuMascara(String mascara) {
     return 'In the chat you are $mascara. Nobody can see who is behind it — not even the organizer.';
   }
@@ -679,9 +622,6 @@ class TextosEn extends Textos {
   @override
   String get chatBorrarTexto =>
       'It disappears for the whole group. You will not find out who wrote it.';
-
-  @override
-  String get chatCambiarPersona => 'I am someone else';
 
   @override
   String get errorMensajeVacio => 'The message is empty.';

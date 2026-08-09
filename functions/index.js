@@ -103,10 +103,13 @@ function participantePrivadoRef(codigo, participanteId) {
   return participanteRef(codigo, participanteId).collection("privado").doc("data");
 }
 
-// --- Cuentas (nickname + contraseña) ---------------------------------
-// Independientes del PIN de cada grupo: sirven solo para que una persona
-// encuentre "mis grupos" desde cualquier dispositivo. El PIN de grupo
-// sigue siendo lo único que revela el amigo secreto.
+// --- Cuentas (nickname + contraseña + PIN) ---------------------------
+// La cuenta es la ÚNICA credencial de autorización de la app. El PIN de 4
+// dígitos es una segunda barrera para una sola acción —revelar tu amigo
+// secreto— y no autoriza nada más.
+//
+// Antes había un PIN por participante y un PIN maestro por grupo, los dos
+// en texto plano. Eran de cuando no existían las cuentas.
 
 const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 

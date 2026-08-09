@@ -355,11 +355,12 @@ ella.
   de `destino_inicial`, `invitacion_pendiente` y `selector_idioma` no se
   tocan. Hacen falta tests nuevos para el formato del PIN y para la forma
   del mapa `grupos`.
-- **Reescribir `scratchpad/probar.ps1`**, la prueba de integración contra
-  producción: hoy crea el grupo con `pinMaestro` y verifica el modo
-  organizador con él. Debe cubrir el camino nuevo de punta a punta,
-  incluido el caso que provocó todo esto: **crear un grupo, apuntarse a
-  él, y comprobar que sale UNA sola vez en la lista de la cuenta.**
+- **`node scripts/probar.mjs`**, la prueba de integración contra
+  producción. El `scratchpad/probar.ps1` que mencionaban las sesiones
+  anteriores nunca estuvo en el repo y se perdió; el nuevo vive
+  trackeado. Cubre el camino nuevo de punta a punta, incluido el caso
+  que provocó todo esto: **crear un grupo, apuntarse a él, y comprobar
+  que sale UNA sola vez en la lista de la cuenta.**
 - En dispositivo: crear cuenta con PIN, crear grupo, apuntarse, ver el
   grupo una vez en Mis grupos, revelar el amigo secreto con el PIN,
   cambiar el PIN desde Configuración, y comprobar que un participante que
