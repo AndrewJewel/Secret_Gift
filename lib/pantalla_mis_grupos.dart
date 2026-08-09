@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'acceso_cuenta.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_crear_grupo.dart';
 import 'pantalla_unirse_grupo.dart';
@@ -158,6 +159,7 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                                       ocasion: ocasion,
                                       valorMinimo: g['valorMinimo'] as String? ?? '',
                                       nombreGrupo: nombreGrupo,
+                                      vinculo: MiVinculo.desdeMapa(g),
                                     ),
                                   ),
                                 ),

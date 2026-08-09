@@ -8,6 +8,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'invitacion_pendiente.dart';
 import 'l10n/app_localizations.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_crear_cuenta.dart';
 import 'pantalla_mis_grupos.dart';
@@ -209,7 +210,8 @@ class _PantallaRaizState extends State<PantallaRaiz> {
 /// registro: sin botón atrás, sin Mis grupos, sin cerrar sesión y sin
 /// selector de idioma. Ahora apila `irADondeToque`, que es quien sabe qué
 /// forma debe tener la pila entera.
-Future<PantallaRegistro?> _entrarAlGrupo(InvitacionPendiente i) async {
+Future<PantallaRegistro?> _entrarAlGrupo(
+    InvitacionPendiente i, List<Map<String, dynamic>> grupos) async {
   final DocumentSnapshot<Map<String, dynamic>> doc;
   try {
     doc = await FirebaseFirestore.instance
@@ -243,11 +245,25 @@ Future<PantallaRegistro?> _entrarAlGrupo(InvitacionPendiente i) async {
   await borrarInvitacion();
   await marcarInvitacionConsumida(i.codigo);
   final data = doc.data()!;
+  // Si la cuenta ya tiene vínculo con este grupo se le pasa; si no, null,
+  // que es lo que hace que la pantalla ofrezca el formulario de alta.
+  //
+  // Con un bucle y no con `firstOrNull`: esa extensión vive en
+  // `package:collection`, que este proyecto no importa, y añadir una
+  // dependencia por una línea no compensa.
+  Map<String, dynamic>? entrada;
+  for (final g in grupos) {
+    if (g['codigo'] == i.codigo) {
+      entrada = g;
+      break;
+    }
+  }
   return PantallaRegistro(
     codigo: i.codigo,
     ocasion: Ocasion.desdeId(data['ocasion'] as String),
     valorMinimo: data['valorMinimo'] as String? ?? '',
     nombreGrupo: data['nombreGrupo'] as String? ?? '',
+    vinculo: entrada == null ? null : MiVinculo.desdeMapa(entrada),
   );
 }
 
@@ -267,7 +283,8 @@ Future<void> irADondeToque(BuildContext context, ResultadoAcceso resultado) asyn
   // El grupo se resuelve ANTES de tocar la pila. Al revés no funciona:
   // `pushAndRemoveUntil` desmonta a quien llama, y con el context muerto
   // ya no se podría apilar el registro encima.
-  final registro = invitacion == null ? null : await _entrarAlGrupo(invitacion);
+  final registro =
+      invitacion == null ? null : await _entrarAlGrupo(invitacion, resultado.grupos);
   if (!context.mounted) return;
 
   // Se coge el Navigator antes de vaciar la pila: el context de quien

@@ -11,6 +11,7 @@ import 'glass.dart';
 import 'hoja_identidad.dart';
 import 'identidad_local.dart';
 import 'l10n/app_localizations.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_chat.dart';
 import 'pantalla_editar_grupo.dart';
@@ -54,12 +55,19 @@ class PantallaRegistro extends StatefulWidget {
   final String valorMinimo;
   final String nombreGrupo;
 
+  /// Tu relación con este grupo, o null si todavía no tienes ninguna
+  /// (llegaste por un QR a un grupo en el que no estás). Se recibe en vez
+  /// de consultarse porque quien navega aquí ya lo tiene: Mis grupos en su
+  /// lista, y el portero en `resultado.grupos`.
+  final MiVinculo? vinculo;
+
   const PantallaRegistro({
     super.key,
     required this.codigo,
     required this.ocasion,
     required this.valorMinimo,
     this.nombreGrupo = '',
+    this.vinculo,
   });
 
   @override
