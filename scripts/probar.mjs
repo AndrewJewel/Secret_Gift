@@ -156,6 +156,30 @@ async function main() {
   await debeFallar("tras el sorteo NO se puede sacar a nadie", "grupo_ya_sorteado",
       () => llamar("borrarParticipante", {...credOrganizador, codigo, participanteId: id}));
 
+  // Las tres reglas del sorteo se sostienen entre sí, así que se prueban
+  // juntas: la lista no cambia (ni sacando ni metiendo) y el sorteo no se
+  // repite. Si cualquiera de las tres cede, las otras dos dejan de
+  // significar nada.
+  //
+  // Quien entrase después del sorteo quedaría fuera de la cadena: sin
+  // amigo asignado y sin nadie que le regale. No se ve hasta el día de la
+  // entrega.
+  //
+  // Se usa la cuenta participante, que YA está dentro, y aun así la clave
+  // esperada es `grupo_cerrado` y no `ya_estas_en_el_grupo`: la bandera
+  // `sorteado` se mira antes de autorizar, porque el grupo está cerrado
+  // para todo el mundo y no hace falta saber quién llama para decirlo. Si
+  // esta comprobación devolviera `ya_estas_en_el_grupo`, significaría que
+  // el guarda nuevo NO está donde se puso.
+  await debeFallar("tras el sorteo NO se puede entrar al grupo", "grupo_cerrado",
+      () => llamar("agregarParticipante",
+          {...credParticipante, codigo, nombre: "Tarde", deseos: ""}));
+
+  // Repetirlo rebarajaría a gente que ya vio su asignación y quizá ya
+  // compró el regalo.
+  await debeFallar("el sorteo NO se puede repetir", "sorteo_ya_hecho",
+      () => llamar("ejecutarSorteo", {...credOrganizador, codigo}));
+
   const cambio = await llamar("cambiarPin", {nickname: NICK_ORGANIZADOR, password: PASSWORD, pinNuevo: PIN_NUEVO});
   await debeFallar("el PIN viejo ya no vale", "pin_incorrecto",
       () => llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: PIN}));
