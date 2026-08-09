@@ -6,7 +6,7 @@ import 'glass.dart';
 import 'idioma.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
-import 'pantalla_inicio.dart';
+import 'pantalla_raiz.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +50,7 @@ class SantaApp extends StatelessWidget {
         supportedLocales: Idioma.soportados,
         localizationsDelegates: Textos.localizationsDelegates,
         theme: temaGlass(colorNeutro),
-        home: const PantallaInicio(),
+        home: const PantallaRaiz(),
       ),
     );
   }
