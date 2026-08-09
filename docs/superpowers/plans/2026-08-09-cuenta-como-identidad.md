@@ -1472,7 +1472,7 @@ sabe qué participante eres."
 
 **Interfaces:**
 - Consumes: `CampoIdioma` (`lib/selector_idioma.dart`), `cerrarSesion` / `leerSesion` (`lib/sesion.dart`), `cambiarPin` (Task 2), claves de Task 1.
-- Produces: `HojaConfiguracion.mostrar(BuildContext context, {required VoidCallback alCerrarSesion})`.
+- Produces: `HojaConfiguracion.mostrar(BuildContext context, {required Future<void> Function() alCerrarSesion})`. **No es `VoidCallback`** — quien lo implementa tiene que esperar a `cerrarSesion()` antes de navegar.
 
 - [ ] **Step 1: Escribir el test que falla**
 
@@ -1488,7 +1488,12 @@ Widget _envoltorio(Widget hijo) => MaterialApp(
       locale: const Locale('en'),
       supportedLocales: const [Locale('en'), Locale('es')],
       localizationsDelegates: Textos.localizationsDelegates,
-      home: hijo,
+      // El Scaffold es lo que aporta el Material que DropdownButtonFormField
+      // (dentro de CampoIdioma) necesita como ancestro. En producción lo pone
+      // showModalBottomSheet; aquí, que la hoja se pinta suelta, lo pone el
+      // test. Mismo patrón que test/selector_idioma_test.dart. Sin él, el
+      // arreglo acabaría en el widget de producción, que es donde no debe ir.
+      home: Scaffold(body: hijo),
     );
 
 void main() {
