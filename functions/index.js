@@ -1,6 +1,14 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
+// `Math.random` no sirve para nada de esto. V8 lo implementa con
+// xorshift128+, que no es un generador criptográfico: a partir de unas
+// pocas salidas consecutivas se puede reconstruir su estado interno y
+// predecir las siguientes. Y aquí las tres cosas que se sortean son
+// secretos: el código del grupo —que desde que se cerró el `list` de
+// Firestore es la ÚNICA llave para llegar a él—, la cadena del sorteo, y
+// la máscara que sostiene el anonimato del chat.
+const {randomInt} = require("node:crypto");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -11,11 +19,11 @@ const ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 function generarCodigo() {
   let letras = "";
   for (let i = 0; i < 4; i++) {
-    letras += ALFABETO_CODIGO[Math.floor(Math.random() * ALFABETO_CODIGO.length)];
+    letras += ALFABETO_CODIGO[randomInt(ALFABETO_CODIGO.length)];
   }
   let numeros = "";
   for (let i = 0; i < 4; i++) {
-    numeros += ALFABETO_CODIGO[Math.floor(Math.random() * ALFABETO_CODIGO.length)];
+    numeros += ALFABETO_CODIGO[randomInt(ALFABETO_CODIGO.length)];
   }
   return `${letras}-${numeros}`;
 }
@@ -734,7 +742,7 @@ exports.ejecutarSorteo = onCall(async (request) => {
   // Derangement por ciclo aleatorio: nadie se regala a sí mismo.
   const indices = docs.map((_, i) => i);
   for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [indices[i], indices[j]] = [indices[j], indices[i]];
   }
 
@@ -785,8 +793,8 @@ async function obtenerMascara(codigo, participanteId) {
     // Si el grupo pasa de 16 personas se reutilizan máscaras, y la
     // repetición las distingue ("Zorro Azul 2").
     const mascara = libres.length > 0 ?
-      libres[Math.floor(Math.random() * libres.length)] :
-      Math.floor(Math.random() * TOTAL_MASCARAS);
+      libres[randomInt(libres.length)] :
+      randomInt(TOTAL_MASCARAS);
     const repeticion = Math.floor(usadas.length / TOTAL_MASCARAS);
 
     tx.set(privRef, {mascara, mascaraRepeticion: repeticion}, {merge: true});
