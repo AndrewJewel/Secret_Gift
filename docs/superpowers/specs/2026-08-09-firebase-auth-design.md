@@ -125,6 +125,25 @@ viejo del atacante no lo tiene.
 Esa comprobación del servidor es lo que cierra de verdad el hallazgo que la
 auditoría marcó como el más grave.
 
+**Y la pantalla tiene que ramificar según cómo entró esa persona.** Quien
+accedió con Google **no tiene contraseña en esta app** — Firebase no guarda
+ninguna para esas cuentas —, así que pedirle "tu contraseña" no tiene
+respuesta posible. Se resuelve mirando `providerData` del usuario:
+
+| Proveedor | Qué se le pide |
+|---|---|
+| `password` | La contraseña, en un campo |
+| `google.com` | Un botón *"Confirma con Google"* que reabre el diálogo y devuelve una credencial fresca |
+| Los dos vinculados | Cualquiera de los dos; se ofrece sin obligar a elegir |
+
+Los dos caminos acaban en `reauthenticateWithCredential` y los dos
+actualizan `auth_time`, que es lo único que el servidor mira.
+
+**Detalle de web que muerde:** el diálogo de Google es una ventana
+emergente y los bloqueadores la frenan. Hay que dejar preparado el camino
+por redirección (`reauthenticateWithRedirect`) como alternativa, igual que
+para el inicio de sesión.
+
 ## Qué cambia en el código
 
 ### Servidor
