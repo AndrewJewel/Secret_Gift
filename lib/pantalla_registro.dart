@@ -76,7 +76,23 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   late final CollectionReference participantesRef = _grupoRef.collection('participantes');
 
+  /// Un solo stream para los dos usos: pintar la lista y vigilar que la
+  /// identidad guardada siga siendo válida. `snapshots()` devuelve un
+  /// stream de difusión, así que escucharlo dos veces no abre dos
+  /// suscripciones contra Firestore. Si cada uno pidiera el suyo, se
+  /// pagarían las lecturas por duplicado.
+  late final Stream<QuerySnapshot> _streamParticipantes =
+      participantesRef.orderBy('fecha', descending: true).snapshots();
+
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _suscripcionGrupo;
+  StreamSubscription<QuerySnapshot>? _suscripcionParticipantes;
+
+  /// Última lista recibida, para poder revisar la identidad en cuanto
+  /// termine de leerse del disco aunque el stream ya hubiera emitido.
+  List<QueryDocumentSnapshot>? _ultimosParticipantes;
+
+  /// Evita lanzar varias comprobaciones contra el servidor a la vez.
+  bool _comprobandoIdentidad = false;
 
   /// Semilla desde el constructor: la pantalla se pinta completa desde el
   /// primer frame y nunca muestra un spinner de carga inicial.
@@ -127,11 +143,22 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }, onError: (_) {
       // Sin conexión: nos quedamos con la semilla, la pantalla sigue viva.
     });
+    // La revisión de identidad va aquí y NO dentro de build(): antes se
+    // llamaba en cada reconstrucción —al abrirse el teclado, al escribir
+    // una letra— y ahora consulta al servidor. Así corre solo cuando la
+    // lista cambia de verdad.
+    _suscripcionParticipantes = _streamParticipantes.listen((snap) {
+      _ultimosParticipantes = snap.docs;
+      _revisarIdentidadContraLista(snap.docs);
+    }, onError: (_) {
+      // Sin conexión no se revisa nada: se conserva lo guardado.
+    });
   }
 
   @override
   void dispose() {
     _suscripcionGrupo?.cancel();
+    _suscripcionParticipantes?.cancel();
     _nombreController.dispose();
     _pinController.dispose();
     _deseosController.dispose();
@@ -147,19 +174,52 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       _yo = guardada;
       _identidadCargada = true;
     });
+    // El disco y el stream corren en paralelo: si la lista llegó primero,
+    // aquella emisión se revisó sin identidad cargada. Se repasa ahora.
+    final ultimos = _ultimosParticipantes;
+    if (ultimos != null) _revisarIdentidadContraLista(ultimos);
   }
 
   /// Si el organizador te sacó del grupo, la identidad guardada apunta a
   /// alguien que ya no existe. Se descarta para no dejar la pantalla
   /// bloqueada sin formulario ni participante.
-  void _revisarIdentidadContraLista(List<QueryDocumentSnapshot> docs) {
+  ///
+  /// La decisión NO puede tomarse desde la lista: va por detrás de las
+  /// altas recién hechas. Al crear un grupo y registrarte el primero, la
+  /// lista que la app tiene en ese instante está VACÍA, así que no
+  /// encontrarse a uno mismo no prueba nada — y se borraba la identidad
+  /// de quien acababa de entrar. El síntoma era desconcertante: tu
+  /// nombre aparecía en la lista (el servidor te tenía) pero el
+  /// formulario de alta seguía delante (tu dispositivo ya no sabía cuál
+  /// de esos participantes eras). Y no se recuperaba ni recargando,
+  /// porque olvidarIdentidad borra de shared_preferences.
+  ///
+  /// Por eso, cuando faltas de la lista, se le pregunta al servidor por
+  /// tu documento concreto. Solo si de verdad no existe se olvida.
+  Future<void> _revisarIdentidadContraLista(List<QueryDocumentSnapshot> docs) async {
     final yo = _yo;
-    if (yo == null) return;
+    if (yo == null || _comprobandoIdentidad) return;
     if (docs.any((d) => d.id == yo.participanteId)) return;
-    olvidarIdentidad(widget.codigo);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _yo = null);
-    });
+
+    _comprobandoIdentidad = true;
+    try {
+      final doc = await participantesRef
+          .doc(yo.participanteId)
+          .get(const GetOptions(source: Source.server));
+      // Sigue dentro: la lista simplemente iba atrasada.
+      if (doc.exists) return;
+      await olvidarIdentidad(widget.codigo);
+      // Puede haber cambiado mientras se preguntaba (otro registro, o
+      // "dejar de ser yo"): solo se borra si sigue siendo la misma.
+      if (!mounted || _yo?.participanteId != yo.participanteId) return;
+      setState(() => _yo = null);
+    } catch (_) {
+      // Sin red no se decide nada y se conserva la identidad.
+      // Equivocarse hacia "sigues dentro" se corrige en la siguiente
+      // emisión; borrar la nota no tiene vuelta atrás.
+    } finally {
+      _comprobandoIdentidad = false;
+    }
   }
 
   Future<void> _decirQuienSoy() async {
@@ -848,7 +908,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   Widget _listaParticipantes(Textos t) {
     final colorTextoSuelto = _info.tematica.fondoOscuro ? Colors.white70 : Colors.black54;
     return StreamBuilder<QuerySnapshot>(
-      stream: participantesRef.orderBy('fecha', descending: true).snapshots(),
+      // El mismo stream que vigila la identidad en initState. La revisión
+      // vive allí: build() solo pinta, no decide ni escribe.
+      stream: _streamParticipantes,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Padding(
@@ -857,7 +919,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           );
         }
         final docs = snapshot.data!.docs;
-        _revisarIdentidadContraLista(docs);
         if (docs.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(24),
