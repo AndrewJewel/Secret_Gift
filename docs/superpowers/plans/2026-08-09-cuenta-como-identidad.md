@@ -785,8 +785,14 @@ Borrar `exports.verificarOrganizador` entera (líneas 592-601) con su comentario
 ```bash
 node --check functions/index.js
 grep -n "pinMaestro\|verificarPin\|verificarCuentaSiAplica\|verificarOrganizador\|privado.pin\b" functions/index.js
+grep -n "MAX_INTENTOS_PIN\|BLOQUEO_PIN_MS\|pinBloqueadoHasta\|pinFallos" functions/index.js
+flutter gen-l10n && flutter analyze && flutter test
 ```
-Expected: `node --check` sin salida. El `grep` **sin ninguna coincidencia**.
+Expected: `node --check` sin salida. El primer `grep` **sin ninguna coincidencia**.
+
+El segundo `grep` debe mostrar el freno de fuerza bruta en `verAmigoSecreto` **y la limpieza en `cambiarPin`**. Si `cambiarPin` no aparece ahí, la salida de emergencia no funciona: quien se bloquee cambiando su PIN con la contraseña seguiría bloqueado, y eso era justo lo que hacía segura esta decisión.
+
+`flutter analyze` limpio y todos los tests en verde — el test de paridad de ARB cubre la clave `errorPinBloqueado` nueva.
 
 - [ ] **Step 12: NO desplegar todavía**
 
