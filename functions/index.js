@@ -413,6 +413,28 @@ exports.agregarParticipante = onCall(async (request) => {
   // no queda un avatar huérfano en Storage ni un participante inscrito.
   const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
 
+  // Una cuenta, una plaza por grupo. Sin esto, volver a entrar por el
+  // código a un grupo donde ya estás creaba un SEGUNDO documento y
+  // sobrescribía el puntero de la cuenta: la plaza vieja quedaba huérfana
+  // y nadie podía borrarla —tú ya no, porque para el servidor había
+  // dejado de ser la tuya— y si el grupo ya había sorteado se quedaba
+  // dentro de la cadena como un fantasma.
+  //
+  // No basta con mirar si el campo está relleno: hay que comprobarlo
+  // contra Firestore. Si el vínculo apunta a un participante que ya no
+  // existe, volver a entrar DEBE funcionar — es justo el caso de alguien
+  // a quien sacaron del grupo y quiere volver.
+  if (sesion.participanteId) {
+    const plaza = await participanteRef(codigo, sesion.participanteId).get();
+    if (plaza.exists) {
+      throw new HttpsError(
+          "already-exists",
+          "Ya tienes una plaza en este grupo.",
+          {clave: "ya_estas_en_el_grupo"},
+      );
+    }
+  }
+
   const ref = grupoRef(codigo).collection("participantes").doc();
   // La imagen se sube antes de escribir en Firestore: si falla, no queda
   // un participante a medias apuntando a un avatar que no existe.
@@ -484,15 +506,37 @@ exports.borrarParticipante = onCall(async (request) => {
   batch.delete(participantePrivadoRef(codigo, participanteId));
   await batch.commit();
 
-  // Se quita el grupo de su "Mis grupos". Sin esto quedaría listado
-  // apuntando a un participante que ya no existe — era un fallo conocido
-  // que no se podía arreglar porque nadie sabía de qué cuenta era la
-  // plaza.
+  // Se limpia el puntero en su "Mis grupos". Sin esto el grupo quedaría
+  // listado apuntando a un participante que ya no existe — era un fallo
+  // conocido que no se podía arreglar porque nadie sabía de qué cuenta
+  // era la plaza.
+  //
+  // Pero el ROL vive en esa misma clave, y borrarla entera al organizador
+  // que se saca a sí mismo le quitaba el mando de su propio grupo para
+  // siempre: sin rol no puede sortear, ni editar, ni sacar a nadie, ni
+  // siquiera eliminar el grupo, que quedaba ingobernable e imborrable. Y
+  // nada lo frenaba, porque salir uno mismo no pasa por
+  // `exigirOrganizador`.
+  //
+  // Así que al organizador se le conserva la entrada con
+  // `participanteId: null`: vuelve al estado de "organizador que todavía
+  // no se ha inscrito", que es exactamente lo que es. Al resto sí se le
+  // borra la clave, porque para ellos el vínculo entero era la plaza.
   if (cuentaDeLaPlaza) {
-    await usuarioRef(cuentaDeLaPlaza).update(
-        new admin.firestore.FieldPath("grupos", codigo),
-        admin.firestore.FieldValue.delete(),
-    );
+    const refCuenta = usuarioRef(cuentaDeLaPlaza);
+    const snapCuenta = await refCuenta.get();
+    // Si la cuenta ya no existe no hay puntero que limpiar, y `update`
+    // sobre un documento ausente lanzaría después de haber borrado ya al
+    // participante.
+    if (snapCuenta.exists) {
+      const vinculo = (snapCuenta.data().grupos || {})[codigo];
+      await refCuenta.update(
+          new admin.firestore.FieldPath("grupos", codigo),
+          vinculo?.rol === "organizador" ?
+            {rol: "organizador", participanteId: null} :
+            admin.firestore.FieldValue.delete(),
+      );
+    }
   }
 
   await borrarAvatarPorUrl(publico.data()?.avatarUrl);

@@ -17,6 +17,14 @@ const sufijo = Date.now().toString(36);
 const NICK = `prueba_${sufijo}`;
 const PASSWORD = "Prueba123!";
 const PIN = "4321";
+const PIN_NUEVO = "9876";
+// El tercer PIN existe para probar la salida de emergencia: cambiarlo estando
+// bloqueado tiene que levantar el bloqueo.
+const PIN_RESCATE = "5555";
+
+// Copiada de functions/index.js. Si allí cambia, aquí también: el bucle de
+// abajo se apoya en ella para saber cuántos fallos hacen falta.
+const MAX_INTENTOS_PIN = 5;
 
 let fallos = 0;
 
@@ -116,10 +124,51 @@ async function main() {
   await debeFallar("tras el sorteo NO se puede sacar a nadie", "grupo_ya_sorteado",
       () => llamar("borrarParticipante", {...cred, codigo, participanteId: id}));
 
-  const cambio = await llamar("cambiarPin", {nickname: NICK, password: PASSWORD, pinNuevo: "9876"});
+  const cambio = await llamar("cambiarPin", {nickname: NICK, password: PASSWORD, pinNuevo: PIN_NUEVO});
   await debeFallar("el PIN viejo ya no vale", "pin_incorrecto",
       () => llamar("verAmigoSecreto", {...cred, codigo, pin: PIN}));
   ok("cambiarPin", cambio.ok === true);
+
+  // --- El bloqueo por intentos fallidos y su salida de emergencia -------
+  //
+  // Es la única parte del rediseño cuyo fallo es irreversible: si el bloqueo
+  // se pusiera y no se levantara, esa cuenta se quedaría sin ver su amigo
+  // secreto para siempre. Se ejerce entera, hasta el rescate.
+  //
+  // El bucle no cuenta intentos exactos a propósito: el fallo de arriba ("el
+  // PIN viejo ya no vale") ya gastó uno, y el intento que PROVOCA el bloqueo
+  // todavía responde `pin_incorrecto` —el contador se mira antes de comparar,
+  // así que el bloqueo no se ve hasta la llamada siguiente—. Se falla hasta
+  // que el servidor lo dice, con un tope para no colgarse si nunca lo dice.
+  let claveDelBloqueo = "";
+  for (let i = 0; i <= MAX_INTENTOS_PIN + 1 && claveDelBloqueo !== "pin_bloqueado"; i++) {
+    try {
+      await llamar("verAmigoSecreto", {...cred, codigo, pin: "0000"});
+      claveDelBloqueo = "entró con un PIN falso";
+      break;
+    } catch (e) {
+      claveDelBloqueo = e.clave;
+    }
+  }
+  ok("fallar el PIN repetidamente acaba bloqueando la revelación",
+      claveDelBloqueo === "pin_bloqueado", `llegó ${claveDelBloqueo}`);
+
+  // Lo que hace que el bloqueo sirva de algo: mientras dura, el PIN correcto
+  // tampoco entra. Si entrara, adivinar seguiría siendo cuestión de insistir.
+  await debeFallar("bloqueado, ni el PIN correcto entra", "pin_bloqueado",
+      () => llamar("verAmigoSecreto", {...cred, codigo, pin: PIN_NUEVO}));
+
+  const rescate = await llamar("cambiarPin",
+      {nickname: NICK, password: PASSWORD, pinNuevo: PIN_RESCATE});
+  ok("cambiarPin funciona estando bloqueado", rescate.ok === true);
+
+  // LA PRUEBA QUE IMPORTA: cambiar el PIN con la contraseña de la cuenta
+  // levanta el bloqueo en el acto, sin esperar los quince minutos. Sin esto,
+  // quien se bloquea se queda fuera y la "salida de emergencia" del diseño
+  // sería una promesa sin respaldo.
+  const rescatado = await llamar("verAmigoSecreto", {...cred, codigo, pin: PIN_RESCATE});
+  ok("el PIN nuevo levanta el bloqueo y entra",
+      typeof rescatado.nombreAmigo === "string");
 
   await llamar("eliminarGrupo", {...cred, codigo});
   const final = await llamar("iniciarSesionCuenta", cred);
