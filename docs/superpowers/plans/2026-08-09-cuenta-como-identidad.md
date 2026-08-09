@@ -562,9 +562,23 @@ Y sustituir la vinculación final:
   await vincularComoParticipante(sesion.clave, codigo, ref.id);
 ```
 
-- [ ] **Step 4: `iniciarSesion` se convierte en `verAmigoSecreto`**
+- [ ] **Step 4: `iniciarSesion` se convierte en `verAmigoSecreto`, con freno a la fuerza bruta**
 
-Sustituir `exports.iniciarSesion` entera (líneas 429-442) por:
+**Por qué el freno.** `verAmigoSecreto` es la primera función que compara un PIN adivinado contra `pinHash`, y por tanto la primera superficie de fuerza bruta del rediseño. El PIN existe para que alguien que coge tu teléfono desbloqueado no vea tu asignación — pero esa misma persona tiene la sesión guardada (en web, `nickname` y `password` están en `localStorage`, a la vista con las herramientas de desarrollo) y puede llamar a esta función directamente saltándose la pantalla. Son 10.000 combinaciones, y **el coste de bcrypt no frena nada**: limita a una instancia, y las Cloud Functions escalan en horizontal. Sin freno, el PIN no protege de exactamente el atacante para el que existe.
+
+Bloquear es seguro porque ya hay salida: `cambiarPin` pide la contraseña de la cuenta, así que quien se bloquee se desbloquea solo, sin depender de nadie.
+
+Primero, las dos constantes, junto a `REGEX_PIN`:
+
+```js
+// Cinco intentos y quince minutos de espera convierten 10.000 combinaciones en
+// semanas de trabajo. No deja a nadie fuera para siempre: quien se bloquee
+// cambia su PIN con la contraseña de la cuenta y sigue.
+const MAX_INTENTOS_PIN = 5;
+const BLOQUEO_PIN_MS = 15 * 60 * 1000;
+```
+
+Y sustituir `exports.iniciarSesion` entera (líneas 429-442) por:
 
 ```js
 // Antes se llamaba `iniciarSesion`, que se confundía con
@@ -583,8 +597,32 @@ exports.verAmigoSecreto = onCall(async (request) => {
   // El PIN es la segunda barrera: la cuenta ya demostró quién eres. Este
   // protege de que alguien con tu teléfono desbloqueado vea tu
   // asignación. Una vez visto, se vio.
+  const ahora = Date.now();
+  if (ahora < (sesion.datos.pinBloqueadoHasta || 0)) {
+    throw new HttpsError(
+        "resource-exhausted",
+        "Demasiados intentos. Espera un rato o cambia tu PIN desde Configuración.",
+        {clave: "pin_bloqueado"},
+    );
+  }
+
   if (!sesion.datos.pinHash || !bcrypt.compareSync(pin, sesion.datos.pinHash)) {
+    // Se cuenta el fallo ANTES de responder. Al llegar al tope se bloquea y se
+    // reinicia el contador, para que al expirar el bloqueo haya cinco intentos
+    // nuevos y no uno solo.
+    const fallos = (sesion.datos.pinFallos || 0) + 1;
+    await usuarioRef(sesion.clave).update(
+        fallos >= MAX_INTENTOS_PIN ?
+          {pinFallos: 0, pinBloqueadoHasta: ahora + BLOQUEO_PIN_MS} :
+          {pinFallos: fallos},
+    );
     throw new HttpsError("permission-denied", "PIN incorrecto.", {clave: "pin_incorrecto"});
+  }
+
+  // Acertó: se limpia el rastro de los intentos fallidos. Solo se escribe si
+  // había algo que limpiar, para no gastar una escritura en cada revelación.
+  if (sesion.datos.pinFallos || sesion.datos.pinBloqueadoHasta) {
+    await usuarioRef(sesion.clave).update({pinFallos: 0, pinBloqueadoHasta: 0});
   }
 
   const privado = await obtenerPrivado(codigo, sesion.participanteId);
@@ -600,6 +638,39 @@ exports.verAmigoSecreto = onCall(async (request) => {
   };
 });
 ```
+
+Y en `exports.cambiarPin` (Task 2), **añadir la limpieza del bloqueo** al `update` final:
+
+```js
+  await usuarioRef(clave).update({
+    pinHash: bcrypt.hashSync(pinNuevo, 10),
+    // Cambiar el PIN levanta el bloqueo: es la salida de emergencia de quien se
+    // quedó fuera intentándolo. Sin esto, quien acierta su contraseña y fija un
+    // PIN nuevo seguiría bloqueado quince minutos con el PIN correcto.
+    pinFallos: 0,
+    pinBloqueadoHasta: 0,
+  });
+```
+
+Por último, la clave del aviso. En `lib/l10n/app_en.arb`:
+
+```json
+  "errorPinBloqueado": "Too many wrong PINs. Wait a few minutes, or change your PIN from Settings."
+```
+
+En `lib/l10n/app_es.arb`:
+
+```json
+  "errorPinBloqueado": "Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración."
+```
+
+Y su `case` en el `switch` de `MensajeLocalizado.texto()` (`lib/funciones.dart`), junto a los otros cuatro:
+
+```dart
+        'pin_bloqueado' => t.errorPinBloqueado,
+```
+
+Después, `flutter gen-l10n` — y recuerda que **los tres `app_localizations*.dart` regenerados están trackeados y van en el commit** (ver las restricciones globales).
 
 - [ ] **Step 5: `borrarParticipante` — cuenta, límite del sorteo y limpieza del puntero**
 
