@@ -2,10 +2,23 @@ rules_version = '2';
 
 // Regalo Sorpresa (Amigo Secreto / Santa Secreto) — reglas de acceso.
 //
-// grupos/{codigo}: ocasion + valorMinimo + fecha. Lectura pública (hace
-// falta para "unirse con un código" y mostrar el valor mínimo); escritura
+// grupos/{codigo}: ocasion + valorMinimo + fecha. Lectura de UN documento
+// concreto abierta (hace falta para "unirse con un código"); escritura
 // SIEMPRE a través de las Cloud Functions (Admin SDK, ignoran estas
 // reglas), nunca directo desde el cliente.
+//
+// ⚠️ `allow read` son DOS permisos: `get` (un documento) y `list` (la
+// colección). Con `read: if true` —y sin Firebase Auth, así que "true" es
+// literalmente cualquiera en internet— la colección entera era
+// descargable sin credenciales: se obtenían todos los códigos, y con ellos
+// los nombres reales, los avatares y los chats de todos los grupos.
+// Verificado contra producción el 2026-08-09 con un GET sin token.
+//
+// Por eso van separados. El cliente NUNCA lista esta colección: sus cinco
+// accesos son `.doc(codigo)` (pantalla_raiz, pantalla_registro,
+// pantalla_unirse_grupo y pantalla_chat), así que cerrar `list` no le
+// quita nada. El código del grupo vuelve a ser lo que debía ser: la única
+// llave para llegar a él.
 //
 // grupos/{codigo}/privado/data: las máscaras ya repartidas en el chat.
 // Cero acceso de cliente en cualquier dirección. El PIN maestro que vivía
@@ -27,7 +40,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /grupos/{codigo} {
-      allow read: if true;
+      // `get` sí, `list` no: ver la nota de arriba.
+      allow get: if true;
+      allow list: if false;
       allow write: if false;
 
       match /privado/{doc} {
