@@ -71,31 +71,48 @@ class _PantallaRaizState extends State<PantallaRaiz> {
           ),
         );
       case DestinoInicial.grupo:
-        await _entrarAlGrupo(context, invitacion!);
-      case DestinoInicial.misGrupos:
-        // La sesión guardada puede haber dejado de valer: contraseña
-        // cambiada desde otro dispositivo, cuenta borrada, o sin
-        // conexión. Sin este catch la app se queda en el indicador de
-        // carga para siempre, que es la peor pantalla posible.
-        try {
-          final r = await entrarConCuenta(
-              nickname: sesion!.nickname, password: sesion.password, registrando: false);
+        // decidirDestino solo devuelve `grupo` habiendo sesión (ver
+        // destino_inicial.dart), así que si no se pudo entrar al grupo
+        // (documento borrado entre validar y consumir, o sin red) hay a
+        // dónde caer: el mismo camino que la rama `misGrupos`. El portero
+        // nunca puede terminar sin navegar a ningún sitio.
+        final entro = await _entrarAlGrupo(context, invitacion!);
+        if (!entro) {
           if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (_) =>
-                    PantallaMisGrupos(nickname: r.nickname, grupos: r.grupos)),
-          );
-        } catch (_) {
-          await cerrarSesion();
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (_) => PantallaCrearCuenta(alEntrar: irADondeToque)),
-          );
+          await _irAMisGruposOCrearCuenta(sesion!);
         }
+      case DestinoInicial.misGrupos:
+        await _irAMisGruposOCrearCuenta(sesion!);
+    }
+  }
+
+  /// La sesión guardada puede haber dejado de valer: contraseña cambiada
+  /// desde otro dispositivo, cuenta borrada, o sin conexión. Sin este
+  /// catch la app se queda en el indicador de carga para siempre, que es
+  /// la peor pantalla posible.
+  ///
+  /// También sirve de camino de rescate para la rama `grupo`: si la
+  /// invitación no se pudo consumir, quien la llama ya sabe que hay
+  /// sesión y cae aquí en vez de dejar a la persona sin pantalla.
+  Future<void> _irAMisGruposOCrearCuenta(Sesion sesion) async {
+    try {
+      final r = await entrarConCuenta(
+          nickname: sesion.nickname, password: sesion.password, registrando: false);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (_) =>
+                PantallaMisGrupos(nickname: r.nickname, grupos: r.grupos)),
+      );
+    } catch (_) {
+      await cerrarSesion();
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (_) => PantallaCrearCuenta(alEntrar: irADondeToque)),
+      );
     }
   }
 
@@ -111,14 +128,41 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       );
 }
 
-/// Entra al grupo de una invitación y la borra. Borrarla importa: si no,
-/// cada apertura de la app volvería a meter a esa persona en ese grupo
-/// para siempre.
-Future<void> _entrarAlGrupo(BuildContext context, InvitacionPendiente i) async {
-  final doc =
-      await FirebaseFirestore.instance.collection('grupos').doc(i.codigo).get();
+/// Entra al grupo de una invitación. Devuelve `true` si consiguió navegar
+/// y `false` si no: entre validar el código y consumirlo pueden pasar
+/// minutos (los que tarda alguien en rellenar el formulario de cuenta), y
+/// en ese rato el grupo puede haberse borrado o la red puede haber
+/// fallado. Quien llama SIEMPRE debe tratar el `false` navegando a otro
+/// sitio: el portero nunca puede terminar sin navegar a ninguna parte.
+Future<bool> _entrarAlGrupo(BuildContext context, InvitacionPendiente i) async {
+  final DocumentSnapshot<Map<String, dynamic>> doc;
+  try {
+    doc = await FirebaseFirestore.instance
+        .collection('grupos')
+        .doc(i.codigo)
+        .get()
+        .timeout(const Duration(seconds: 6));
+  } catch (_) {
+    // Sin conexión o error de Firestore: la invitación puede seguir
+    // siendo válida, así que NO se borra. Borrarla aquí sería perder una
+    // invitación buena por un problema pasajero; la próxima apertura
+    // reintenta con el mismo código.
+    return false;
+  }
+  if (!context.mounted) return false;
+
+  if (!doc.exists) {
+    // El grupo ya no existe: la invitación está muerta y no sirve
+    // conservarla.
+    await borrarInvitacion();
+    return false;
+  }
+
+  // Solo aquí se va a navegar de verdad: se borra la invitación. Si no,
+  // cada apertura de la app volvería a meter a esa persona en ese grupo
+  // para siempre.
   await borrarInvitacion();
-  if (!context.mounted || !doc.exists) return;
+  if (!context.mounted) return false;
   final data = doc.data()!;
   Navigator.pushReplacement(
     context,
@@ -131,6 +175,7 @@ Future<void> _entrarAlGrupo(BuildContext context, InvitacionPendiente i) async {
       ),
     ),
   );
+  return true;
 }
 
 /// A dónde se va tras crear cuenta o iniciar sesión. Lo usan las dos
@@ -139,8 +184,12 @@ Future<void> irADondeToque(BuildContext context, ResultadoAcceso resultado) asyn
   final invitacion = await leerInvitacion();
   if (!context.mounted) return;
   if (invitacion != null) {
-    await _entrarAlGrupo(context, invitacion);
-    return;
+    final entro = await _entrarAlGrupo(context, invitacion);
+    if (entro) return;
+    // No se pudo consumir la invitación (grupo borrado, sin red): se
+    // sigue con el `resultado` que ya se tiene en la mano, en vez de
+    // dejar a la persona sin pantalla.
+    if (!context.mounted) return;
   }
   Navigator.pushAndRemoveUntil(
     context,
