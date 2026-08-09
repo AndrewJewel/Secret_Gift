@@ -716,10 +716,11 @@ grep -n "pinMaestro\|verificarPin\|verificarCuentaSiAplica\|verificarOrganizador
 ```
 Expected: `node --check` sin salida. El `grep` **sin ninguna coincidencia**.
 
-- [ ] **Step 12: Desplegar y comprobar que arrancan**
+- [ ] **Step 12: NO desplegar todavía**
 
-Run: `firebase deploy --only functions`
-Expected: despliegue correcto. `verificarOrganizador` e `iniciarSesion` aparecen como funciones **borradas**; `verAmigoSecreto` y `cambiarPin` como **nuevas**. Confirmar el borrado cuando lo pregunte.
+**Esta tarea no despliega nada.** El backend nuevo es incompatible con el cliente que hay en producción —que sigue mandando PINs— y también con los datos que hay en Firestore, donde `grupos` todavía es un array. Desplegarlo aquí dejaría la app en vivo rota durante siete tareas y daría resultados falsos en cualquier prueba manual.
+
+El despliegue del backend, el borrado de las colecciones y la prueba de integración van juntos en la **Task 12**, cuando el cliente esté listo. Hasta entonces, la única verificación de estas funciones es `node --check`.
 
 - [ ] **Step 13: Commit**
 
@@ -2222,18 +2223,25 @@ main().catch((e) => {
 });
 ```
 
-- [ ] **Step 8: Correr la prueba de integración**
+- [ ] **Step 8: Desplegar el backend y borrar los datos viejos**
+
+Este es el momento del corte, y los dos pasos van juntos: el backend nuevo no entiende los datos viejos y el cliente viejo no entiende el backend nuevo.
+
+```bash
+firebase deploy --only functions
+```
+Expected: `verificarOrganizador` e `iniciarSesion` aparecen como funciones **borradas**; `verAmigoSecreto` y `cambiarPin` como **nuevas**. Confirmar el borrado cuando lo pregunte.
+
+Después, en la consola de Firebase → Firestore, **borrar las colecciones `grupos` y `usuarios` enteras**. No hay migración: el modelo viejo (array `grupos`, PINs en claro) es incompatible y no hay datos reales que preservar — solo grupos de prueba del propio desarrollador.
+
+- [ ] **Step 9: Correr la prueba de integración**
 
 Run: `node scripts/probar.mjs`
-Expected: **Todo en verde**, salida 0. Si algo falla, arreglar el backend antes de seguir — esta prueba es la única verificación real que tiene el servidor.
+Expected: **Todo en verde**, salida 0. Si algo falla, arreglar el backend y volver a desplegar antes de seguir — esta prueba es la única verificación real que tiene el servidor.
 
-- [ ] **Step 9: Corregir la referencia muerta del spec**
+- [ ] **Step 10: Corregir la referencia muerta del spec**
 
 En `docs/superpowers/specs/2026-08-09-cuenta-como-identidad-design.md`, en la sección "Verificación", sustituir *"Reescribir `scratchpad/probar.ps1`"* por *"`node scripts/probar.mjs`, la prueba de integración contra producción. El `scratchpad/probar.ps1` que mencionaban las sesiones anteriores nunca estuvo en el repo y se perdió; el nuevo vive trackeado."*
-
-- [ ] **Step 10: Borrar los datos de prueba viejos**
-
-En la consola de Firebase → Firestore, borrar las colecciones `grupos` y `usuarios` enteras. **No hay migración**: el modelo viejo (array `grupos`, PINs en claro) es incompatible y no hay datos reales que preservar.
 
 - [ ] **Step 11: Verificación final**
 
@@ -2248,8 +2256,10 @@ Expected: `No issues found!`, todos los tests en verde, y el `grep` **sin ningun
 
 ```bash
 flutter build web --release
-firebase deploy
+firebase deploy --only hosting
 ```
+
+Las funciones ya se desplegaron en el Step 8; aquí solo va el cliente.
 
 Con los datos del sitio borrados o en incógnito **antes de cada camino** (el service worker sirve el build anterior y ya engañó a dos sesiones):
 
