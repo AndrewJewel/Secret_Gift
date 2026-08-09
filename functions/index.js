@@ -671,6 +671,27 @@ exports.ejecutarSorteo = onCall(async (request) => {
 
   exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
 
+  // Se sortea UNA vez. Volver a hacerlo rebaraja a gente que ya vio su
+  // asignación y quizá ya compró el regalo: se quedarían con un regalo
+  // para alguien que ha dejado de tocarles, y sin saber que ha pasado
+  // nada. No hay forma de deshacerlo ni de avisar.
+  //
+  // Es también lo que sostiene las otras dos reglas del sorteo:
+  // `borrarParticipante` y `agregarParticipante` se cierran cuando
+  // `sorteado` es true, y esa bandera no valdría de nada si el propio
+  // sorteo pudiera volver a correr.
+  const grupoSnap = await grupoRef(codigo).get();
+  if (!grupoSnap.exists) {
+    throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
+  }
+  if (grupoSnap.data().sorteado === true) {
+    throw new HttpsError(
+        "failed-precondition",
+        "Este grupo ya sorteó. El sorteo no se puede repetir.",
+        {clave: "sorteo_ya_hecho"},
+    );
+  }
+
   const snap = await grupoRef(codigo).collection("participantes").get();
   const docs = snap.docs;
   if (docs.length < 2) {

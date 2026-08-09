@@ -385,6 +385,12 @@ abstract class Textos {
   /// **'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.'**
   String get errorGrupoCerrado;
 
+  /// The organiser tried to run the draw on a group that already drew
+  ///
+  /// In en, this message translates to:
+  /// **'This group has already drawn. The draw can\'t be run twice.'**
+  String get errorSorteoYaHecho;
+
   /// No description provided for @errorPinBloqueado.
   ///
   /// In en, this message translates to:

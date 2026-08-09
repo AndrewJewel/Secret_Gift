@@ -166,6 +166,10 @@ class TextosEn extends Textos {
       'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.';
 
   @override
+  String get errorSorteoYaHecho =>
+      'This group has already drawn. The draw can\'t be run twice.';
+
+  @override
   String get errorPinBloqueado =>
       'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.';
 

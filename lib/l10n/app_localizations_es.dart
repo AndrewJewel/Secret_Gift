@@ -164,6 +164,10 @@ class TextosEs extends Textos {
       'El sorteo ya se hizo, así que este grupo está cerrado a gente nueva. Pídele al organizador que te dé el sitio de alguien.';
 
   @override
+  String get errorSorteoYaHecho =>
+      'Este grupo ya sorteó. El sorteo no se puede repetir.';
+
+  @override
   String get errorPinBloqueado =>
       'Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.';
 
