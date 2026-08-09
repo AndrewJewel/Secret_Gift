@@ -1,9 +1,9 @@
 /// Tu relación con un grupo concreto, tal como la cuenta la conoce.
 ///
-/// Sustituye a la identidad que antes se guardaba en disco por grupo
-/// (`identidad_local.dart`): el servidor ya sabe qué participante eres en
-/// cada grupo, y lo manda en `iniciarSesionCuenta`. Preguntárselo al
-/// usuario era pedirle un dato que ya teníamos.
+/// Sustituye a la identidad que antes se guardaba en disco por grupo,
+/// asociada al par código-de-grupo + PIN: el servidor ya sabe qué
+/// participante eres en cada grupo, y lo manda en `iniciarSesionCuenta`.
+/// Preguntárselo al usuario era pedirle un dato que ya teníamos.
 class MiVinculo {
   /// `organizador` o `participante`.
   final String rol;

@@ -661,7 +661,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                               codigo: widget.codigo,
                               ocasion: _info.ocasion,
                               tematica: _info.tematica,
-                              esOrganizador: _esOrganizador,
+                              vinculo: _vinculo,
                             ),
                           ),
                         ),

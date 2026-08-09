@@ -13,9 +13,9 @@ const _claveNickname = 'sesion_nickname';
 const _clavePassword = 'sesion_password';
 
 // Las tres funciones envuelven SharedPreferences en try/catch por la misma
-// razón que invitacion_pendiente.dart e identidad_local.dart: con el
-// almacenamiento bloqueado (Safari en privado, webview sin cookies) el
-// plugin LANZA. Quien llama a `leerSesion` es el portero, que corre en
+// razón que invitacion_pendiente.dart: con el almacenamiento bloqueado
+// (Safari en privado, webview sin cookies) el plugin LANZA. Quien llama a
+// `leerSesion` es el portero, que corre en
 // initState sin nadie que capture nada: sin esto la app se queda colgada
 // en el indicador de carga para siempre. Perder la sesión es molesto;
 // quedarse sin pantalla es fatal.
