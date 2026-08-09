@@ -175,6 +175,60 @@ abstract class Textos {
   /// **'Español'**
   String get idiomaEspanol;
 
+  /// No description provided for @configuracion.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get configuracion;
+
+  /// No description provided for @configuracionIdioma.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get configuracionIdioma;
+
+  /// No description provided for @configuracionCambiarPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change my PIN'**
+  String get configuracionCambiarPin;
+
+  /// No description provided for @cambiarPinTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Change my PIN'**
+  String get cambiarPinTitulo;
+
+  /// No description provided for @cambiarPinTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account password is asked because it is the only way back if you forget the PIN.'**
+  String get cambiarPinTexto;
+
+  /// No description provided for @cambiarPinPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Account password'**
+  String get cambiarPinPassword;
+
+  /// No description provided for @cambiarPinNuevo.
+  ///
+  /// In en, this message translates to:
+  /// **'New 4-digit PIN'**
+  String get cambiarPinNuevo;
+
+  /// No description provided for @cambiarPinGuardar.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the new PIN'**
+  String get cambiarPinGuardar;
+
+  /// No description provided for @cambiarPinGuardado.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN changed'**
+  String get cambiarPinGuardado;
+
   /// No description provided for @errorInesperado.
   ///
   /// In en, this message translates to:
@@ -294,6 +348,30 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Could not create the group, please try again.'**
   String get errorCodigoNoGenerado;
+
+  /// No description provided for @errorPinFormato.
+  ///
+  /// In en, this message translates to:
+  /// **'The PIN must be exactly 4 digits'**
+  String get errorPinFormato;
+
+  /// No description provided for @errorNoEresOrganizador.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group organizer can do this'**
+  String get errorNoEresOrganizador;
+
+  /// No description provided for @errorNoEstasEnElGrupo.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not signed up in this group yet'**
+  String get errorNoEstasEnElGrupo;
+
+  /// No description provided for @errorGrupoYaSorteado.
+  ///
+  /// In en, this message translates to:
+  /// **'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.'**
+  String get errorGrupoYaSorteado;
 
   /// No description provided for @inicioSubtitulo.
   ///
@@ -529,6 +607,30 @@ abstract class Textos {
   /// **'No account yet? Create one'**
   String get cuentaNoTengoCuenta;
 
+  /// No description provided for @cuentaPin.
+  ///
+  /// In en, this message translates to:
+  /// **'4-digit PIN'**
+  String get cuentaPin;
+
+  /// No description provided for @cuentaPinAyuda.
+  ///
+  /// In en, this message translates to:
+  /// **'You will type it to reveal your secret friend, in every group. Only you know it.'**
+  String get cuentaPinAyuda;
+
+  /// No description provided for @cuentaPinConfirmar.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get cuentaPinConfirmar;
+
+  /// No description provided for @cuentaPinNoCoinciden.
+  ///
+  /// In en, this message translates to:
+  /// **'The PINs do not match'**
+  String get cuentaPinNoCoinciden;
+
   /// No description provided for @misGruposSaludo.
   ///
   /// In en, this message translates to:
@@ -675,13 +777,13 @@ abstract class Textos {
   /// No description provided for @registroFaltaNombre.
   ///
   /// In en, this message translates to:
-  /// **'The name or the PIN is missing'**
+  /// **'The name is missing'**
   String get registroFaltaNombre;
 
   /// No description provided for @registroFaltaPersonaje.
   ///
   /// In en, this message translates to:
-  /// **'The character or the PIN is missing'**
+  /// **'The character is missing'**
   String get registroFaltaPersonaje;
 
   /// No description provided for @registroVacioNormal.
@@ -900,6 +1002,12 @@ abstract class Textos {
   /// **'Yes, delete it'**
   String get editarEliminarConfirmar;
 
+  /// No description provided for @editarEliminarEscribeNombre.
+  ///
+  /// In en, this message translates to:
+  /// **'To delete it, type the group name exactly: {grupo}'**
+  String editarEliminarEscribeNombre(String grupo);
+
   /// No description provided for @editarEliminado.
   ///
   /// In en, this message translates to:
@@ -917,6 +1025,18 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Hi {nombre}'**
   String loginHola(String nombre);
+
+  /// No description provided for @verAmigoPinTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your PIN'**
+  String get verAmigoPinTitulo;
+
+  /// No description provided for @verAmigoPinTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody else should see this. Your PIN is asked every time.'**
+  String get verAmigoPinTexto;
 
   /// No description provided for @secretaTitulo.
   ///

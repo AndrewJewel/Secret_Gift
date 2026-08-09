@@ -48,6 +48,34 @@ class TextosEn extends Textos {
   String get idiomaEspanol => 'Español';
 
   @override
+  String get configuracion => 'Settings';
+
+  @override
+  String get configuracionIdioma => 'Language';
+
+  @override
+  String get configuracionCambiarPin => 'Change my PIN';
+
+  @override
+  String get cambiarPinTitulo => 'Change my PIN';
+
+  @override
+  String get cambiarPinTexto =>
+      'Your account password is asked because it is the only way back if you forget the PIN.';
+
+  @override
+  String get cambiarPinPassword => 'Account password';
+
+  @override
+  String get cambiarPinNuevo => 'New 4-digit PIN';
+
+  @override
+  String get cambiarPinGuardar => 'Save the new PIN';
+
+  @override
+  String get cambiarPinGuardado => 'PIN changed';
+
+  @override
   String errorInesperado(String detalle) {
     return 'Unexpected error: $detalle';
   }
@@ -115,6 +143,19 @@ class TextosEn extends Textos {
   @override
   String get errorCodigoNoGenerado =>
       'Could not create the group, please try again.';
+
+  @override
+  String get errorPinFormato => 'The PIN must be exactly 4 digits';
+
+  @override
+  String get errorNoEresOrganizador => 'Only the group organizer can do this';
+
+  @override
+  String get errorNoEstasEnElGrupo => 'You are not signed up in this group yet';
+
+  @override
+  String get errorGrupoYaSorteado =>
+      'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.';
 
   @override
   String get inicioSubtitulo => 'Group Manager';
@@ -242,6 +283,19 @@ class TextosEn extends Textos {
   String get cuentaNoTengoCuenta => 'No account yet? Create one';
 
   @override
+  String get cuentaPin => '4-digit PIN';
+
+  @override
+  String get cuentaPinAyuda =>
+      'You will type it to reveal your secret friend, in every group. Only you know it.';
+
+  @override
+  String get cuentaPinConfirmar => 'Confirm PIN';
+
+  @override
+  String get cuentaPinNoCoinciden => 'The PINs do not match';
+
+  @override
   String misGruposSaludo(String nickname) {
     return 'Hi, $nickname';
   }
@@ -328,10 +382,10 @@ class TextosEn extends Textos {
   String get registroBoton => 'ADD TO THE LIST';
 
   @override
-  String get registroFaltaNombre => 'The name or the PIN is missing';
+  String get registroFaltaNombre => 'The name is missing';
 
   @override
-  String get registroFaltaPersonaje => 'The character or the PIN is missing';
+  String get registroFaltaPersonaje => 'The character is missing';
 
   @override
   String get registroVacioNormal => 'No members yet.';
@@ -451,6 +505,11 @@ class TextosEn extends Textos {
   String get editarEliminarConfirmar => 'Yes, delete it';
 
   @override
+  String editarEliminarEscribeNombre(String grupo) {
+    return 'To delete it, type the group name exactly: $grupo';
+  }
+
+  @override
   String get editarEliminado => 'Group deleted';
 
   @override
@@ -460,6 +519,13 @@ class TextosEn extends Textos {
   String loginHola(String nombre) {
     return 'Hi $nombre';
   }
+
+  @override
+  String get verAmigoPinTitulo => 'Type your PIN';
+
+  @override
+  String get verAmigoPinTexto =>
+      'Nobody else should see this. Your PIN is asked every time.';
 
   @override
   String get secretaTitulo => 'Your secret friend is...';

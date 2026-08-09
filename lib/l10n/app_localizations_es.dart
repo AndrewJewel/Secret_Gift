@@ -48,6 +48,34 @@ class TextosEs extends Textos {
   String get idiomaEspanol => 'Español';
 
   @override
+  String get configuracion => 'Configuración';
+
+  @override
+  String get configuracionIdioma => 'Idioma';
+
+  @override
+  String get configuracionCambiarPin => 'Cambiar mi PIN';
+
+  @override
+  String get cambiarPinTitulo => 'Cambiar mi PIN';
+
+  @override
+  String get cambiarPinTexto =>
+      'Se te pide la contraseña de la cuenta porque es la única salida si olvidas el PIN.';
+
+  @override
+  String get cambiarPinPassword => 'Contraseña de la cuenta';
+
+  @override
+  String get cambiarPinNuevo => 'PIN nuevo de 4 dígitos';
+
+  @override
+  String get cambiarPinGuardar => 'Guardar el PIN nuevo';
+
+  @override
+  String get cambiarPinGuardado => 'PIN cambiado';
+
+  @override
   String errorInesperado(String detalle) {
     return 'Error inesperado: $detalle';
   }
@@ -114,6 +142,20 @@ class TextosEs extends Textos {
   @override
   String get errorCodigoNoGenerado =>
       'No se pudo crear el grupo, intenta de nuevo.';
+
+  @override
+  String get errorPinFormato => 'El PIN tiene que ser de 4 dígitos exactos';
+
+  @override
+  String get errorNoEresOrganizador =>
+      'Solo el organizador del grupo puede hacer esto';
+
+  @override
+  String get errorNoEstasEnElGrupo => 'Todavía no estás inscrito en este grupo';
+
+  @override
+  String get errorGrupoYaSorteado =>
+      'El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera.';
 
   @override
   String get inicioSubtitulo => 'Gestión de grupos';
@@ -243,6 +285,19 @@ class TextosEs extends Textos {
   String get cuentaNoTengoCuenta => '¿Aún no tienes cuenta? Crea una';
 
   @override
+  String get cuentaPin => 'PIN de 4 dígitos';
+
+  @override
+  String get cuentaPinAyuda =>
+      'Lo escribirás para ver tu amigo secreto, en todos tus grupos. Solo tú lo sabes.';
+
+  @override
+  String get cuentaPinConfirmar => 'Confirma el PIN';
+
+  @override
+  String get cuentaPinNoCoinciden => 'Los PIN no coinciden';
+
+  @override
   String misGruposSaludo(String nickname) {
     return 'Hola, $nickname';
   }
@@ -329,10 +384,10 @@ class TextosEs extends Textos {
   String get registroBoton => 'AGREGAR A LA LISTA';
 
   @override
-  String get registroFaltaNombre => 'Falta el nombre o el PIN';
+  String get registroFaltaNombre => 'Falta el nombre';
 
   @override
-  String get registroFaltaPersonaje => 'Falta el personaje o el PIN';
+  String get registroFaltaPersonaje => 'Falta el personaje';
 
   @override
   String get registroVacioNormal => 'Todavía no hay participantes.';
@@ -452,6 +507,11 @@ class TextosEs extends Textos {
   String get editarEliminarConfirmar => 'Sí, eliminar';
 
   @override
+  String editarEliminarEscribeNombre(String grupo) {
+    return 'Para eliminarlo, escribe el nombre del grupo exactamente: $grupo';
+  }
+
+  @override
   String get editarEliminado => 'Grupo eliminado';
 
   @override
@@ -461,6 +521,13 @@ class TextosEs extends Textos {
   String loginHola(String nombre) {
     return 'Hola $nombre';
   }
+
+  @override
+  String get verAmigoPinTitulo => 'Escribe tu PIN';
+
+  @override
+  String get verAmigoPinTexto =>
+      'Nadie más debería ver esto. El PIN se pide cada vez.';
 
   @override
   String get secretaTitulo => 'Tu amigo secreto es...';
