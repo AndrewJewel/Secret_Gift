@@ -5,7 +5,11 @@
 // reescribirla de memoria.
 //
 // Uso:  node scripts/probar.mjs
-// Crea una cuenta y un grupo de usar y tirar, y los borra al terminar.
+// Crea un grupo de usar y tirar y lo borra al terminar. La CUENTA de prueba
+// (prueba_<marca de tiempo>) se queda: no hay ninguna función que borre
+// cuentas, y añadirla solo para esto abriría una superficie que nadie más
+// necesita. Son documentos pequeños y con prefijo reconocible; si molestan,
+// se limpian a mano desde la consola de Firebase.
 
 const BASE = "https://us-central1-santa-secreto-860c3.cloudfunctions.net";
 
@@ -58,8 +62,8 @@ async function main() {
   await debeFallar("registrarCuenta rechaza un PIN de 3 dígitos", "pin_formato",
       () => llamar("registrarCuenta", {nickname: NICK, password: PASSWORD, pin: "123"}));
 
-  await llamar("registrarCuenta", {nickname: NICK, password: PASSWORD, pin: PIN});
-  ok("registrarCuenta con PIN de 4 dígitos", true);
+  const registro = await llamar("registrarCuenta", {nickname: NICK, password: PASSWORD, pin: PIN});
+  ok("registrarCuenta con PIN de 4 dígitos", registro.nickname === NICK, `llegó ${registro.nickname}`);
 
   const cred = {nickname: NICK, password: PASSWORD};
 
@@ -93,13 +97,13 @@ async function main() {
   const segundo = await llamar("agregarParticipante", {
     ...cred, codigo, nombre: "Sobrante", deseos: "",
   });
-  await llamar("borrarParticipante", {...cred, codigo, participanteId: segundo.id});
-  ok("antes del sorteo se puede sacar a alguien", true);
+  const borrado = await llamar("borrarParticipante", {...cred, codigo, participanteId: segundo.id});
+  ok("antes del sorteo se puede sacar a alguien", borrado.ok === true);
 
   // Se necesitan dos para sortear.
   await llamar("agregarParticipante", {...cred, codigo, nombre: "Otra persona", deseos: ""});
-  await llamar("ejecutarSorteo", {...cred, codigo});
-  ok("ejecutarSorteo por cuenta", true);
+  const sorteo = await llamar("ejecutarSorteo", {...cred, codigo});
+  ok("ejecutarSorteo por cuenta", sorteo.ok === true);
 
   const trasSorteo = await llamar("iniciarSesionCuenta", cred);
   ok("el grupo queda marcado como sorteado",
@@ -112,10 +116,10 @@ async function main() {
   await debeFallar("tras el sorteo NO se puede sacar a nadie", "grupo_ya_sorteado",
       () => llamar("borrarParticipante", {...cred, codigo, participanteId: id}));
 
-  await llamar("cambiarPin", {nickname: NICK, password: PASSWORD, pinNuevo: "9876"});
+  const cambio = await llamar("cambiarPin", {nickname: NICK, password: PASSWORD, pinNuevo: "9876"});
   await debeFallar("el PIN viejo ya no vale", "pin_incorrecto",
       () => llamar("verAmigoSecreto", {...cred, codigo, pin: PIN}));
-  ok("cambiarPin", true);
+  ok("cambiarPin", cambio.ok === true);
 
   await llamar("eliminarGrupo", {...cred, codigo});
   const final = await llamar("iniciarSesionCuenta", cred);
