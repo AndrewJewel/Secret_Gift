@@ -202,9 +202,10 @@ async function vincularCuentaSiAplica(nickname, password, entrada) {
   const ref = usuarioRef(clave);
   const snap = await ref.get();
   if (!snap.exists || !bcrypt.compareSync(password, snap.data().hash)) {
-    // Credenciales inválidas: no vinculamos, pero no rompemos la acción
-    // principal (crear grupo / unirse) por esto.
-    return;
+    // Antes se ignoraba en silencio para no romper el alta por un extra.
+    // Con la cuenta ya obligatoria eso deja de valer: el grupo no
+    // aparecería en "Mis grupos" y nadie sabría por qué.
+    throw new HttpsError("unauthenticated", "La sesión de tu cuenta no es válida. Vuelve a entrar.", {clave: "sesion_invalida"});
   }
   await ref.update({grupos: admin.firestore.FieldValue.arrayUnion(entrada)});
 }

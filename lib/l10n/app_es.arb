@@ -203,6 +203,7 @@
   "errorMensajeVacio": "El mensaje está vacío.",
   "errorMensajeLargo": "El mensaje es demasiado largo.",
   "errorMuyRapido": "Espera un momento antes de volver a escribir.",
+  "errorSesionInvalida": "La sesión de tu cuenta ya no es válida. Vuelve a entrar.",
 
   "mascaraZorro": "Zorro",
   "mascaraBuho": "Búho",

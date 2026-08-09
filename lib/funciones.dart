@@ -55,6 +55,7 @@ extension MensajeLocalizado on FuncionError {
         'mensaje_vacio' => t.errorMensajeVacio,
         'mensaje_largo' => t.errorMensajeLargo,
         'muy_rapido' => t.errorMuyRapido,
+        'sesion_invalida' => t.errorSesionInvalida,
         _ => mensaje,
       };
 }

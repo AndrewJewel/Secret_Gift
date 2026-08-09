@@ -219,6 +219,7 @@
   "errorMensajeVacio": "The message is empty.",
   "errorMensajeLargo": "The message is too long.",
   "errorMuyRapido": "Wait a moment before writing again.",
+  "errorSesionInvalida": "Your account session is no longer valid. Please sign in again.",
 
   "mascaraZorro": "Fox",
   "mascaraBuho": "Owl",
