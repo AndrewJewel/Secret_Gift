@@ -13,7 +13,7 @@ import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_chat.dart';
 import 'pantalla_editar_grupo.dart';
-import 'pantalla_login.dart';
+import 'pantalla_secreta.dart';
 import 'sesion.dart';
 import 'tematica.dart';
 
@@ -265,6 +265,77 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     final s = await leerSesion();
     if (s == null) return null;
     return {'nickname': s.nickname, 'password': s.password};
+  }
+
+  /// Pide el PIN global y abre la pantalla del amigo secreto.
+  ///
+  /// El PIN se pide CADA VEZ, a propósito. Si se cacheara dejaría de ser
+  /// una segunda barrera y volvería a ser decorado, que es el problema del
+  /// que viene todo este rediseño. Revelar tu amigo secreto se hace una
+  /// vez por grupo y temporada, no cada rato.
+  Future<void> _verAmigoSecreto() async {
+    final t = Textos.of(context);
+    final pinController = TextEditingController();
+    final pin = await showDialog<String>(
+      context: context,
+      builder: (c) => AlertDialog(
+        icon: Icon(Icons.lock_outline, color: _color.shade700, size: 36),
+        title: Text(t.verAmigoPinTitulo),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(t.verAmigoPinTexto, style: const TextStyle(fontSize: 13)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              autofocus: true,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(labelText: t.cuentaPin),
+              onSubmitted: (v) => Navigator.pop(c, v.trim()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: Text(t.cancelar)),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, pinController.text.trim()),
+            child: Text(t.entrar),
+          ),
+        ],
+      ),
+    );
+    if (pin == null || pin.isEmpty || !mounted) return;
+
+    final cred = await _credenciales();
+    if (cred == null || !mounted) {
+      _avisar('⚠️ ${t.errorSesionInvalida}');
+      return;
+    }
+    try {
+      final data = await llamarFuncion('verAmigoSecreto', {
+        'codigo': widget.codigo,
+        'pin': pin,
+        ...cred,
+      });
+      if (!mounted) return;
+      final deseos = data['deseosAmigo'] as String? ?? '';
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaSecreta(
+            ocasion: _info.ocasion,
+            tematica: _info.tematica,
+            nombre: data['nombre'] as String? ?? '',
+            nombreAmigo: data['nombreAmigo'] as String? ?? '',
+            deseosAmigo: deseos.isEmpty ? t.secretaSinSugerencias : deseos,
+          ),
+        ),
+      );
+    } catch (e) {
+      _avisarError(e);
+    }
   }
 
   Future<void> _abrirEdicionGrupo() async {
@@ -576,16 +647,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                       ],
                       GlassOutlineButton(
                         color: _color,
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (c) => PantallaLogin(
-                              codigo: widget.codigo,
-                              ocasion: _info.ocasion,
-                              tematica: _info.tematica,
-                            ),
-                          ),
-                        ),
+                        // Solo tiene sentido si estás dentro: sin plaza no
+                        // hay amigo asignado.
+                        onPressed:
+                            _vinculo?.estoyDentro == true ? _verAmigoSecreto : null,
                         icon: Icons.visibility,
                         label: t.registroVerAmigo,
                       ),
