@@ -36,13 +36,7 @@ void main() {
     expect(find.text('Español'), findsOneWidget);
   });
 
-  testWidgets('el icono se dibuja', (tester) async {
-    await tester.pumpWidget(_envoltorio(const IconoIdioma()));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.language), findsOneWidget);
-  });
-
-  // Los tres tests anteriores solo comprueban el dibujado: no fallarían si
+  // Los dos tests anteriores solo comprueban el dibujado: no fallarían si
   // se borrara el onChanged de CampoIdioma. Este completa una selección de
   // verdad y comprueba el efecto real del widget, que es llamar a
   // Idioma.cambiar(locale). Nótese que la aserción va contra

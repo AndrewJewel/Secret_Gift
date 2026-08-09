@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'acceso_cuenta.dart';
 import 'glass.dart';
+import 'hoja_configuracion.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_crear_grupo.dart';
 import 'pantalla_unirse_grupo.dart';
 import 'ruta_observer.dart';
-import 'selector_idioma.dart';
 import 'tematica.dart';
 import 'pantalla_registro.dart';
 import 'sesion.dart';
@@ -87,21 +87,24 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
             title: Text(t.misGruposSaludo(widget.nickname)),
             color: colorNeutro,
             actions: [
-              const IconoIdioma(),
               IconButton(
-                icon: Icon(Icons.logout, color: colorNeutro.shade800),
-                tooltip: t.misGruposCerrarSesion,
-                onPressed: () async {
-                  await cerrarSesion();
-                  if (context.mounted) {
-                    // Se vuelve a la raíz por nombre de ruta, no importando el portero.
-                    // Importarlo aquí crearía un ciclo: el portero ya importa esta pantalla
-                    // para navegar hacia ella. La raíz '/' es el `home:` de MaterialApp, o
-                    // sea el propio portero, que al no encontrar sesión manda al registro
-                    // con la callback correcta.
+                icon: Icon(Icons.settings_outlined, color: colorNeutro.shade800),
+                tooltip: t.configuracion,
+                onPressed: () => HojaConfiguracion.mostrar(
+                  context,
+                  alCerrarSesion: () async {
+                    await cerrarSesion();
+                    if (!context.mounted) return;
+                    // Se cierra la hoja y se vuelve a la raíz por nombre de
+                    // ruta, no importando el portero. Importarlo aquí
+                    // crearía un ciclo: el portero ya importa esta pantalla
+                    // para navegar hacia ella. La raíz '/' es el `home:` de
+                    // MaterialApp, o sea el propio portero, que al no
+                    // encontrar sesión manda al registro.
+                    Navigator.of(context).pop();
                     Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
-                  }
-                },
+                  },
+                ),
               ),
             ],
           ),

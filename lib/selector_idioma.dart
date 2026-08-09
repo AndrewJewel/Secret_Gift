@@ -7,31 +7,6 @@ import 'l10n/app_localizations.dart';
 String _nombre(Textos t, Locale l) =>
     l.languageCode == 'en' ? t.idiomaIngles : t.idiomaEspanol;
 
-/// Menú de idioma para la barra superior. Vive en "Mis grupos", que es el
-/// único sitio donde se puede cambiar una vez hay sesión.
-class IconoIdioma extends StatelessWidget {
-  const IconoIdioma({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Textos.of(context);
-    final actual = Localizations.localeOf(context).languageCode;
-    return PopupMenuButton<Locale>(
-      icon: Icon(Icons.language, color: colorNeutro.shade800),
-      tooltip: t.idioma,
-      onSelected: Idioma.cambiar,
-      itemBuilder: (context) => [
-        for (final locale in Idioma.soportados)
-          CheckedPopupMenuItem<Locale>(
-            value: locale,
-            checked: locale.languageCode == actual,
-            child: Text(_nombre(t, locale)),
-          ),
-      ],
-    );
-  }
-}
-
 /// Casilla de idioma para el formulario de registro. Es la primera
 /// pantalla de la app, así que tiene que poder cambiarse ahí mismo: quien
 /// no entienda inglés no llegaría a ningún otro sitio.
