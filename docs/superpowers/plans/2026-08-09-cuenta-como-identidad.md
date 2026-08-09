@@ -15,6 +15,7 @@
 - **Dart 3.10.9.** No usar features de Dart 3.12 (private named parameters, primary constructors): no compilan.
 - **Todo texto de interfaz pasa por ARB**, en `lib/l10n/app_en.arb` y `lib/l10n/app_es.arb`. **Los dos ficheros deben tener exactamente el mismo conjunto de claves.** La Task 1 añade un test que lo comprueba; a partir de ahí, romperlo hace fallar `flutter test`.
 - **`app_en.arb` es la plantilla** (`l10n.yaml`). La clase generada se llama `Textos`, se accede con `Textos.of(context)`, y `flutter gen-l10n` corre solo durante `flutter build` / `flutter run` — **no** durante `flutter test`. Si un test necesita una clave nueva, hay que correr `flutter gen-l10n` a mano antes.
+- **Los ficheros generados de l10n están trackeados en git** (`lib/l10n/app_localizations.dart`, `app_localizations_en.dart`, `app_localizations_es.dart` — `git ls-files lib/l10n/` los lista, y `.gitignore` no los excluye). **Toda tarea que toque un `.arb` tiene que commitear también los tres generados**, en el mismo commit o en el siguiente. Si no, un checkout limpio tiene las claves nuevas en el ARB y el Dart viejo, y no compila.
 - **Inglés es el idioma por defecto.**
 - **La barra es `flutter analyze` sin una sola advertencia, al final de CADA tarea.** El proyecto está así hoy y no debe dejar de estarlo ni entre tareas. Por eso las claves ARB nuevas se añaden al principio (Task 1) y las muertas se borran al final (Task 12): borrarlas antes que a sus consumidores dejaría el árbol roto durante diez tareas, y un `analyze` que ya falla deja de avisar de los errores que sí importan.
 - **Comentarios en español**, explicando el *porqué*, como el resto del código.
@@ -2275,6 +2276,8 @@ Con los datos del sitio borrados o en incógnito **antes de cada camino** (el se
 
 ```bash
 git add lib/l10n/ test/arb_paridad_test.dart firestore.rules functions/index.js scripts/probar.mjs docs/superpowers/specs/2026-08-09-cuenta-como-identidad-design.md
+# `lib/l10n/` incluye los tres app_localizations*.dart regenerados en el Step 4.
+# Están trackeados: sin ellos el checkout no compila.
 git commit -m "Fuera las claves muertas, prueba de integración y comentarios al día
 
 El probar.ps1 de las sesiones anteriores vivía en un scratchpad sin
