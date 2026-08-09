@@ -56,6 +56,10 @@ extension MensajeLocalizado on FuncionError {
         'mensaje_largo' => t.errorMensajeLargo,
         'muy_rapido' => t.errorMuyRapido,
         'sesion_invalida' => t.errorSesionInvalida,
+        'pin_formato' => t.errorPinFormato,
+        'no_eres_organizador' => t.errorNoEresOrganizador,
+        'no_estas_en_el_grupo' => t.errorNoEstasEnElGrupo,
+        'grupo_ya_sorteado' => t.errorGrupoYaSorteado,
         _ => mensaje,
       };
 }
