@@ -622,8 +622,49 @@ exports.verAmigoSecreto = onCall(async (request) => {
   // El PIN es la segunda barrera: la cuenta ya demostró quién eres. Este
   // protege de que alguien con tu teléfono desbloqueado vea tu
   // asignación. Una vez visto, se vio.
+  //
+  // El intento SE RESERVA ANTES DE COMPROBARLO, y ese orden es el arreglo.
+  //
+  // Contar después de comprobar no frena nada aunque el contador fuese
+  // atómico: cien peticiones en paralelo leen todas el mismo contador a
+  // cero, pasan todas la comprobación de bloqueo, ejecutan todas su
+  // bcrypt, y el atacante ya tiene cien respuestas antes de que la primera
+  // haya escrito nada. Reservando primero, las cien se serializan en la
+  // transacción: cinco se llevan un intento y las otras noventa y cinco
+  // salen bloqueadas sin llegar a comparar nada.
+  //
+  // Cuesta una escritura de más en cada revelación acertada —se incrementa
+  // y luego se limpia—. Revelar tu amigo secreto se hace una vez por
+  // grupo; el límite de intentos tiene que ser de verdad.
   const ahora = Date.now();
-  if (ahora < (sesion.datos.pinBloqueadoHasta || 0)) {
+  const refUsuario = usuarioRef(sesion.clave);
+
+  // La transacción DEVUELVE el veredicto en vez de lanzarlo. Lanzar desde
+  // dentro haría depender el comportamiento de cómo clasifique el SDK ese
+  // error para decidir si reintenta la transacción, que no es una promesa
+  // que nos haya hecho nadie.
+  const reserva = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(refUsuario);
+    const datos = snap.data() || {};
+
+    if (ahora < (datos.pinBloqueadoHasta || 0)) {
+      return {bloqueado: true, pinHash: ""};
+    }
+
+    // Al llegar al tope se bloquea y se reinicia el contador, para que al
+    // expirar el bloqueo haya cinco intentos nuevos y no uno solo.
+    const fallos = (datos.pinFallos || 0) + 1;
+    tx.update(refUsuario, fallos >= MAX_INTENTOS_PIN ?
+      {pinFallos: 0, pinBloqueadoHasta: ahora + BLOQUEO_PIN_MS} :
+      {pinFallos: fallos});
+
+    // El hash sale de la lectura de DENTRO de la transacción, no del que
+    // trajo `autorizar`: si acabas de cambiar tu PIN desde otro
+    // dispositivo, el viejo ya no vale.
+    return {bloqueado: false, pinHash: datos.pinHash || ""};
+  });
+
+  if (reserva.bloqueado) {
     throw new HttpsError(
         "resource-exhausted",
         "Demasiados intentos. Espera un rato o cambia tu PIN desde Configuración.",
@@ -631,24 +672,12 @@ exports.verAmigoSecreto = onCall(async (request) => {
     );
   }
 
-  if (!sesion.datos.pinHash || !bcrypt.compareSync(pin, sesion.datos.pinHash)) {
-    // Se cuenta el fallo ANTES de responder. Al llegar al tope se bloquea y se
-    // reinicia el contador, para que al expirar el bloqueo haya cinco intentos
-    // nuevos y no uno solo.
-    const fallos = (sesion.datos.pinFallos || 0) + 1;
-    await usuarioRef(sesion.clave).update(
-        fallos >= MAX_INTENTOS_PIN ?
-          {pinFallos: 0, pinBloqueadoHasta: ahora + BLOQUEO_PIN_MS} :
-          {pinFallos: fallos},
-    );
+  if (!reserva.pinHash || !bcrypt.compareSync(pin, reserva.pinHash)) {
     throw new HttpsError("permission-denied", "PIN incorrecto.", {clave: "pin_incorrecto"});
   }
 
-  // Acertó: se limpia el rastro de los intentos fallidos. Solo se escribe si
-  // había algo que limpiar, para no gastar una escritura en cada revelación.
-  if (sesion.datos.pinFallos || sesion.datos.pinBloqueadoHasta) {
-    await usuarioRef(sesion.clave).update({pinFallos: 0, pinBloqueadoHasta: 0});
-  }
+  // Acertó: se devuelve el intento reservado y se limpia el rastro.
+  await refUsuario.update({pinFallos: 0, pinBloqueadoHasta: 0});
 
   const privado = await obtenerPrivado(codigo, sesion.participanteId);
   const publico = await participanteRef(codigo, sesion.participanteId).get();
