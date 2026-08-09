@@ -26,7 +26,7 @@
 
 **El nombre de juego ya se pide en blanco.** El spec insiste en que el nickname no se proponga nunca como nombre de participante. Eso ya es el comportamiento actual: `pantalla_registro.dart` arranca con el controlador vacío y nadie lo rellena. **No hay nada que cambiar** — se documenta para que quien implemente no vaya a "arreglarlo".
 
-**Las importaciones circulares aquí son correctas.** `pantalla_crear_cuenta.dart` importa `pantalla_raiz.dart` (por `irADondeToque`) y `pantalla_raiz.dart` importa `pantalla_crear_cuenta.dart` (por la pantalla). Dart permite ciclos entre librerías y esto compila. No hay que reorganizarlo.
+**Las pantallas de cuenta no saben a dónde se va después.** Reciben una callback `alEntrar` y la llaman al terminar. Quien decide el destino es el portero (Task 6), que se la pasa. Así la Task 5 no importa nada de la Task 6, compila sola, y sus tests pueden pasarle una callback vacía para probar la pantalla aislada de la navegación. **No introducir importaciones circulares entre ambas.**
 
 ---
 
@@ -497,10 +497,11 @@ Hoy `pantalla_cuenta.dart` es una sola pantalla con un interruptor `_modoCrear`.
 - Produces:
   - `Future<ResultadoAcceso> entrarConCuenta({required String nickname, required String password, required bool registrando})`
   - `class ResultadoAcceso { final String nickname; final List<Map<String, dynamic>> grupos; }`
-  - `class PantallaCrearCuenta extends StatefulWidget { final String? nombreGrupoInvitacion; const PantallaCrearCuenta({super.key, this.nombreGrupoInvitacion}); }`
-  - `class PantallaIniciarSesion extends StatefulWidget { const PantallaIniciarSesion({super.key}); }`
+  - `typedef AlEntrar = Future<void> Function(BuildContext, ResultadoAcceso);`
+  - `class PantallaCrearCuenta extends StatefulWidget { final AlEntrar alEntrar; final String? nombreGrupoInvitacion; const PantallaCrearCuenta({super.key, required this.alEntrar, this.nombreGrupoInvitacion}); }`
+  - `class PantallaIniciarSesion extends StatefulWidget { final AlEntrar alEntrar; const PantallaIniciarSesion({super.key, required this.alEntrar}); }`
 
-**Nota sobre la navegación posterior:** ambas pantallas, al terminar, llaman a `irADondeToque(context, resultado)` — definida en Task 6. **Implementar Task 6 antes de compilar esta**, o dejar el import y aceptar que `flutter analyze` falle hasta que Task 6 exista.
+**Esta tarea no depende de la Task 6.** Las pantallas no deciden a dónde se va después: reciben `alEntrar` y la llaman. El portero se la pasará. **No importar `pantalla_raiz.dart` desde aquí.**
 
 - [ ] **Step 1: Escribir el test que falla**
 
@@ -512,6 +513,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:santa_secreto/l10n/app_localizations.dart';
 import 'package:santa_secreto/pantalla_crear_cuenta.dart';
 
+/// Callback vacía: estos tests prueban la pantalla, no la navegación.
+/// Poder pasarla es justo la razón de que el destino no viva aquí dentro.
+Future<void> _sinNavegar(BuildContext _, dynamic __) async {}
+
 Widget _envoltorio(Widget hijo) => MaterialApp(
       locale: const Locale('en'),
       supportedLocales: const [Locale('en'), Locale('es')],
@@ -521,7 +526,7 @@ Widget _envoltorio(Widget hijo) => MaterialApp(
 
 void main() {
   testWidgets('sin invitación muestra la frase gancho', (tester) async {
-    await tester.pumpWidget(_envoltorio(const PantallaCrearCuenta()));
+    await tester.pumpWidget(_envoltorio(PantallaCrearCuenta(alEntrar: _sinNavegar)));
     await tester.pumpAndSettle();
     expect(
         find.text(
@@ -530,8 +535,8 @@ void main() {
   });
 
   testWidgets('con invitación muestra el grupo en vez de la frase', (tester) async {
-    await tester.pumpWidget(
-        _envoltorio(const PantallaCrearCuenta(nombreGrupoInvitacion: 'Navidad Familia')));
+    await tester.pumpWidget(_envoltorio(PantallaCrearCuenta(
+        alEntrar: _sinNavegar, nombreGrupoInvitacion: 'Navidad Familia')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Navidad Familia'), findsOneWidget);
     expect(
@@ -541,7 +546,7 @@ void main() {
   });
 
   testWidgets('tiene los tres campos y la casilla de idioma', (tester) async {
-    await tester.pumpWidget(_envoltorio(const PantallaCrearCuenta()));
+    await tester.pumpWidget(_envoltorio(PantallaCrearCuenta(alEntrar: _sinNavegar)));
     await tester.pumpAndSettle();
     expect(find.text('Nickname'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
@@ -609,7 +614,6 @@ import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
 import 'pantalla_iniciar_sesion.dart';
-import 'pantalla_raiz.dart';
 import 'selector_idioma.dart';
 import 'tematica.dart';
 
@@ -618,14 +622,22 @@ import 'tematica.dart';
 final RegExp _regexPassword =
     RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
 
+/// Qué hacer cuando la cuenta ya está lista. La pantalla no decide el
+/// destino: se lo pasa el portero, que es quien sabe si hay invitación
+/// pendiente. Así esta pantalla se prueba sin navegación.
+typedef AlEntrar = Future<void> Function(BuildContext, ResultadoAcceso);
+
 /// Primera pantalla de la app.
 class PantallaCrearCuenta extends StatefulWidget {
+  final AlEntrar alEntrar;
+
   /// Si se llegó por un QR, el nombre del grupo que invitó. Se muestra en
   /// vez de la frase gancho: quien escanea necesita saber a qué entra, no
   /// leer un eslogan.
   final String? nombreGrupoInvitacion;
 
-  const PantallaCrearCuenta({super.key, this.nombreGrupoInvitacion});
+  const PantallaCrearCuenta(
+      {super.key, required this.alEntrar, this.nombreGrupoInvitacion});
 
   @override
   State<PantallaCrearCuenta> createState() => _PantallaCrearCuentaState();
@@ -674,7 +686,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
       final r = await entrarConCuenta(
           nickname: nickname, password: password, registrando: true);
       if (!mounted) return;
-      await irADondeToque(context, r);
+      await widget.alEntrar(context, r);
     } on FuncionError catch (e) {
       _avisar('⚠️ ${e.texto(t)}');
     } catch (e) {
@@ -751,7 +763,8 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                       : () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const PantallaIniciarSesion()),
+                                builder: (_) =>
+                                    PantallaIniciarSesion(alEntrar: widget.alEntrar)),
                           ),
                   child: Text(t.cuentaYaTengoCuenta, textAlign: TextAlign.center),
                 ),
@@ -777,7 +790,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
-import 'pantalla_raiz.dart';
+import 'pantalla_crear_cuenta.dart' show AlEntrar;
 import 'tematica.dart';
 
 /// Entrar con una cuenta que ya existe.
@@ -786,7 +799,9 @@ import 'tematica.dart';
 /// guardado, y quien llega desde un dispositivo nuevo pasa antes por la
 /// pantalla de registro, donde sí está.
 class PantallaIniciarSesion extends StatefulWidget {
-  const PantallaIniciarSesion({super.key});
+  final AlEntrar alEntrar;
+
+  const PantallaIniciarSesion({super.key, required this.alEntrar});
 
   @override
   State<PantallaIniciarSesion> createState() => _PantallaIniciarSesionState();
@@ -823,7 +838,7 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
       final r = await entrarConCuenta(
           nickname: nickname, password: password, registrando: false);
       if (!mounted) return;
-      await irADondeToque(context, r);
+      await widget.alEntrar(context, r);
     } on FuncionError catch (e) {
       _avisar('⚠️ ${e.texto(t)}');
     } catch (e) {
@@ -988,8 +1003,9 @@ class _PantallaRaizState extends State<PantallaRaiz> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                PantallaCrearCuenta(nombreGrupoInvitacion: invitacion?.nombreGrupo),
+            builder: (_) => PantallaCrearCuenta(
+                alEntrar: irADondeToque,
+                nombreGrupoInvitacion: invitacion?.nombreGrupo),
           ),
         );
       case DestinoInicial.grupo:
@@ -1014,7 +1030,8 @@ class _PantallaRaizState extends State<PantallaRaiz> {
           if (!mounted) return;
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const PantallaCrearCuenta()),
+            MaterialPageRoute(
+                builder: (_) => PantallaCrearCuenta(alEntrar: irADondeToque)),
           );
         }
     }
@@ -1177,12 +1194,15 @@ Padding(
 Sustituir el `Navigator.pop(context)` del botón de cerrar sesión por:
 
 ```dart
-Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (_) => const PantallaCrearCuenta()),
-  (r) => false,
-);
+// Se vuelve a la raíz por nombre de ruta, no importando el portero.
+// Importarlo aquí crearía un ciclo: el portero ya importa esta pantalla
+// para navegar hacia ella. La raíz '/' es el `home:` de MaterialApp, o
+// sea el propio portero, que al no encontrar sesión manda al registro
+// con la callback correcta.
+Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
 ```
+
+**No importar `pantalla_raiz.dart` ni `pantalla_crear_cuenta.dart` en este archivo.**
 
 - [ ] **Step 5: Comprobar que compila y pasa la suite**
 
