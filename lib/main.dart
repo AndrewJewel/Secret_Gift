@@ -7,6 +7,7 @@ import 'idioma.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
 import 'pantalla_raiz.dart';
+import 'ruta_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,9 @@ class SantaApp extends StatelessWidget {
         supportedLocales: Idioma.soportados,
         localizationsDelegates: Textos.localizationsDelegates,
         theme: temaGlass(colorNeutro),
+        // Sin registrarlo aquí, `rutaObserver` no recibe nada y "Mis
+        // grupos" nunca se enteraría de que vuelve a estar visible.
+        navigatorObservers: [rutaObserver],
         home: const PantallaRaiz(),
       ),
     );

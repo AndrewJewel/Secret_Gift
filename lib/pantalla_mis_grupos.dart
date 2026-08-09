@@ -6,6 +6,7 @@ import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
 import 'pantalla_crear_grupo.dart';
 import 'pantalla_unirse_grupo.dart';
+import 'ruta_observer.dart';
 import 'selector_idioma.dart';
 import 'tematica.dart';
 import 'pantalla_registro.dart';
@@ -21,8 +22,33 @@ class PantallaMisGrupos extends StatefulWidget {
   State<PantallaMisGrupos> createState() => _PantallaMisGruposState();
 }
 
-class _PantallaMisGruposState extends State<PantallaMisGrupos> {
+class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
   late List<Map<String, dynamic>> _grupos = widget.grupos;
+
+  /// Suscripción al observador global. `didPopNext` es lo único que avisa
+  /// de verdad de que esta pantalla vuelve a ser visible; esperar al
+  /// future del `push` no vale porque crear/unirse terminan en
+  /// `pushReplacement` (ver ruta_observer.dart).
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ruta = ModalRoute.of(context);
+    if (ruta is PageRoute) rutaObserver.subscribe(this, ruta);
+  }
+
+  @override
+  void dispose() {
+    rutaObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Se volvió aquí desde la pantalla que había encima: crear grupo,
+  /// unirse o el propio grupo. En todos esos casos la lista puede haber
+  /// cambiado.
+  @override
+  void didPopNext() {
+    _recargar();
+  }
 
   /// La lista llega como semilla desde el login para pintar sin espera,
   /// pero deja de valer en cuanto se crea o se entra a un grupo. Se
@@ -42,9 +68,10 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> {
     }
   }
 
-  Future<void> _abrir(Widget pantalla) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => pantalla));
-    await _recargar();
+  /// Solo apila. La recarga la dispara `didPopNext` cuando esta pantalla
+  /// vuelve a verse, que es el único momento fiable.
+  void _abrir(Widget pantalla) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => pantalla));
   }
 
   @override
