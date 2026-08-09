@@ -81,16 +81,37 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   late final CollectionReference participantesRef = _grupoRef.collection('participantes');
 
-  /// Un solo stream para los dos usos: pintar la lista y vigilar que el
-  /// vínculo siga siendo válido. `snapshots()` devuelve un stream de
-  /// difusión, así que escucharlo dos veces no abre dos suscripciones
-  /// contra Firestore. Si cada uno pidiera el suyo, se pagarían las
-  /// lecturas por duplicado.
+  /// Un solo stream, con un solo suscriptor: el `listen` de `initState`.
+  ///
+  /// Antes la lista se pintaba con un `StreamBuilder` que se suscribía
+  /// aparte, ADEMÁS del `listen` de aquí abajo. La razón que se daba era
+  /// ahorrar lecturas —`snapshots()` es un stream de difusión, así que
+  /// escucharlo dos veces no duplica las consultas a Firestore— y eso es
+  /// cierto, pero no es el problema. El problema es que un stream de
+  /// difusión NO reproduce lo ya emitido: quien se suscribe tarde se
+  /// pierde cualquier evento anterior y solo recibe los que vengan
+  /// después. La primera vez que se entra al grupo, la respuesta viaja
+  /// por red y da tiempo a que el primer `build` ya haya montado el
+  /// `StreamBuilder` antes de que llegue. Pero al reentrar, Firestore
+  /// sirve la colección desde caché local casi al instante, ANTES de que
+  /// el `StreamBuilder` llegue a suscribirse: se pierde el único evento
+  /// y la lista se queda esperando uno que no vuelve a salir mientras
+  /// nadie más toque el grupo. Por eso ahora hay un solo suscriptor: el
+  /// `listen` de `initState`, que guarda lo recibido en `_participantes`
+  /// y de ahí lo pinta `_listaParticipantes`. Si alguna vez se necesita
+  /// un segundo consumidor de este stream, que lea del campo, no que
+  /// vuelva a suscribirse.
   late final Stream<QuerySnapshot> _streamParticipantes =
       participantesRef.orderBy('fecha', descending: true).snapshots();
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _suscripcionGrupo;
   StreamSubscription<QuerySnapshot>? _suscripcionParticipantes;
+
+  /// Últimos participantes recibidos del stream único de arriba. Null
+  /// mientras no ha llegado nada todavía (spinner); lista vacía si el
+  /// grupo no tiene a nadie; con contenido en cualquier otro caso. Los
+  /// pinta `_listaParticipantes` directamente, sin un segundo `listen`.
+  List<QueryDocumentSnapshot>? _participantes;
 
   /// Evita lanzar varias comprobaciones contra el servidor a la vez.
   bool _comprobandoIdentidad = false;
@@ -138,6 +159,8 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     // una letra— y ahora consulta al servidor. Así corre solo cuando la
     // lista cambia de verdad.
     _suscripcionParticipantes = _streamParticipantes.listen((snap) {
+      if (!mounted) return;
+      setState(() => _participantes = snap.docs);
       _revisarIdentidadContraLista(snap.docs);
     }, onError: (_) {
       // Sin conexión no se revisa nada: se conserva el vínculo.
@@ -854,99 +877,95 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   Widget _listaParticipantes(Textos t) {
     final colorTextoSuelto = _info.tematica.fondoOscuro ? Colors.white70 : Colors.black54;
-    return StreamBuilder<QuerySnapshot>(
-      // El mismo stream que vigila la identidad en initState. La revisión
-      // vive allí: build() solo pinta, no decide ni escribe.
-      stream: _streamParticipantes,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator(color: _color.shade700)),
-          );
-        }
-        final docs = snapshot.data!.docs;
-        if (docs.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Text(
-                _info.tematica.usaPersonajes ? t.registroVacioPersonaje : t.registroVacioNormal,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: colorTextoSuelto),
-              ),
-            ),
-          );
-        }
-        // Va dentro de la lista exterior, así que no scrollea por su
-        // cuenta: se deja medir por su contenido.
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final data = docs[index].data() as Map<String, dynamic>;
-            final id = docs[index].id;
-            final nombre = data['nombre'] as String? ?? '';
-            final yaTieneAmigo = data['tieneAmigo'] == true;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: GlassCard(
+    // Se pinta desde `_participantes`, no desde un StreamBuilder propio:
+    // el único suscriptor del stream es el `listen` de initState, que ya
+    // guarda ahí cada emisión (ver el comentario de `_streamParticipantes`).
+    final docs = _participantes;
+    if (docs == null) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator(color: _color.shade700)),
+      );
+    }
+    if (docs.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Text(
+            _info.tematica.usaPersonajes ? t.registroVacioPersonaje : t.registroVacioNormal,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: colorTextoSuelto),
+          ),
+        ),
+      );
+    }
+    // Va dentro de la lista exterior, así que no scrollea por su
+    // cuenta: se deja medir por su contenido.
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: docs.length,
+      itemBuilder: (context, index) {
+        final data = docs[index].data() as Map<String, dynamic>;
+        final id = docs[index].id;
+        final nombre = data['nombre'] as String? ?? '';
+        final yaTieneAmigo = data['tieneAmigo'] == true;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GlassCard(
+            color: _color,
+            radius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: AvatarParticipante(
+                url: data['avatarUrl'] as String?,
                 color: _color,
-                radius: 16,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: AvatarParticipante(
-                    url: data['avatarUrl'] as String?,
-                    color: _color,
-                    yaTieneAmigo: yaTieneAmigo,
-                  ),
-                  title: Text(
-                      id == _vinculo?.participanteId
-                          ? '$nombre (${t.grupoTuEtiqueta})'
-                          : nombre,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.black87)),
-                  subtitle: yaTieneAmigo
-                      ? Text(t.registroYaTieneAmigo,
-                          style: const TextStyle(fontSize: 12, color: Colors.black54))
-                      : null,
-                  trailing: _esOrganizador
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit_outlined, color: _color.shade700),
-                              tooltip: t.organizadorCorregirNombre,
-                              onPressed: () => _editarNombre(id, nombre),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.person_remove_outlined,
-                                  color: Colors.red.shade700),
-                              tooltip: t.organizadorSacar,
-                              onPressed: () => _borrarComoOrganizador(id, nombre),
-                            ),
-                          ],
-                        )
-                      // Quien no es organizador solo puede salirse a sí
-                      // mismo, así que el botón va únicamente en SU fila.
-                      // Antes salía en todas: pedía el PIN de esa persona,
-                      // que hacía de barrera legible. Sin PIN, tocar la
-                      // fila de otro abría una confirmación seria delante
-                      // de una llamada que el servidor siempre rechaza.
-                      : id == _vinculo?.participanteId
-                          ? IconButton(
-                              icon: Icon(Icons.logout, color: _color.shade700),
-                              tooltip: t.registroSalirGrupo,
-                              onPressed: () => _salirDelGrupo(id),
-                            )
-                          : null,
-                ),
+                yaTieneAmigo: yaTieneAmigo,
               ),
-            );
-          },
+              title: Text(
+                  id == _vinculo?.participanteId
+                      ? '$nombre (${t.grupoTuEtiqueta})'
+                      : nombre,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black87)),
+              subtitle: yaTieneAmigo
+                  ? Text(t.registroYaTieneAmigo,
+                      style: const TextStyle(fontSize: 12, color: Colors.black54))
+                  : null,
+              trailing: _esOrganizador
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit_outlined, color: _color.shade700),
+                          tooltip: t.organizadorCorregirNombre,
+                          onPressed: () => _editarNombre(id, nombre),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.person_remove_outlined,
+                              color: Colors.red.shade700),
+                          tooltip: t.organizadorSacar,
+                          onPressed: () => _borrarComoOrganizador(id, nombre),
+                        ),
+                      ],
+                    )
+                  // Quien no es organizador solo puede salirse a sí
+                  // mismo, así que el botón va únicamente en SU fila.
+                  // Antes salía en todas: pedía el PIN de esa persona,
+                  // que hacía de barrera legible. Sin PIN, tocar la
+                  // fila de otro abría una confirmación seria delante
+                  // de una llamada que el servidor siempre rechaza.
+                  : id == _vinculo?.participanteId
+                      ? IconButton(
+                          icon: Icon(Icons.logout, color: _color.shade700),
+                          tooltip: t.registroSalirGrupo,
+                          onPressed: () => _salirDelGrupo(id),
+                        )
+                      : null,
+            ),
+          ),
         );
       },
     );
