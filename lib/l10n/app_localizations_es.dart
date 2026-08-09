@@ -620,6 +620,10 @@ class TextosEs extends Textos {
   String get errorMuyRapido => 'Espera un momento antes de volver a escribir.';
 
   @override
+  String get errorSesionInvalida =>
+      'La sesión de tu cuenta ya no es válida. Vuelve a entrar.';
+
+  @override
   String get mascaraZorro => 'Zorro';
 
   @override

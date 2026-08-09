@@ -620,6 +620,10 @@ class TextosEn extends Textos {
   String get errorMuyRapido => 'Wait a moment before writing again.';
 
   @override
+  String get errorSesionInvalida =>
+      'Your account session is no longer valid. Please sign in again.';
+
+  @override
   String get mascaraZorro => 'Fox';
 
   @override

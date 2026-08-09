@@ -1206,6 +1206,12 @@ abstract class Textos {
   /// **'Wait a moment before writing again.'**
   String get errorMuyRapido;
 
+  /// No description provided for @errorSesionInvalida.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account session is no longer valid. Please sign in again.'**
+  String get errorSesionInvalida;
+
   /// No description provided for @mascaraZorro.
   ///
   /// In en, this message translates to:
