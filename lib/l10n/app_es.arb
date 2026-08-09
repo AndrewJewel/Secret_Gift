@@ -50,6 +50,7 @@
   "errorNoEresOrganizador": "Solo el organizador del grupo puede hacer esto",
   "errorNoEstasEnElGrupo": "Todavía no estás inscrito en este grupo",
   "errorGrupoYaSorteado": "El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera.",
+  "errorPinBloqueado": "Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.",
 
   "inicioSubtitulo": "Gestión de grupos",
   "inicioContinuarEn": "Continuar en «{grupo}»",

@@ -24,8 +24,8 @@ function generarCodigo() {
 // Las imágenes entran por aquí, nunca directo del cliente al bucket: la
 // app no usa Firebase Auth, así que unas reglas de Storage que permitan
 // escribir dejarían el bucket abierto a cualquiera. Subiéndolas por la
-// función, el PIN del participante es la autorización, igual que en el
-// resto de la app.
+// función, la cuenta vinculada al grupo es la autorización, igual que en
+// el resto de la app.
 
 const BUCKET = "santa-secreto-860c3.firebasestorage.app";
 // El cliente ya redimensiona a 256px (unos 20KB). El tope generoso es
@@ -115,6 +115,12 @@ const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
 // vea tu asignación, que es lo único irreversible de la app.
 const REGEX_PIN = /^\d{4}$/;
 
+// Cinco intentos y quince minutos de espera convierten 10.000 combinaciones en
+// semanas de trabajo. No deja a nadie fuera para siempre: quien se bloquee
+// cambia su PIN con la contraseña de la cuenta y sigue.
+const MAX_INTENTOS_PIN = 5;
+const BLOQUEO_PIN_MS = 15 * 60 * 1000;
+
 function validarPin(pin) {
   if (!REGEX_PIN.test(pin || "")) {
     throw new HttpsError("invalid-argument", "El PIN debe ser de 4 dígitos exactos.", {clave: "pin_formato"});
@@ -189,7 +195,14 @@ exports.cambiarPin = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "La contraseña no es correcta.", {clave: "password_incorrecta"});
   }
 
-  await usuarioRef(clave).update({pinHash: bcrypt.hashSync(pinNuevo, 10)});
+  await usuarioRef(clave).update({
+    pinHash: bcrypt.hashSync(pinNuevo, 10),
+    // Cambiar el PIN levanta el bloqueo: es la salida de emergencia de quien se
+    // quedó fuera intentándolo. Sin esto, quien acierta su contraseña y fija un
+    // PIN nuevo seguiría bloqueado quince minutos con el PIN correcto.
+    pinFallos: 0,
+    pinBloqueadoHasta: 0,
+  });
   return {ok: true};
 });
 
@@ -247,24 +260,49 @@ exports.iniciarSesionCuenta = onCall(async (request) => {
 });
 
 /**
- * Comprueba las credenciales ANTES de tocar nada. Si no valen, la acción
- * entera se aborta sin dejar rastro: ni grupo huérfano, ni participante
- * inscrito, ni avatar subido.
+ * Verifica la cuenta y devuelve tu vínculo con ese grupo.
  *
- * Devuelve la clave normalizada de la cuenta, o null si no se mandó
- * cuenta (la vinculación es opcional en la llamada, no la validez).
+ * Lo importante no es que sustituya a tres funciones, es de dónde sale el
+ * `participanteId`: antes lo mandaba el cliente y el servidor comprobaba
+ * que el PIN cuadrara; ahora el servidor lo DERIVA del vínculo. El cliente
+ * ya no puede decir que es otro participante, así que suplantar deja de
+ * ser cuestión de adivinar cuatro cifras guardadas en texto plano.
  */
-async function verificarCuentaSiAplica(nickname, password) {
-  if (!nickname || !password) return null;
+/** Solo comprueba la cuenta. La usa `crearGrupo`, donde todavía no hay
+ * grupo con el que tener vínculo. */
+async function verificarCuenta(nickname, password) {
   const clave = normalizarNickname(nickname);
+  if (!clave || !password) {
+    throw new HttpsError("unauthenticated", "Faltan las credenciales de tu cuenta.", {clave: "sesion_invalida"});
+  }
   const snap = await usuarioRef(clave).get();
   if (!snap.exists || !bcrypt.compareSync(password, snap.data().hash)) {
-    // Antes se ignoraba en silencio para no romper el alta por un extra.
-    // Con la cuenta ya obligatoria eso deja de valer: el grupo no
-    // aparecería en "Mis grupos" y nadie sabría por qué.
     throw new HttpsError("unauthenticated", "La sesión de tu cuenta no es válida. Vuelve a entrar.", {clave: "sesion_invalida"});
   }
-  return clave;
+  return {clave, datos: snap.data()};
+}
+
+async function autorizar(codigo, nickname, password) {
+  const {clave, datos} = await verificarCuenta(nickname, password);
+  const vinculo = (datos.grupos || {})[codigo] || null;
+  return {
+    clave,
+    rol: vinculo ? vinculo.rol : null,
+    participanteId: vinculo ? (vinculo.participanteId || null) : null,
+    datos,
+  };
+}
+
+function exigirOrganizador(sesion) {
+  if (sesion.rol !== "organizador") {
+    throw new HttpsError("permission-denied", "Solo el organizador del grupo puede hacer esto.", {clave: "no_eres_organizador"});
+  }
+}
+
+function exigirParticipante(sesion) {
+  if (!sesion.participanteId) {
+    throw new HttpsError("permission-denied", "Todavía no estás inscrito en este grupo.", {clave: "no_estas_en_el_grupo"});
+  }
 }
 
 /**
@@ -306,23 +344,22 @@ async function vincularComoParticipante(clave, codigo, participanteId) {
 
 exports.crearGrupo = onCall(async (request) => {
   const ocasion = (request.data?.ocasion || "").trim();
-  const pinMaestro = (request.data?.pinMaestro || "").trim();
   const valorMinimo = (request.data?.valorMinimo || "").trim();
   const nombreGrupo = (request.data?.nombreGrupo || "").trim();
   // Vacío = grupo sin temática: cada quien se registra con su nombre y su
   // foto. Con temática, se registra con un personaje y su imagen.
   const tematica = (request.data?.tematica || "").trim();
   const reglas = (request.data?.reglas || "").trim();
-  const nickname = request.data?.nickname;
-  const password = request.data?.password;
 
-  if (!ocasion || !pinMaestro || !nombreGrupo) {
-    throw new HttpsError("invalid-argument", "Falta la ocasión, el nombre del grupo o el PIN maestro.", {clave: "faltan_datos_grupo"});
+  if (!ocasion || !nombreGrupo) {
+    throw new HttpsError("invalid-argument", "Falta la ocasión o el nombre del grupo.", {clave: "faltan_datos_grupo"});
   }
 
-  // Se verifica antes de escribir nada: si las credenciales no valen, la
-  // creación del grupo se aborta entera y no queda un grupo huérfano.
-  const claveCuenta = await verificarCuentaSiAplica(nickname, password);
+  // La cuenta ya no es opcional: sin ella el grupo quedaría huérfano, sin
+  // organizador y sin aparecer en "Mis grupos" de nadie. Aquí se usa
+  // `verificarCuenta` y no `autorizar` porque el grupo todavía no existe:
+  // no hay vínculo que consultar.
+  const {clave} = await verificarCuenta(request.data?.nickname, request.data?.password);
 
   // Reintenta si el código generado (poco probable) ya existe.
   for (let intento = 0; intento < 5; intento++) {
@@ -342,9 +379,8 @@ exports.crearGrupo = onCall(async (request) => {
           reglas,
           fecha: admin.firestore.FieldValue.serverTimestamp(),
         });
-        tx.set(grupoPrivadoRef(codigo), {pinMaestro});
       });
-      await vincularCuenta(claveCuenta, {codigo, rol: "organizador"});
+      await vincularComoOrganizador(clave, codigo);
       return {codigo};
     } catch (e) {
       if (e instanceof HttpsError && e.message === "código repetido, reintentar") {
@@ -359,13 +395,10 @@ exports.crearGrupo = onCall(async (request) => {
 exports.agregarParticipante = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const nombre = (request.data?.nombre || "").trim();
-  const pin = (request.data?.pin || "").trim();
   const deseos = (request.data?.deseos || "").trim();
-  const nickname = request.data?.nickname;
-  const password = request.data?.password;
 
-  if (!codigo || !nombre || !pin) {
-    throw new HttpsError("invalid-argument", "Falta el grupo, el nombre o el PIN.", {clave: "faltan_datos_participante"});
+  if (!codigo || !nombre) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o el nombre.", {clave: "faltan_datos_participante"});
   }
 
   const grupoSnap = await grupoRef(codigo).get();
@@ -375,7 +408,7 @@ exports.agregarParticipante = onCall(async (request) => {
 
   // Se verifica antes de subir el avatar: si las credenciales no valen,
   // no queda un avatar huérfano en Storage ni un participante inscrito.
-  const claveCuenta = await verificarCuentaSiAplica(nickname, password);
+  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
 
   const ref = grupoRef(codigo).collection("participantes").doc();
   // La imagen se sube antes de escribir en Firestore: si falla, no queda
@@ -390,14 +423,19 @@ exports.agregarParticipante = onCall(async (request) => {
     tieneAmigo: false,
   });
   batch.set(participantePrivadoRef(codigo, ref.id), {
-    pin,
+    // De qué cuenta es esta plaza. Sin este dato, borrarParticipante no
+    // puede limpiar el puntero de usuarios/{x}.grupos —no sabría de
+    // quién— y el grupo seguiría saliendo en su "Mis grupos" apuntando a
+    // un participante que ya no existe. Este documento está cerrado a
+    // cero para el cliente (ver firestore.rules).
+    cuenta: sesion.clave,
     deseos: deseos || "¡Sorpréndeme!",
     asignado_a: "",
     nombre_asignado: "",
     deseos_asignado: "",
   });
   await batch.commit();
-  await vincularCuenta(claveCuenta, {codigo, participanteId: ref.id, rol: "participante"});
+  await vincularComoParticipante(sesion.clave, codigo, ref.id);
   return {id: ref.id};
 });
 
@@ -409,71 +447,67 @@ async function obtenerPrivado(codigo, participanteId) {
   return privSnap.data();
 }
 
-// El PIN maestro identifica a quien creó el grupo. Es la credencial de
-// TODAS las acciones de organizador (editar el grupo, corregir nombres,
-// sortear, eliminar) y nunca sirve para ver el amigo secreto de nadie.
-async function verificarPinMaestro(codigo, pinIngresado) {
-  const snap = await grupoPrivadoRef(codigo).get();
-  if (!snap.exists) {
-    throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
-  }
-  if ((pinIngresado || "").trim() !== snap.data().pinMaestro) {
-    throw new HttpsError("permission-denied", "PIN incorrecto.", {clave: "pin_incorrecto"});
-  }
-  return snap.data();
-}
-
-// Para acciones administrativas (borrar): el PIN propio o el PIN maestro
-// del responsable de la actividad sirven por igual.
-async function verificarPinOAdmin(codigo, participanteId, pinIngresado) {
-  const privado = await obtenerPrivado(codigo, participanteId);
-  if (pinIngresado === privado.pin) return privado;
-
-  const grupoPrivSnap = await grupoPrivadoRef(codigo).get();
-  if (pinIngresado === grupoPrivSnap.data()?.pinMaestro) return privado;
-
-  throw new HttpsError("permission-denied", "PIN incorrecto.", {clave: "pin_incorrecto"});
-}
-
-// Para revelar el amigo secreto: SOLO el PIN propio, nunca el maestro. El
-// responsable de la actividad no debe poder espiar asignaciones ajenas.
-async function verificarPinPropio(codigo, participanteId, pinIngresado) {
-  const privado = await obtenerPrivado(codigo, participanteId);
-  if (pinIngresado === privado.pin) return privado;
-  throw new HttpsError("permission-denied", "PIN incorrecto.", {clave: "pin_incorrecto"});
-}
-
 exports.borrarParticipante = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const participanteId = request.data?.participanteId;
-  const pin = (request.data?.pin || "").trim();
   if (!codigo || !participanteId) {
     throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
   }
 
-  await verificarPinOAdmin(codigo, participanteId, pin);
+  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  // O es tu propia plaza, o eres el organizador.
+  if (sesion.participanteId !== participanteId) exigirOrganizador(sesion);
+
+  // Tras el sorteo, sacar a alguien deja a quien le regalaba apuntando a
+  // un fantasma —su nombre_asignado sigue ahí pero ya no hay nadie— y ese
+  // tercero no se entera hasta el día del intercambio. La salida es
+  // reemplazar a la persona conservando su plaza en la cadena (P4), no
+  // borrarla.
+  const grupoSnap = await grupoRef(codigo).get();
+  if (grupoSnap.data()?.sorteado === true) {
+    throw new HttpsError(
+        "failed-precondition",
+        "El sorteo ya se hizo: a esta persona hay que reemplazarla, no sacarla.",
+        {clave: "grupo_ya_sorteado"},
+    );
+  }
 
   const publico = await participanteRef(codigo, participanteId).get();
+  const privado = await participantePrivadoRef(codigo, participanteId).get();
+  const cuentaDeLaPlaza = privado.data()?.cuenta;
+
   const batch = db.batch();
   batch.delete(participanteRef(codigo, participanteId));
   batch.delete(participantePrivadoRef(codigo, participanteId));
   await batch.commit();
+
+  // Se quita el grupo de su "Mis grupos". Sin esto quedaría listado
+  // apuntando a un participante que ya no existe — era un fallo conocido
+  // que no se podía arreglar porque nadie sabía de qué cuenta era la
+  // plaza.
+  if (cuentaDeLaPlaza) {
+    await usuarioRef(cuentaDeLaPlaza).update(
+        new admin.firestore.FieldPath("grupos", codigo),
+        admin.firestore.FieldValue.delete(),
+    );
+  }
+
   await borrarAvatarPorUrl(publico.data()?.avatarUrl);
   return {ok: true};
 });
 
-// Cambiar la propia imagen (con el PIN propio) o quitarle una inapropiada
-// a alguien (con el PIN maestro): verificarPinOAdmin acepta las dos.
+// Cambiar la propia imagen, o quitarle una inapropiada a alguien si eres
+// el organizador: `autorizar` ya sabe si eres una cosa o la otra.
 // Mandar avatarBase64 vacío o nulo equivale a quitar la imagen.
 exports.cambiarAvatar = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const participanteId = request.data?.participanteId;
-  const pin = (request.data?.pin || "").trim();
   if (!codigo || !participanteId) {
     throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
   }
 
-  await verificarPinOAdmin(codigo, participanteId, pin);
+  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  if (sesion.participanteId !== participanteId) exigirOrganizador(sesion);
 
   const ref = participanteRef(codigo, participanteId);
   const anterior = (await ref.get()).data()?.avatarUrl;
@@ -484,18 +518,17 @@ exports.cambiarAvatar = onCall(async (request) => {
   return {ok: true, avatarUrl: nuevaUrl || ""};
 });
 
-// Solo el PIN maestro puede corregir el nombre de un participante (p.ej.
+// Solo el organizador puede corregir el nombre de un participante (p.ej.
 // un error de tipeo) — es una acción del responsable de la actividad.
 exports.editarParticipante = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const participanteId = request.data?.participanteId;
   const nuevoNombre = (request.data?.nuevoNombre || "").trim();
-  const pinMaestro = (request.data?.pinMaestro || "").trim();
   if (!codigo || !participanteId || !nuevoNombre) {
     throw new HttpsError("invalid-argument", "Falta el grupo, el participante o el nuevo nombre.", {clave: "faltan_datos"});
   }
 
-  await verificarPinMaestro(codigo, pinMaestro);
+  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
 
   const ref = participanteRef(codigo, participanteId);
   const snap = await ref.get();
@@ -506,29 +539,70 @@ exports.editarParticipante = onCall(async (request) => {
   return {ok: true};
 });
 
-exports.iniciarSesion = onCall(async (request) => {
+// Antes se llamaba `iniciarSesion`, que se confundía con
+// `iniciarSesionCuenta` y ya no describe lo que hace: no inicia ninguna
+// sesión, revela una asignación.
+exports.verAmigoSecreto = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
-  const participanteId = request.data?.participanteId;
   const pin = (request.data?.pin || "").trim();
-  if (!codigo || !participanteId) {
-    throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
+  if (!codigo) {
+    throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
 
-  const privado = await verificarPinPropio(codigo, participanteId, pin);
+  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  exigirParticipante(sesion);
+
+  // El PIN es la segunda barrera: la cuenta ya demostró quién eres. Este
+  // protege de que alguien con tu teléfono desbloqueado vea tu
+  // asignación. Una vez visto, se vio.
+  const ahora = Date.now();
+  if (ahora < (sesion.datos.pinBloqueadoHasta || 0)) {
+    throw new HttpsError(
+        "resource-exhausted",
+        "Demasiados intentos. Espera un rato o cambia tu PIN desde Configuración.",
+        {clave: "pin_bloqueado"},
+    );
+  }
+
+  if (!sesion.datos.pinHash || !bcrypt.compareSync(pin, sesion.datos.pinHash)) {
+    // Se cuenta el fallo ANTES de responder. Al llegar al tope se bloquea y se
+    // reinicia el contador, para que al expirar el bloqueo haya cinco intentos
+    // nuevos y no uno solo.
+    const fallos = (sesion.datos.pinFallos || 0) + 1;
+    await usuarioRef(sesion.clave).update(
+        fallos >= MAX_INTENTOS_PIN ?
+          {pinFallos: 0, pinBloqueadoHasta: ahora + BLOQUEO_PIN_MS} :
+          {pinFallos: fallos},
+    );
+    throw new HttpsError("permission-denied", "PIN incorrecto.", {clave: "pin_incorrecto"});
+  }
+
+  // Acertó: se limpia el rastro de los intentos fallidos. Solo se escribe si
+  // había algo que limpiar, para no gastar una escritura en cada revelación.
+  if (sesion.datos.pinFallos || sesion.datos.pinBloqueadoHasta) {
+    await usuarioRef(sesion.clave).update({pinFallos: 0, pinBloqueadoHasta: 0});
+  }
+
+  const privado = await obtenerPrivado(codigo, sesion.participanteId);
+  const publico = await participanteRef(codigo, sesion.participanteId).get();
   return {
+    // Tu propio nombre en el grupo. Antes lo sacaba el cliente de la lista
+    // de participantes que mostraba PantallaLogin, que desaparece.
+    nombre: publico.data()?.nombre || "",
     nombreAmigo: privado.nombre_asignado || "",
-    deseosAmigo: privado.deseos_asignado || "Sin sugerencias",
+    // Vacío y no "Sin sugerencias": el texto por defecto lo pone el
+    // cliente traducido, y aquí saldría siempre en español.
+    deseosAmigo: privado.deseos_asignado || "",
   };
 });
 
 exports.ejecutarSorteo = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
-  const pin = (request.data?.pinMaestro || "").trim();
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
 
-  await verificarPinMaestro(codigo, pin);
+  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
 
   const snap = await grupoRef(codigo).collection("participantes").get();
   const docs = snap.docs;
@@ -560,6 +634,10 @@ exports.ejecutarSorteo = onCall(async (request) => {
     }, {merge: true});
     batch.update(docs[iRegala].ref, {tieneAmigo: true});
   }
+  // Marca en el documento del grupo, que el cliente ya escucha en vivo.
+  // Sin esto, saber si el grupo sorteó exigiría leer todos los
+  // participantes buscando un tieneAmigo:true.
+  batch.update(grupoRef(codigo), {sorteado: true});
   await batch.commit();
   return {ok: true};
 });
@@ -602,12 +680,10 @@ async function obtenerMascara(codigo, participanteId) {
 
 exports.enviarMensaje = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
-  const participanteId = request.data?.participanteId;
-  const pin = (request.data?.pin || "").trim();
   const texto = (request.data?.texto || "").trim();
 
-  if (!codigo || !participanteId) {
-    throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
+  if (!codigo) {
+    throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
   if (!texto) {
     throw new HttpsError("invalid-argument", "El mensaje está vacío.", {clave: "mensaje_vacio"});
@@ -616,9 +692,10 @@ exports.enviarMensaje = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "El mensaje es demasiado largo.", {clave: "mensaje_largo"});
   }
 
-  // PIN propio, nunca el maestro: el organizador no debe poder escribir
-  // suplantando a otra persona.
-  const privado = await verificarPinPropio(codigo, participanteId, pin);
+  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  exigirParticipante(sesion);
+  const participanteId = sesion.participanteId;
+  const privado = await obtenerPrivado(codigo, participanteId);
 
   const ahora = Date.now();
   if (privado.ultimoMensajeMs && ahora - privado.ultimoMensajeMs < ESPERA_ENTRE_MENSAJES_MS) {
@@ -647,7 +724,7 @@ exports.borrarMensaje = onCall(async (request) => {
   if (!codigo || !mensajeId) {
     throw new HttpsError("invalid-argument", "Falta el grupo o el mensaje.", {clave: "faltan_datos"});
   }
-  await verificarPinMaestro(codigo, request.data?.pinMaestro);
+  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
   await grupoRef(codigo).collection("chat").doc(mensajeId).delete();
   return {ok: true};
 });
@@ -656,29 +733,18 @@ exports.borrarMensaje = onCall(async (request) => {
 // mensajes. Se la asigna si todavía no escribía.
 exports.miMascara = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
-  const participanteId = request.data?.participanteId;
-  if (!codigo || !participanteId) {
-    throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
-  }
-  await verificarPinPropio(codigo, participanteId, (request.data?.pin || "").trim());
-  return await obtenerMascara(codigo, participanteId);
-});
-
-// --- Acciones de organizador -----------------------------------------
-// Quien creó el grupo desbloquea el "modo organizador" una sola vez con el
-// PIN maestro y desde ahí edita todo, en vez de que cada acción suelta le
-// vuelva a pedir el PIN.
-
-// Solo confirma que el PIN maestro es correcto: es lo que desbloquea los
-// controles de organizador en la pantalla del grupo.
-exports.verificarOrganizador = onCall(async (request) => {
-  const codigo = (request.data?.codigo || "").trim();
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  await verificarPinMaestro(codigo, request.data?.pinMaestro);
-  return {ok: true};
+  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  exigirParticipante(sesion);
+  return await obtenerMascara(codigo, sesion.participanteId);
 });
+
+// --- Acciones de organizador -----------------------------------------
+// Cada una comprueba `exigirOrganizador` por su cuenta: no hay ya un PIN
+// maestro que desbloquee un "modo organizador" en el cliente, así que no
+// hay nada que memorizar entre acciones.
 
 // Campos del grupo que el organizador puede cambiar después de crearlo.
 const CAMPOS_EDITABLES = ["nombreGrupo", "valorMinimo", "tematica", "reglas"];
@@ -689,7 +755,7 @@ exports.editarGrupo = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  await verificarPinMaestro(codigo, request.data?.pinMaestro);
+  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
 
   // Solo se tocan los campos que vengan en la petición: así la pantalla
   // puede mandar un cambio suelto sin pisar los demás.
@@ -718,8 +784,8 @@ exports.editarGrupo = onCall(async (request) => {
   return {ok: true, cambios};
 });
 
-// Irreversible: borra el grupo, su PIN maestro, y todos los participantes
-// con sus datos privados. Las referencias que queden en las cuentas
+// Irreversible: borra el grupo y todos los participantes con sus datos
+// privados. Las referencias que queden en las cuentas
 // (usuarios/{nickname}.grupos) se limpian solas al siguiente inicio de
 // sesión — ver iniciarSesionCuenta.
 exports.eliminarGrupo = onCall(async (request) => {
@@ -727,7 +793,7 @@ exports.eliminarGrupo = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  await verificarPinMaestro(codigo, request.data?.pinMaestro);
+  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
 
   // recursiveDelete baja por las subcolecciones (participantes y cada
   // privado/data) y parte el trabajo en lotes por dentro.

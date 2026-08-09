@@ -158,6 +158,10 @@ class TextosEs extends Textos {
       'El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera.';
 
   @override
+  String get errorPinBloqueado =>
+      'Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.';
+
+  @override
   String get inicioSubtitulo => 'Gestión de grupos';
 
   @override

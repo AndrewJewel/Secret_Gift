@@ -60,6 +60,7 @@ extension MensajeLocalizado on FuncionError {
         'no_eres_organizador' => t.errorNoEresOrganizador,
         'no_estas_en_el_grupo' => t.errorNoEstasEnElGrupo,
         'grupo_ya_sorteado' => t.errorGrupoYaSorteado,
+        'pin_bloqueado' => t.errorPinBloqueado,
         _ => mensaje,
       };
 }

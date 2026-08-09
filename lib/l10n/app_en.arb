@@ -51,6 +51,7 @@
   "errorNoEresOrganizador": "Only the group organizer can do this",
   "errorNoEstasEnElGrupo": "You are not signed up in this group yet",
   "errorGrupoYaSorteado": "The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.",
+  "errorPinBloqueado": "Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.",
 
   "inicioSubtitulo": "Group Manager",
   "inicioContinuarEn": "Continue in \"{grupo}\"",

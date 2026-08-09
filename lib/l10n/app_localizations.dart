@@ -373,6 +373,12 @@ abstract class Textos {
   /// **'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.'**
   String get errorGrupoYaSorteado;
 
+  /// No description provided for @errorPinBloqueado.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.'**
+  String get errorPinBloqueado;
+
   /// No description provided for @inicioSubtitulo.
   ///
   /// In en, this message translates to:
