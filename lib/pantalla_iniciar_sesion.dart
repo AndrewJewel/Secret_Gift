@@ -37,9 +37,7 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
 
   void _avisar(String mensaje) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensaje)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
   }
 
   Future<void> _enviar() async {
@@ -53,10 +51,7 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
     setState(() => _cargando = true);
     try {
       final r = await entrarConCuenta(
-        nickname: nickname,
-        password: password,
-        registrando: false,
-      );
+          nickname: nickname, password: password, registrando: false);
       if (!mounted) return;
       await widget.alEntrar(context, r);
     } on FuncionError catch (e) {
@@ -76,59 +71,41 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
       child: FondoNeutro(
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: GlassAppBar(
-            title: Text(t.cuentaEntrarTitulo),
-            color: colorNeutro,
-          ),
+          appBar: GlassAppBar(title: Text(t.cuentaEntrarTitulo), color: colorNeutro),
           body: SafeArea(
-            // SingleChildScrollView + Column, no ListView: ver la nota en
-            // pantalla_crear_cuenta.dart. Aquí el formulario es corto y
-            // probablemente cabría en el viewport de los tests, pero se usa
-            // el mismo patrón que la pantalla hermana para no depender del
-            // tamaño exacto de la pantalla.
-            child: SingleChildScrollView(
+            child: ListView(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Image.asset('assets/logo.png', height: 96),
-                  const SizedBox(height: 24),
-                  GlassTextField(
+              children: [
+                Image.asset('assets/logo.png', height: 96),
+                const SizedBox(height: 24),
+                GlassTextField(
                     controller: _nickname,
                     labelText: t.cuentaNickname,
-                    icon: Icons.person_outline,
+                    icon: Icons.person_outline),
+                const SizedBox(height: 16),
+                GlassTextField(
+                  controller: _password,
+                  labelText: t.cuentaPassword,
+                  icon: Icons.lock_outline,
+                  obscureText: !_verPassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(_verPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _verPassword = !_verPassword),
                   ),
-                  const SizedBox(height: 16),
-                  GlassTextField(
-                    controller: _password,
-                    labelText: t.cuentaPassword,
-                    icon: Icons.lock_outline,
-                    obscureText: !_verPassword,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _verPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () =>
-                          setState(() => _verPassword = !_verPassword),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  GlassButton(
-                    color: colorNeutro.shade600,
-                    icon: Icons.login,
-                    label: t.cuentaEntrarTitulo,
-                    onPressed: _cargando ? null : _enviar,
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _cargando ? null : () => Navigator.pop(context),
-                    child: Text(
-                      t.cuentaNoTengoCuenta,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 24),
+                GlassButton(
+                  color: colorNeutro.shade600,
+                  icon: Icons.login,
+                  label: t.cuentaEntrarTitulo,
+                  onPressed: _cargando ? null : _enviar,
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _cargando ? null : () => Navigator.pop(context),
+                  child: Text(t.cuentaNoTengoCuenta, textAlign: TextAlign.center),
+                ),
+              ],
             ),
           ),
         ),

@@ -11,9 +11,8 @@ import 'tematica.dart';
 
 /// Misma exigencia que valida el servidor: 8+, mayúscula, minúscula,
 /// número y símbolo. Se comprueba aquí para no gastar una llamada.
-final RegExp _regexPassword = RegExp(
-  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
-);
+final RegExp _regexPassword =
+    RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
 
 /// Qué hacer cuando la cuenta ya está lista. La pantalla no decide el
 /// destino: se lo pasa el portero, que es quien sabe si hay invitación
@@ -29,11 +28,8 @@ class PantallaCrearCuenta extends StatefulWidget {
   /// leer un eslogan.
   final String? nombreGrupoInvitacion;
 
-  const PantallaCrearCuenta({
-    super.key,
-    required this.alEntrar,
-    this.nombreGrupoInvitacion,
-  });
+  const PantallaCrearCuenta(
+      {super.key, required this.alEntrar, this.nombreGrupoInvitacion});
 
   @override
   State<PantallaCrearCuenta> createState() => _PantallaCrearCuentaState();
@@ -56,9 +52,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
   void _avisar(String mensaje) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensaje)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
   }
 
   Future<void> _enviar() async {
@@ -82,10 +76,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
     setState(() => _cargando = true);
     try {
       final r = await entrarConCuenta(
-        nickname: nickname,
-        password: password,
-        registrando: true,
-      );
+          nickname: nickname, password: password, registrando: true);
       if (!mounted) return;
       await widget.alEntrar(context, r);
     } on FuncionError catch (e) {
@@ -107,94 +98,69 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: SafeArea(
-            // SingleChildScrollView + Column, no ListView: un ListView de
-            // slivers solo construye los hijos que caben en el viewport más
-            // el cacheExtent, y este formulario completo (logo, gancho,
-            // idioma y los tres campos) es más alto que eso. Con ListView
-            // los tests de widget que buscan el campo de confirmación nunca
-            // lo encontraban, porque ni siquiera llegaba a construirse.
-            child: SingleChildScrollView(
+            child: ListView(
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Image.asset('assets/logo.png', height: 120),
-                  const SizedBox(height: 8),
-                  Text(
-                    t.appTitle,
+              children: [
+                Image.asset('assets/logo.png', height: 120),
+                const SizedBox(height: 8),
+                Text(t.appTitle,
+                    textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
+                const SizedBox(height: 16),
+                GlassCard(
+                  color: colorNeutro,
+                  child: Text(
+                    invitacion != null && invitacion.isNotEmpty
+                        ? t.cuentaInvitadoA(invitacion)
+                        : t.cuentaFraseGancho,
                     textAlign: TextAlign.center,
-                    style: tituloGlass(colorNeutro),
+                    style: const TextStyle(color: Colors.black87, fontSize: 16),
                   ),
-                  const SizedBox(height: 16),
-                  GlassCard(
-                    color: colorNeutro,
-                    child: Text(
-                      invitacion != null && invitacion.isNotEmpty
-                          ? t.cuentaInvitadoA(invitacion)
-                          : t.cuentaFraseGancho,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const CampoIdioma(),
-                  const SizedBox(height: 16),
-                  GlassTextField(
+                ),
+                const SizedBox(height: 24),
+                const CampoIdioma(),
+                const SizedBox(height: 16),
+                GlassTextField(
                     controller: _nickname,
                     labelText: t.cuentaNickname,
-                    icon: Icons.person_outline,
+                    icon: Icons.person_outline),
+                const SizedBox(height: 16),
+                GlassTextField(
+                  controller: _password,
+                  labelText: t.cuentaPassword,
+                  helperText: t.cuentaPasswordAyuda,
+                  icon: Icons.lock_outline,
+                  obscureText: !_verPassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(_verPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _verPassword = !_verPassword),
                   ),
-                  const SizedBox(height: 16),
-                  GlassTextField(
-                    controller: _password,
-                    labelText: t.cuentaPassword,
-                    helperText: t.cuentaPasswordAyuda,
-                    icon: Icons.lock_outline,
-                    obscureText: !_verPassword,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _verPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () =>
-                          setState(() => _verPassword = !_verPassword),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GlassTextField(
+                ),
+                const SizedBox(height: 16),
+                GlassTextField(
                     controller: _confirmar,
                     labelText: t.cuentaConfirmar,
                     icon: Icons.lock_outline,
-                    obscureText: !_verPassword,
-                  ),
-                  const SizedBox(height: 24),
-                  GlassButton(
-                    color: colorNeutro.shade600,
-                    icon: Icons.person_add_alt,
-                    label: t.cuentaCrearTitulo,
-                    onPressed: _cargando ? null : _enviar,
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _cargando
-                        ? null
-                        : () => Navigator.push(
+                    obscureText: !_verPassword),
+                const SizedBox(height: 24),
+                GlassButton(
+                  color: colorNeutro.shade600,
+                  icon: Icons.person_add_alt,
+                  label: t.cuentaCrearTitulo,
+                  onPressed: _cargando ? null : _enviar,
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _cargando
+                      ? null
+                      : () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => PantallaIniciarSesion(
-                                alEntrar: widget.alEntrar,
-                              ),
-                            ),
+                                builder: (_) =>
+                                    PantallaIniciarSesion(alEntrar: widget.alEntrar)),
                           ),
-                    child: Text(
-                      t.cuentaYaTengoCuenta,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
+                  child: Text(t.cuentaYaTengoCuenta, textAlign: TextAlign.center),
+                ),
+              ],
             ),
           ),
         ),

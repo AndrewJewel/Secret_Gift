@@ -40,7 +40,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Nickname'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
-    expect(find.text('Confirm password'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
+    // El campo de confirmación queda más abajo de lo que cabe en el
+    // viewport de prueba. El ListView es de slivers: los widgets fuera de
+    // la vista (más allá del cacheExtent) ni siquiera se construyen, así
+    // que hace falta el gesto de scroll -no basta con pumpAndSettle- para
+    // que "Confirm password" llegue a existir en el árbol.
+    await tester.drag(find.byType(ListView), const Offset(0, -2000));
+    await tester.pumpAndSettle();
+    expect(find.text('Confirm password'), findsOneWidget);
   });
 }
