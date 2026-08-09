@@ -74,12 +74,18 @@
   "cuentaNoCoinciden": "Las contraseñas no coinciden",
   "cuentaCambiarAEntrar": "¿Ya tienes cuenta? Inicia sesión",
   "cuentaCambiarACrear": "¿No tienes cuenta? Créala",
+  "cuentaFraseGancho": "Crea tu cuenta para descubrir quién te envía los regalos secretos",
+  "cuentaInvitadoA": "Te han invitado a «{grupo}»",
+  "cuentaYaTengoCuenta": "¿Ya tienes cuenta? Entra",
+  "cuentaNoTengoCuenta": "¿Aún no tienes cuenta? Crea una",
 
   "misGruposSaludo": "Hola, {nickname}",
   "misGruposVacio": "Todavía no tienes grupos vinculados a esta cuenta.\nCrea o únete a uno y quedará guardado aquí.",
   "misGruposOrganizador": "Organizador",
   "misGruposParticipante": "Participante",
   "misGruposCerrarSesion": "Cerrar sesión",
+  "misGruposCrear": "Crear un grupo nuevo",
+  "misGruposUnirse": "Unirme con un código",
 
   "grupoCodigo": "Código: {codigo}",
   "grupoMinimo": "Mínimo: {valor}",

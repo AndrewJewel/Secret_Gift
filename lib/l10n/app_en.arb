@@ -76,6 +76,13 @@
   "cuentaNoCoinciden": "The passwords do not match",
   "cuentaCambiarAEntrar": "Already have an account? Sign in",
   "cuentaCambiarACrear": "No account yet? Create one",
+  "cuentaFraseGancho": "Create your account to discover who sends you the secret gifts",
+  "cuentaInvitadoA": "You've been invited to “{grupo}”",
+  "@cuentaInvitadoA": {
+    "placeholders": { "grupo": { "type": "String" } }
+  },
+  "cuentaYaTengoCuenta": "Already have an account? Sign in",
+  "cuentaNoTengoCuenta": "No account yet? Create one",
 
   "misGruposSaludo": "Hi, {nickname}",
   "@misGruposSaludo": { "placeholders": { "nickname": { "type": "String" } } },
@@ -83,6 +90,8 @@
   "misGruposOrganizador": "Organizer",
   "misGruposParticipante": "Member",
   "misGruposCerrarSesion": "Sign out",
+  "misGruposCrear": "Create a new group",
+  "misGruposUnirse": "Join with a code",
 
   "grupoCodigo": "Code: {codigo}",
   "@grupoCodigo": { "placeholders": { "codigo": { "type": "String" } } },
