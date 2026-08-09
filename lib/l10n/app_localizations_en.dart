@@ -208,7 +208,7 @@ class TextosEn extends Textos {
   String get crearValorMinimoPista => 'e.g. \$50';
 
   @override
-  String get crearFaltanDatos => 'The group name or the master PIN is missing';
+  String get crearFaltanDatos => 'The group name is missing';
 
   @override
   String get crearBoton => 'Create group';

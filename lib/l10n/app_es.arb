@@ -67,7 +67,7 @@
   "crearPinMaestroAyuda": "Lo necesitarás para el sorteo y para editar el grupo. Elígelo tú.",
   "crearValorMinimo": "Valor mínimo del regalo (opcional)",
   "crearValorMinimoPista": "Ej: $50.000 COP",
-  "crearFaltanDatos": "Falta el nombre del grupo o el PIN maestro",
+  "crearFaltanDatos": "Falta el nombre del grupo",
   "crearBoton": "Crear grupo",
   "crearCreando": "Creando...",
   "crearListoTitulo": "¡Grupo creado!",

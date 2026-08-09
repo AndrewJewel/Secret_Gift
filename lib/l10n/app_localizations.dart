@@ -466,7 +466,7 @@ abstract class Textos {
   /// No description provided for @crearFaltanDatos.
   ///
   /// In en, this message translates to:
-  /// **'The group name or the master PIN is missing'**
+  /// **'The group name is missing'**
   String get crearFaltanDatos;
 
   /// No description provided for @crearBoton.

@@ -209,7 +209,7 @@ class TextosEs extends Textos {
   String get crearValorMinimoPista => 'Ej: \$50.000 COP';
 
   @override
-  String get crearFaltanDatos => 'Falta el nombre del grupo o el PIN maestro';
+  String get crearFaltanDatos => 'Falta el nombre del grupo';
 
   @override
   String get crearBoton => 'Crear grupo';

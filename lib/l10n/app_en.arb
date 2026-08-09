@@ -69,7 +69,7 @@
   "crearPinMaestroAyuda": "You will need it to draw names and to edit the group. You choose it.",
   "crearValorMinimo": "Minimum gift value (optional)",
   "crearValorMinimoPista": "e.g. $50",
-  "crearFaltanDatos": "The group name or the master PIN is missing",
+  "crearFaltanDatos": "The group name is missing",
   "crearBoton": "Create group",
   "crearCreando": "Creating...",
   "crearListoTitulo": "Group created!",
