@@ -345,12 +345,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       MaterialPageRoute(
         builder: (_) => PantallaEditarGrupo(
           codigo: widget.codigo,
-          // El backend ya no acepta PIN maestro (Tasks 2-4), pero
-          // PantallaEditarGrupo todavía lo declara `required`: se lo quita
-          // la Task 10, que está fuera del alcance de esta tarea. Hasta
-          // entonces se manda vacío; el servidor lo ignora y autoriza por
-          // cuenta igual que aquí.
-          pinMaestro: '',
+          // El backend autoriza por cuenta (Tasks 2-4) y PantallaEditarGrupo
+          // ya no declara `pinMaestro` (Task 10): las credenciales de sesión
+          // se leen dentro de la propia pantalla.
           ocasion: _info.ocasion,
           nombreGrupo: _info.nombreGrupo,
           valorMinimo: _info.valorMinimo,

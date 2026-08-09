@@ -21,7 +21,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   Ocasion _ocasion = Ocasion.amigoSecreto;
   Tematica _tematica = Tematica.ninguna;
   final TextEditingController _nombreGrupoController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
   final TextEditingController _valorMinimoController = TextEditingController();
   bool _creando = false;
 
@@ -31,7 +30,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   @override
   void dispose() {
     _nombreGrupoController.dispose();
-    _pinController.dispose();
     _valorMinimoController.dispose();
     super.dispose();
   }
@@ -44,10 +42,9 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   Future<void> _crearGrupo() async {
     final t = Textos.of(context);
     final nombreGrupo = _nombreGrupoController.text.trim();
-    final pin = _pinController.text.trim();
     final valorMinimo = _valorMinimoController.text.trim();
 
-    if (nombreGrupo.isEmpty || pin.isEmpty) {
+    if (nombreGrupo.isEmpty) {
       _avisar('⚠️ ${t.crearFaltanDatos}');
       return;
     }
@@ -55,17 +52,20 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     setState(() => _creando = true);
     try {
       final sesion = await leerSesion();
+      if (sesion == null) {
+        _avisar('⚠️ ${t.errorSesionInvalida}');
+        return;
+      }
       final datos = await llamarFuncion('crearGrupo', {
         'ocasion': _ocasion.id,
         'nombreGrupo': nombreGrupo,
-        'pinMaestro': pin,
         'valorMinimo': valorMinimo,
         'tematica': _tematica.id,
         // Arranca con las reglas propias de la temática; el organizador
         // las puede reescribir después desde "Editar grupo".
         'reglas': _tematica.reglasPorDefecto(t),
-        if (sesion != null) 'nickname': sesion.nickname,
-        if (sesion != null) 'password': sesion.password,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
       final codigo = datos['codigo'] as String;
       if (!mounted) return;
@@ -176,16 +176,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
                   hintText: t.crearNombreGrupoPista,
                   icon: Icons.label_outline,
                   textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                GlassTextField(
-                  color: _color,
-                  controller: _pinController,
-                  labelText: t.crearPinMaestro,
-                  helperText: t.crearPinMaestroAyuda,
-                  icon: Icons.lock_outline,
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
                 ),
                 const SizedBox(height: 16),
                 GlassTextField(
