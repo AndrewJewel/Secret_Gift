@@ -16,7 +16,7 @@
 - **Todo texto de interfaz pasa por ARB**, en `lib/l10n/app_en.arb` y `lib/l10n/app_es.arb`. **Los dos ficheros deben tener exactamente el mismo conjunto de claves.** La Task 1 añade un test que lo comprueba; a partir de ahí, romperlo hace fallar `flutter test`.
 - **`app_en.arb` es la plantilla** (`l10n.yaml`). La clase generada se llama `Textos`, se accede con `Textos.of(context)`, y `flutter gen-l10n` corre solo durante `flutter build` / `flutter run` — **no** durante `flutter test`. Si un test necesita una clave nueva, hay que correr `flutter gen-l10n` a mano antes.
 - **Inglés es el idioma por defecto.**
-- **La barra es `flutter analyze` sin una sola advertencia.** El proyecto está así hoy y debe seguir al final de CADA tarea.
+- **La barra es `flutter analyze` sin una sola advertencia, al final de CADA tarea.** El proyecto está así hoy y no debe dejar de estarlo ni entre tareas. Por eso las claves ARB nuevas se añaden al principio (Task 1) y las muertas se borran al final (Task 12): borrarlas antes que a sus consumidores dejaría el árbol roto durante diez tareas, y un `analyze` que ya falla deja de avisar de los errores que sí importan.
 - **Comentarios en español**, explicando el *porqué*, como el resto del código.
 - **`SharedPreferences` nunca debe tumbar la app**: todo acceso va envuelto en `try/catch`, como en `lib/sesion.dart`.
 - **Estilo:** reutilizar los widgets de `lib/glass.dart` (`GlassCard`, `GlassAppBar`, `GlassTextField`, `GlassButton`, `GlassOutlineButton`), el fondo `FondoNeutro` (`lib/tematica.dart`), el tema `temaGlass(colorNeutro)` (`lib/ocasion.dart`) y el color `colorNeutro` (`lib/glass.dart`).
@@ -44,9 +44,11 @@ git checkout -b cuenta-como-identidad
 
 ---
 
-### Task 1: Claves de texto y el test que impide que los ARB se desincronicen
+### Task 1: Claves de texto nuevas, y el test que impide que los ARB se desincronicen
 
-Todas las claves ARB de una vez. Van primero porque casi todas las tareas siguientes las necesitan, y hacerlas a trozos rompería la paridad entre idiomas una y otra vez.
+Las claves que **nacen**, todas de una vez, porque casi todas las tareas siguientes las necesitan y hacerlas a trozos rompería la paridad entre idiomas una y otra vez.
+
+**Las 16 claves muertas NO se borran aquí.** Se borran en la Task 12, cuando ya no las usa ningún fichero. Borrarlas ahora dejaría `flutter analyze` roto durante diez tareas, y un `analyze` que ya falla deja de avisar de los errores que sí importan.
 
 **Files:**
 - Modify: `lib/l10n/app_en.arb`
@@ -87,30 +89,20 @@ void main() {
     expect(es.difference(en), isEmpty, reason: 'claves que solo están en español');
   });
 
-  test('no quedan claves de los PIN por grupo', () {
+  test('las claves nuevas del PIN global existen en los dos idiomas', () {
     final en = _clavesDe('lib/l10n/app_en.arb');
-    // Se borran en esta tarea porque los PIN por participante y el PIN
-    // maestro desaparecen. Si alguna reaparece, es que se resucitó código
-    // muerto.
-    for (final muerta in const [
-      'crearPinMaestro',
-      'crearPinMaestroAyuda',
-      'registroPin',
-      'registroPinAyuda',
-      'registroTuPin',
-      'organizadorPinTexto',
-      'organizadorPinCampo',
-      'organizadorEntrar',
-      'organizadorSalir',
-      'organizadorActivado',
-      'organizadorDesactivado',
-      'loginTitulo',
-      'loginHola',
-      'chatQuienEres',
-      'chatQuienEresTexto',
-      'chatCambiarPersona',
+    final es = _clavesDe('lib/l10n/app_es.arb');
+    for (final nueva in const [
+      'cuentaPin',
+      'configuracion',
+      'cambiarPinTitulo',
+      'verAmigoPinTitulo',
+      'editarEliminarEscribeNombre',
+      'errorPinFormato',
+      'errorGrupoYaSorteado',
     ]) {
-      expect(en.contains(muerta), isFalse, reason: '$muerta debería estar borrada');
+      expect(en.contains(nueva), isTrue, reason: 'falta $nueva en inglés');
+      expect(es.contains(nueva), isTrue, reason: 'falta $nueva en español');
     }
   });
 }
@@ -119,15 +111,9 @@ void main() {
 - [ ] **Step 2: Correr el test para verificar que falla**
 
 Run: `flutter test test/arb_paridad_test.dart`
-Expected: FAIL en el segundo test — `crearPinMaestro debería estar borrada`. El primero debería pasar ya (hoy los ARB están sincronizados).
+Expected: FAIL en el segundo test — `falta cuentaPin en inglés`. El primero debería pasar ya (hoy los ARB están sincronizados).
 
-- [ ] **Step 3: Borrar las 16 claves muertas de los dos ARB**
-
-En `lib/l10n/app_en.arb` y `lib/l10n/app_es.arb`, borrar estas claves **y sus bloques `@clave` de metadatos si los tienen**:
-
-`crearPinMaestro`, `crearPinMaestroAyuda`, `registroPin`, `registroPinAyuda`, `registroTuPin`, `organizadorPinTexto`, `organizadorPinCampo`, `organizadorEntrar`, `organizadorSalir`, `organizadorActivado`, `organizadorDesactivado`, `loginTitulo`, `loginHola`, `chatQuienEres`, `chatQuienEresTexto`, `chatCambiarPersona`.
-
-- [ ] **Step 4: Reescribir las dos claves que mencionan el PIN**
+- [ ] **Step 3: Reescribir las dos claves que mencionan el PIN**
 
 El PIN sale del formulario de alta, así que estos textos mienten. En `app_en.arb`:
 
@@ -143,7 +129,7 @@ En `app_es.arb`:
   "registroFaltaPersonaje": "Falta el personaje",
 ```
 
-- [ ] **Step 5: Añadir las claves nuevas a `app_en.arb`**
+- [ ] **Step 4: Añadir las claves nuevas a `app_en.arb`**
 
 Insertar en `lib/l10n/app_en.arb` (el sitio dentro del fichero da igual; agruparlas junto a sus vecinas temáticas lo hace legible):
 
@@ -177,7 +163,7 @@ Insertar en `lib/l10n/app_en.arb` (el sitio dentro del fichero da igual; agrupar
   "errorGrupoYaSorteado": "The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact."
 ```
 
-- [ ] **Step 6: Añadir las mismas claves a `app_es.arb`**
+- [ ] **Step 5: Añadir las mismas claves a `app_es.arb`**
 
 ```json
   "cuentaPin": "PIN de 4 dígitos",
@@ -206,7 +192,7 @@ Insertar en `lib/l10n/app_en.arb` (el sitio dentro del fichero da igual; agrupar
   "errorGrupoYaSorteado": "El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera."
 ```
 
-- [ ] **Step 7: Añadir los `case` nuevos al switch de errores**
+- [ ] **Step 6: Añadir los `case` nuevos al switch de errores**
 
 En `lib/funciones.dart`, dentro de `MensajeLocalizado.texto()` (línea 35), añadir junto a los demás:
 
@@ -217,29 +203,27 @@ En `lib/funciones.dart`, dentro de `MensajeLocalizado.texto()` (línea 35), aña
         'grupo_ya_sorteado' => t.errorGrupoYaSorteado,
 ```
 
-- [ ] **Step 8: Regenerar la clase de textos**
+- [ ] **Step 7: Regenerar la clase de textos**
 
 Run: `flutter gen-l10n`
 Expected: termina sin error. `flutter test` NO regenera, así que sin este paso las claves nuevas no existen para el compilador.
 
-- [ ] **Step 9: Correr el test**
+- [ ] **Step 8: Correr los tests y el analizador**
 
-Run: `flutter test test/arb_paridad_test.dart`
-Expected: PASS los dos tests.
+```bash
+flutter test
+flutter analyze
+```
+Expected: **todos** los tests en verde y `No issues found!`. Esta tarea solo añade claves y reescribe dos textos: nada puede romperse. Si `analyze` se queja, es de algo que ya venía roto.
 
-- [ ] **Step 10: Verificar que nada más se rompió**
-
-Run: `flutter analyze`
-Expected: fallará con errores en `lib/pantalla_crear_grupo.dart`, `lib/pantalla_registro.dart`, `lib/pantalla_login.dart`, `lib/hoja_identidad.dart` y `lib/pantalla_chat.dart`, porque usan las claves borradas. **Es lo esperado en esta tarea**: las tareas 5 a 11 los arreglan. Anotar la lista de errores; sirve de guía de lo que falta.
-
-- [ ] **Step 11: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add lib/l10n/app_en.arb lib/l10n/app_es.arb lib/funciones.dart test/arb_paridad_test.dart
-git commit -m "Textos: fuera los PIN por grupo, dentro el PIN global
+git commit -m "Textos del PIN global, y un test de paridad entre los ARB
 
-Y un test que compara los conjuntos de claves de los dos ARB. Hasta hoy
-esa paridad se comprobaba a mano en cada sesión."
+Hasta hoy que los dos idiomas llevaran las mismas claves se comprobaba a
+mano en cada sesión."
 ```
 
 ---
@@ -1074,7 +1058,7 @@ Importar `mi_vinculo.dart`.
 flutter analyze
 flutter test
 ```
-Expected: `analyze` sigue con los errores heredados de la Task 1 en `pantalla_registro.dart`, `pantalla_login.dart`, `hoja_identidad.dart`, `pantalla_chat.dart` y `pantalla_crear_grupo.dart`. **Ningún error nuevo en `mi_vinculo.dart`, `pantalla_mis_grupos.dart` ni `pantalla_raiz.dart`.** Los tests de `mi_vinculo` pasan.
+Expected: `No issues found!` y todos los tests en verde. `PantallaRegistro` gana un parámetro **opcional**, así que quienes la construyen sin pasarlo siguen compilando.
 
 - [ ] **Step 9: Commit**
 
@@ -1252,7 +1236,7 @@ En el botón del chat (682), quitar `pinMaestro: _pinMaestro`.
 ```bash
 flutter analyze
 ```
-Expected: sin errores en `pantalla_registro.dart`. Siguen los de `pantalla_login.dart`, `hoja_identidad.dart`, `pantalla_chat.dart`, `pantalla_crear_grupo.dart` y `pantalla_editar_grupo.dart`, que se arreglan en las Tasks 8, 10 y 11.
+Expected: `No issues found!`. Ojo: `pantalla_login.dart` sigue existiendo y sigue usando `registroTuPin`, que **todavía no se ha borrado** — por eso las claves muertas se borran al final. Si `analyze` se queja de algo, es un error real de esta tarea.
 
 - [ ] **Step 8: Commit**
 
@@ -1384,7 +1368,7 @@ Listaba a todos los participantes para que eligieras tu nombre y tecleases tu PI
 ```bash
 flutter analyze
 ```
-Expected: sin errores en `pantalla_registro.dart` ni referencias a `pantalla_login.dart`. Siguen los de `hoja_identidad.dart`, `pantalla_chat.dart`, `pantalla_crear_grupo.dart` y `pantalla_editar_grupo.dart`.
+Expected: `No issues found!` y ninguna referencia a `pantalla_login.dart` en `lib/`.
 
 - [ ] **Step 5: Commit**
 
@@ -1843,7 +1827,7 @@ En `lib/pantalla_crear_grupo.dart`: borrar `_pinController` y su `dispose()`, bo
 flutter test test/eliminar_grupo_test.dart
 flutter analyze
 ```
-Expected: el test pasa. `analyze` ya solo se queja de `hoja_identidad.dart` y `pantalla_chat.dart`.
+Expected: el test pasa y `analyze` dice `No issues found!`.
 
 - [ ] **Step 7: Commit**
 
@@ -1982,7 +1966,7 @@ Expected: **sin ninguna coincidencia**.
 flutter analyze
 flutter test
 ```
-Expected: `No issues found!` y **todos** los tests en verde. Es la primera vez desde la Task 1 que el proyecto vuelve a estar limpio.
+Expected: `No issues found!` y **todos** los tests en verde. A partir de aquí, ningún fichero de `lib/` usa ya las 16 claves ARB muertas: la Task 12 puede borrarlas.
 
 - [ ] **Step 9: Commit**
 
@@ -1998,9 +1982,11 @@ un PIN para saber quién eres."
 
 ---
 
-### Task 12: Reglas, limpieza de comentarios, script de integración y verificación final
+### Task 12: Borrar las claves muertas, reglas, script de integración y verificación final
 
 **Files:**
+- Modify: `lib/l10n/app_en.arb`, `lib/l10n/app_es.arb` — borrar las 16 claves muertas
+- Modify: `test/arb_paridad_test.dart` — añadir el test que impide que resuciten
 - Modify: `firestore.rules` — los comentarios describen PINs que ya no existen
 - Modify: `functions/index.js:23-28, 106-109` — comentarios de cabecera
 - Create: `scripts/probar.mjs`
@@ -2010,7 +1996,59 @@ un PIN para saber quién eres."
 - Consumes: todas las funciones desplegadas.
 - Produces: `node scripts/probar.mjs` como prueba de integración contra producción.
 
-- [ ] **Step 1: Corregir los comentarios de `firestore.rules`**
+- [ ] **Step 1: Escribir el test que falla**
+
+Añadir a `test/arb_paridad_test.dart`, dentro de `main()`:
+
+```dart
+  test('no quedan claves de los PIN por grupo', () {
+    final en = _clavesDe('lib/l10n/app_en.arb');
+    // Los PIN por participante y el PIN maestro desaparecieron. Si alguna
+    // de estas reaparece, es que se resucitó código muerto con ella.
+    for (final muerta in const [
+      'crearPinMaestro',
+      'crearPinMaestroAyuda',
+      'registroPin',
+      'registroPinAyuda',
+      'registroTuPin',
+      'organizadorPinTexto',
+      'organizadorPinCampo',
+      'organizadorEntrar',
+      'organizadorSalir',
+      'organizadorActivado',
+      'organizadorDesactivado',
+      'loginTitulo',
+      'loginHola',
+      'chatQuienEres',
+      'chatQuienEresTexto',
+      'chatCambiarPersona',
+    ]) {
+      expect(en.contains(muerta), isFalse, reason: '$muerta debería estar borrada');
+    }
+  });
+```
+
+- [ ] **Step 2: Correr el test para verificar que falla**
+
+Run: `flutter test test/arb_paridad_test.dart`
+Expected: FAIL — `crearPinMaestro debería estar borrada`.
+
+- [ ] **Step 3: Borrar las 16 claves muertas de los dos ARB**
+
+En `lib/l10n/app_en.arb` y `lib/l10n/app_es.arb`, borrar estas claves **y sus bloques `@clave` de metadatos si los tienen**:
+
+`crearPinMaestro`, `crearPinMaestroAyuda`, `registroPin`, `registroPinAyuda`, `registroTuPin`, `organizadorPinTexto`, `organizadorPinCampo`, `organizadorEntrar`, `organizadorSalir`, `organizadorActivado`, `organizadorDesactivado`, `loginTitulo`, `loginHola`, `chatQuienEres`, `chatQuienEresTexto`, `chatCambiarPersona`.
+
+- [ ] **Step 4: Regenerar, y comprobar que no las usaba nadie**
+
+```bash
+flutter gen-l10n
+flutter test test/arb_paridad_test.dart
+flutter analyze
+```
+Expected: los tres tests de paridad pasan y `analyze` dice `No issues found!`. **Si `analyze` falla, es que queda código vivo usando una clave que se acaba de borrar** — arreglar ese código, no devolver la clave.
+
+- [ ] **Step 5: Corregir los comentarios de `firestore.rules`**
 
 Las reglas en sí **no cambian** (todo sigue cerrado al cliente salvo las lecturas públicas), pero sus comentarios describen campos que ya no existen. Sustituir los dos bloques equivocados:
 
@@ -2029,7 +2067,7 @@ Las reglas en sí **no cambian** (todo sigue cerrado al cliente salvo las lectur
 
 Y en el bloque de `usuarios/{nickname}`, añadir que ahora guarda también el `pinHash` y el mapa de grupos.
 
-- [ ] **Step 2: Corregir los comentarios de `functions/index.js`**
+- [ ] **Step 6: Corregir los comentarios de `functions/index.js`**
 
 En la cabecera de avatares (línea 26-28), sustituir *"el PIN del participante es la autorización"* por *"la cuenta es la autorización"*.
 
@@ -2045,7 +2083,7 @@ En la cabecera de cuentas (línea 106-109), sustituir el párrafo entero por:
 // en texto plano. Eran de cuando no existían las cuentas.
 ```
 
-- [ ] **Step 3: Crear el script de integración**
+- [ ] **Step 7: Crear el script de integración**
 
 Crear `scripts/probar.mjs`. **Node 20 trae `fetch` global, así que no hace falta ninguna dependencia.**
 
@@ -2184,20 +2222,20 @@ main().catch((e) => {
 });
 ```
 
-- [ ] **Step 4: Correr la prueba de integración**
+- [ ] **Step 8: Correr la prueba de integración**
 
 Run: `node scripts/probar.mjs`
 Expected: **Todo en verde**, salida 0. Si algo falla, arreglar el backend antes de seguir — esta prueba es la única verificación real que tiene el servidor.
 
-- [ ] **Step 5: Corregir la referencia muerta del spec**
+- [ ] **Step 9: Corregir la referencia muerta del spec**
 
 En `docs/superpowers/specs/2026-08-09-cuenta-como-identidad-design.md`, en la sección "Verificación", sustituir *"Reescribir `scratchpad/probar.ps1`"* por *"`node scripts/probar.mjs`, la prueba de integración contra producción. El `scratchpad/probar.ps1` que mencionaban las sesiones anteriores nunca estuvo en el repo y se perdió; el nuevo vive trackeado."*
 
-- [ ] **Step 6: Borrar los datos de prueba viejos**
+- [ ] **Step 10: Borrar los datos de prueba viejos**
 
 En la consola de Firebase → Firestore, borrar las colecciones `grupos` y `usuarios` enteras. **No hay migración**: el modelo viejo (array `grupos`, PINs en claro) es incompatible y no hay datos reales que preservar.
 
-- [ ] **Step 7: Verificación final**
+- [ ] **Step 11: Verificación final**
 
 ```bash
 flutter analyze
@@ -2206,7 +2244,7 @@ grep -rn "pinMaestro\|IdentidadGrupo\|verificarOrganizador\|pantalla_login" lib/
 ```
 Expected: `No issues found!`, todos los tests en verde, y el `grep` **sin ninguna coincidencia**.
 
-- [ ] **Step 8: Desplegar y probar en dispositivo**
+- [ ] **Step 12: Desplegar y probar en dispositivo**
 
 ```bash
 flutter build web --release
@@ -2223,11 +2261,11 @@ Con los datos del sitio borrados o en incógnito **antes de cada camino** (el se
 6. Sortear → intentar sacar a alguien → sale el aviso de que hay que reemplazarle.
 7. Editar grupo → Eliminar → el botón rojo no se activa hasta escribir el nombre exacto.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
-git add firestore.rules functions/index.js scripts/probar.mjs docs/superpowers/specs/2026-08-09-cuenta-como-identidad-design.md
-git commit -m "Prueba de integración en el repo, y comentarios al día
+git add lib/l10n/ test/arb_paridad_test.dart firestore.rules functions/index.js scripts/probar.mjs docs/superpowers/specs/2026-08-09-cuenta-como-identidad-design.md
+git commit -m "Fuera las claves muertas, prueba de integración y comentarios al día
 
 El probar.ps1 de las sesiones anteriores vivía en un scratchpad sin
 trackear y se perdió. Este vive en scripts/ y cubre el bug que originó
