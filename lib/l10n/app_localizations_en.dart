@@ -224,6 +224,21 @@ class TextosEn extends Textos {
   String get cuentaCambiarACrear => 'No account yet? Create one';
 
   @override
+  String get cuentaFraseGancho =>
+      'Create your account to discover who sends you the secret gifts';
+
+  @override
+  String cuentaInvitadoA(String grupo) {
+    return 'You\'ve been invited to “$grupo”';
+  }
+
+  @override
+  String get cuentaYaTengoCuenta => 'Already have an account? Sign in';
+
+  @override
+  String get cuentaNoTengoCuenta => 'No account yet? Create one';
+
+  @override
   String misGruposSaludo(String nickname) {
     return 'Hi, $nickname';
   }
@@ -240,6 +255,12 @@ class TextosEn extends Textos {
 
   @override
   String get misGruposCerrarSesion => 'Sign out';
+
+  @override
+  String get misGruposCrear => 'Create a new group';
+
+  @override
+  String get misGruposUnirse => 'Join with a code';
 
   @override
   String grupoCodigo(String codigo) {

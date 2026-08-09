@@ -499,6 +499,30 @@ abstract class Textos {
   /// **'No account yet? Create one'**
   String get cuentaCambiarACrear;
 
+  /// No description provided for @cuentaFraseGancho.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account to discover who sends you the secret gifts'**
+  String get cuentaFraseGancho;
+
+  /// No description provided for @cuentaInvitadoA.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been invited to “{grupo}”'**
+  String cuentaInvitadoA(String grupo);
+
+  /// No description provided for @cuentaYaTengoCuenta.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get cuentaYaTengoCuenta;
+
+  /// No description provided for @cuentaNoTengoCuenta.
+  ///
+  /// In en, this message translates to:
+  /// **'No account yet? Create one'**
+  String get cuentaNoTengoCuenta;
+
   /// No description provided for @misGruposSaludo.
   ///
   /// In en, this message translates to:
@@ -528,6 +552,18 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Sign out'**
   String get misGruposCerrarSesion;
+
+  /// No description provided for @misGruposCrear.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new group'**
+  String get misGruposCrear;
+
+  /// No description provided for @misGruposUnirse.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with a code'**
+  String get misGruposUnirse;
 
   /// No description provided for @grupoCodigo.
   ///

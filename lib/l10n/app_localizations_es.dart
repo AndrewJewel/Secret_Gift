@@ -225,6 +225,21 @@ class TextosEs extends Textos {
   String get cuentaCambiarACrear => '¿No tienes cuenta? Créala';
 
   @override
+  String get cuentaFraseGancho =>
+      'Crea tu cuenta para descubrir quién te envía los regalos secretos';
+
+  @override
+  String cuentaInvitadoA(String grupo) {
+    return 'Te han invitado a «$grupo»';
+  }
+
+  @override
+  String get cuentaYaTengoCuenta => '¿Ya tienes cuenta? Entra';
+
+  @override
+  String get cuentaNoTengoCuenta => '¿Aún no tienes cuenta? Crea una';
+
+  @override
   String misGruposSaludo(String nickname) {
     return 'Hola, $nickname';
   }
@@ -241,6 +256,12 @@ class TextosEs extends Textos {
 
   @override
   String get misGruposCerrarSesion => 'Cerrar sesión';
+
+  @override
+  String get misGruposCrear => 'Crear un grupo nuevo';
+
+  @override
+  String get misGruposUnirse => 'Unirme con un código';
 
   @override
   String grupoCodigo(String codigo) {
