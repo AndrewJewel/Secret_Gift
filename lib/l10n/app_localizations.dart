@@ -151,6 +151,12 @@ abstract class Textos {
   /// **'One moment...'**
   String get unMomento;
 
+  /// No description provided for @reintentar.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get reintentar;
+
   /// No description provided for @idioma.
   ///
   /// In en, this message translates to:

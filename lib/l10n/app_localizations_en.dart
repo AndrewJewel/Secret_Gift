@@ -36,6 +36,9 @@ class TextosEn extends Textos {
   String get unMomento => 'One moment...';
 
   @override
+  String get reintentar => 'Try again';
+
+  @override
   String get idioma => 'Language';
 
   @override
