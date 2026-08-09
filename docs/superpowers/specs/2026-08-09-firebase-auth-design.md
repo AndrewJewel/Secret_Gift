@@ -1,9 +1,11 @@
 # Diseño — Firebase Auth como identidad
 
 **Fecha:** 2026-08-09
-**Estado:** aprobado, pendiente de plan de implementación
-**Rama prevista:** propia, **después** de fusionar `cuenta-como-identidad` y
-**después** de los cuatro arreglos de seguridad baratos (ver §Orden).
+**Estado:** aprobado, con plan de implementación en
+`docs/superpowers/plans/2026-08-09-firebase-auth.md`
+**Rama prevista:** propia. Sus dos requisitos previos se cumplieron el
+2026-08-09: `cuenta-como-identidad` fusionada en `main` y los cuatro
+arreglos baratos de seguridad hechos, desplegados y probados.
 
 ## Qué se cambia y por qué
 

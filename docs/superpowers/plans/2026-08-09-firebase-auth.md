@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-09-firebase-auth-design.md`
 
-**Rama:** una nueva a partir de `main`, **después** de fusionar `flujo-cuenta`.
+**Rama:** una nueva a partir de `main`. **Los dos requisitos previos ya están cumplidos** (2026-08-09): la rama `cuenta-como-identidad` está fusionada en `main` (commit de fusión `19c23a2`) y los cuatro arreglos baratos de seguridad están hechos, desplegados y probados.
 
 ## Global Constraints
 
@@ -1710,28 +1710,7 @@ Y en cada caso de prueba, quitar `nickname`/`password` de los datos y pasar el t
 
 - [ ] **Step 5: Añadir el comprobador de fallos esperados y los casos nuevos**
 
-El script tiene hoy `ok(titulo, condicion)`. Hace falta su gemelo, porque los casos nuevos comprueban que algo **se rechaza** — y una prueba que solo sabe afirmar no puede comprobar un rechazo:
-
-```js
-// Falla de dos maneras distintas, y las dos importan: si la acción NO
-// lanza, la protección no existe; si lanza con otra clave, existe pero por
-// el motivo equivocado. Un `try/catch` que solo mire "hubo error" daría
-// verde con un fallo de red.
-async function debeFallar(titulo, claveEsperada, accion) {
-  try {
-    await accion();
-  } catch (e) {
-    ok(`${titulo} (${claveEsperada})`, e.clave === claveEsperada,
-        `esperaba clave "${claveEsperada}", llegó "${e.clave}": ${e.message}`);
-    return;
-  }
-  ok(`${titulo} (${claveEsperada})`, false, "no lanzó ningún error");
-}
-```
-
-Si el `ok(...)` que ya existe no acepta un tercer argumento con el detalle, ampliarlo para que lo imprima cuando la condición sea falsa. Sin ese detalle, un fallo de esta batería no dice qué pasó.
-
-Y los tres casos que antes no podían existir:
+El script **ya tiene** `ok(titulo, condicion, detalle)` y `debeFallar(titulo, claveEsperada, fn)`. No hay que escribirlos: se reutilizan tal cual. Estos son los tres casos que antes no podían existir:
 
 ```js
 // 1. Sin token: TODAS las funciones tienen que rechazar. Es la comprobación
@@ -1846,7 +1825,7 @@ Usar la skill `superpowers:finishing-a-development-branch`.
 
 - **Google y cualquier otro proveedor.** Decisión consciente del spec.
 - **App Check y limitación de peticiones** (hallazgo A4 de la auditoría). Sigue abierto.
-- **Los cuatro arreglos baratos de seguridad** (entrar tras el sorteo, sorteo repetible, contador del PIN sin transacción, `Math.random()`). Van **antes** de esta rama, en su propio trabajo.
+- **Los cuatro arreglos baratos de seguridad** (entrar tras el sorteo, sorteo repetible, contador del PIN sin transacción, `Math.random()`). **Hechos el 2026-08-09**, antes de esta rama, con sus casos en `probar.mjs`.
 - **El idioma en la cuenta** — tiene su propio spec (`2026-08-09-idioma-en-la-cuenta-design.md`) y su propia rama.
 - **Enseñar el nombre real al organizador.** El dato queda disponible; exponerlo no es parte de esto.
 - **P3 (chat sin máscaras), P4 (reemplazar participante), P1 (invitaciones QR).**
