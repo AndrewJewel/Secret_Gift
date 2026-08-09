@@ -162,6 +162,10 @@ class TextosEn extends Textos {
       'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.';
 
   @override
+  String get errorGrupoCerrado =>
+      'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.';
+
+  @override
   String get errorPinBloqueado =>
       'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.';
 

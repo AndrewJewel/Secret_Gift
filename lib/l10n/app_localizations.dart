@@ -379,6 +379,12 @@ abstract class Textos {
   /// **'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.'**
   String get errorGrupoYaSorteado;
 
+  /// Someone tried to join a group whose draw already ran
+  ///
+  /// In en, this message translates to:
+  /// **'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.'**
+  String get errorGrupoCerrado;
+
   /// No description provided for @errorPinBloqueado.
   ///
   /// In en, this message translates to:

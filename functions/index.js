@@ -409,6 +409,26 @@ exports.agregarParticipante = onCall(async (request) => {
     throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
   }
 
+  // Tras el sorteo no entra nadie más. Quien se apuntara después quedaría
+  // FUERA de la cadena: sin amigo asignado y sin nadie que le regale a
+  // él. No es un error que se vea al momento —el grupo parece normal— sino
+  // el día de la entrega, cuando esa persona se queda sin regalo.
+  //
+  // Es la otra mitad de la regla que ya cumple `borrarParticipante`: una
+  // vez sorteado, la lista no cambia. Si alguien no puede seguir, se le
+  // reemplaza conservando su plaza en la cadena.
+  //
+  // Clave propia y no `grupo_ya_sorteado`: ese texto dice "a esta persona
+  // no se la puede sacar", que es lo que necesita `borrarParticipante` y
+  // no tiene ningún sentido para quien acaba de escanear un QR.
+  if (grupoSnap.data().sorteado === true) {
+    throw new HttpsError(
+        "failed-precondition",
+        "Este grupo ya sorteó: no se puede entrar.",
+        {clave: "grupo_cerrado"},
+    );
+  }
+
   // Se verifica antes de subir el avatar: si las credenciales no valen,
   // no queda un avatar huérfano en Storage ni un participante inscrito.
   const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);

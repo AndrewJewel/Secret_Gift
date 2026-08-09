@@ -51,6 +51,7 @@
   "errorNoEstasEnElGrupo": "Todavía no estás inscrito en este grupo",
   "errorYaEstasEnElGrupo": "Ya tienes una plaza en este grupo",
   "errorGrupoYaSorteado": "El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera.",
+  "errorGrupoCerrado": "El sorteo ya se hizo, así que este grupo está cerrado a gente nueva. Pídele al organizador que te dé el sitio de alguien.",
   "errorPinBloqueado": "Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.",
 
   "inicioSubtitulo": "Gestión de grupos",
