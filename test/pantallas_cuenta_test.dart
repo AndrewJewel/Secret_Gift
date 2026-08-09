@@ -35,7 +35,8 @@ void main() {
         findsNothing);
   });
 
-  testWidgets('tiene los tres campos y la casilla de idioma', (tester) async {
+  testWidgets('tiene los campos de cuenta, el PIN y la casilla de idioma',
+      (tester) async {
     await tester.pumpWidget(_envoltorio(PantallaCrearCuenta(alEntrar: _sinNavegar)));
     await tester.pumpAndSettle();
     expect(find.text('Nickname'), findsOneWidget);
@@ -45,9 +46,11 @@ void main() {
     // viewport de prueba. El ListView es de slivers: los widgets fuera de
     // la vista (más allá del cacheExtent) ni siquiera se construyen, así
     // que hace falta el gesto de scroll -no basta con pumpAndSettle- para
-    // que "Confirm password" llegue a existir en el árbol.
+    // que lleguen a existir en el árbol.
     await tester.drag(find.byType(ListView), const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(find.text('Confirm password'), findsOneWidget);
+    expect(find.text('4-digit PIN'), findsOneWidget);
+    expect(find.text('Confirm PIN'), findsOneWidget);
   });
 }

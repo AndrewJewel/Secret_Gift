@@ -18,9 +18,11 @@ Future<ResultadoAcceso> entrarConCuenta({
   required String nickname,
   required String password,
   required bool registrando,
+  String? pin,
 }) async {
   if (registrando) {
-    await llamarFuncion('registrarCuenta', {'nickname': nickname, 'password': password});
+    await llamarFuncion('registrarCuenta',
+        {'nickname': nickname, 'password': password, 'pin': pin ?? ''});
   }
   final r = await llamarFuncion(
       'iniciarSesionCuenta', {'nickname': nickname, 'password': password});

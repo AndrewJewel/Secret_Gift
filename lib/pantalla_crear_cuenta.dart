@@ -14,6 +14,9 @@ import 'tematica.dart';
 final RegExp _regexPassword =
     RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
 
+/// Misma exigencia que valida el servidor: 4 dígitos exactos.
+final RegExp _regexPin = RegExp(r'^\d{4}$');
+
 /// Qué hacer cuando la cuenta ya está lista. La pantalla no decide el
 /// destino: se lo pasa el portero, que es quien sabe si hay invitación
 /// pendiente. Así esta pantalla se prueba sin navegación.
@@ -39,6 +42,8 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
   final _nickname = TextEditingController();
   final _password = TextEditingController();
   final _confirmar = TextEditingController();
+  final _pin = TextEditingController();
+  final _confirmarPin = TextEditingController();
   bool _cargando = false;
   bool _verPassword = false;
 
@@ -47,6 +52,8 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
     _nickname.dispose();
     _password.dispose();
     _confirmar.dispose();
+    _pin.dispose();
+    _confirmarPin.dispose();
     super.dispose();
   }
 
@@ -72,11 +79,22 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
       _avisar('⚠️ ${t.cuentaNoCoinciden}');
       return;
     }
+    if (!_regexPin.hasMatch(_pin.text.trim())) {
+      _avisar('⚠️ ${t.errorPinFormato}');
+      return;
+    }
+    if (_pin.text.trim() != _confirmarPin.text.trim()) {
+      _avisar('⚠️ ${t.cuentaPinNoCoinciden}');
+      return;
+    }
 
     setState(() => _cargando = true);
     try {
       final r = await entrarConCuenta(
-          nickname: nickname, password: password, registrando: true);
+          nickname: nickname,
+          password: password,
+          registrando: true,
+          pin: _pin.text.trim());
       if (!mounted) return;
       await widget.alEntrar(context, r);
     } on FuncionError catch (e) {
@@ -141,6 +159,22 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                     labelText: t.cuentaConfirmar,
                     icon: Icons.lock_outline,
                     obscureText: !_verPassword),
+                const SizedBox(height: 16),
+                GlassTextField(
+                  controller: _pin,
+                  labelText: t.cuentaPin,
+                  helperText: t.cuentaPinAyuda,
+                  icon: Icons.pin_outlined,
+                  keyboardType: TextInputType.number,
+                  obscureText: true,
+                ),
+                const SizedBox(height: 16),
+                GlassTextField(
+                    controller: _confirmarPin,
+                    labelText: t.cuentaPinConfirmar,
+                    icon: Icons.pin_outlined,
+                    keyboardType: TextInputType.number,
+                    obscureText: true),
                 const SizedBox(height: 24),
                 GlassButton(
                   color: colorNeutro.shade600,
