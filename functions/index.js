@@ -207,26 +207,40 @@ exports.iniciarSesionCuenta = onCall(async (request) => {
     throw new HttpsError("permission-denied", "Contraseña incorrecta.", {clave: "password_incorrecta"});
   }
 
-  const grupos = datos.grupos || [];
-  const detalles = (await Promise.all(grupos.map(async (g) => {
-    const gs = await grupoRef(g.codigo).get();
+  const grupos = datos.grupos || {};
+  const codigos = Object.keys(grupos);
+  const detalles = (await Promise.all(codigos.map(async (codigo) => {
+    const gs = await grupoRef(codigo).get();
     if (!gs.exists) return null;
     return {
-      codigo: g.codigo,
-      rol: g.rol,
+      codigo,
+      rol: grupos[codigo].rol,
+      // Null hasta que esa persona se da de alta en el grupo. Es lo que
+      // el cliente usa para saber si ofrecerte el formulario de alta.
+      participanteId: grupos[codigo].participanteId || null,
       ocasion: gs.data().ocasion,
       valorMinimo: gs.data().valorMinimo,
       nombreGrupo: gs.data().nombreGrupo || "",
       tematica: gs.data().tematica || "",
+      sorteado: gs.data().sorteado === true,
     };
   }))).filter(Boolean);
 
   // Si algún grupo vinculado ya no existe (su organizador lo eliminó), se
-  // limpia aquí la referencia muerta. Así eliminarGrupo no tiene que
-  // recorrer toda la colección de usuarios buscando a quién avisarle.
-  if (detalles.length !== grupos.length) {
+  // borra aquí su clave del mapa. Así eliminarGrupo no tiene que recorrer
+  // toda la colección de usuarios buscando a quién avisar.
+  //
+  // Se borra con FieldPath y no con la cadena `grupos.${codigo}`: los
+  // códigos llevan guion (ABCD-2345) y una ruta en texto se parsea.
+  if (detalles.length !== codigos.length) {
     const vivos = new Set(detalles.map((d) => d.codigo));
-    await usuarioRef(clave).update({grupos: grupos.filter((g) => vivos.has(g.codigo))});
+    for (const codigo of codigos) {
+      if (vivos.has(codigo)) continue;
+      await usuarioRef(clave).update(
+          new admin.firestore.FieldPath("grupos", codigo),
+          admin.firestore.FieldValue.delete(),
+      );
+    }
   }
 
   return {nickname: datos.nickname, grupos: detalles};
@@ -254,12 +268,40 @@ async function verificarCuentaSiAplica(nickname, password) {
 }
 
 /**
- * Añade el grupo a una cuenta YA verificada. Se llama después de la
- * escritura principal, cuando ya existe el id al que apuntar.
+ * Al crear un grupo. La plaza de participante todavía no existe: quien
+ * crea el grupo se inscribe después, como todo el mundo.
  */
-async function vincularCuenta(clave, entrada) {
+async function vincularComoOrganizador(clave, codigo) {
   if (!clave) return;
-  await usuarioRef(clave).update({grupos: admin.firestore.FieldValue.arrayUnion(entrada)});
+  await usuarioRef(clave).set(
+      {grupos: {[codigo]: {rol: "organizador", participanteId: null}}},
+      {merge: true},
+  );
+}
+
+/**
+ * Al inscribirse en un grupo.
+ *
+ * `merge` hace una fusión PROFUNDA de mapas, así que esto rellena tu
+ * `participanteId` sin crear una entrada nueva. Quien creó el grupo y
+ * luego se apunta conserva su rol de organizador y queda UNA sola
+ * entrada.
+ *
+ * Antes `grupos` era un array y esto se hacía con arrayUnion, que compara
+ * por igualdad profunda: `{codigo, rol}` y `{codigo, participanteId, rol}`
+ * son distintos, así que quedaban los DOS y el grupo salía duplicado en
+ * "Mis grupos". Con el mapa indexado por código, ese bug no se puede ni
+ * escribir.
+ */
+async function vincularComoParticipante(clave, codigo, participanteId) {
+  if (!clave) return;
+  const ref = usuarioRef(clave);
+  // Se lee para saber si ya había rol: si no lo hubiera y no lo
+  // pusiéramos, la entrada quedaría sin rol y "Mis grupos" no sabría si
+  // eres organizador.
+  const snap = await ref.get();
+  const rol = (snap.data()?.grupos || {})[codigo]?.rol || "participante";
+  await ref.set({grupos: {[codigo]: {rol, participanteId}}}, {merge: true});
 }
 
 exports.crearGrupo = onCall(async (request) => {
