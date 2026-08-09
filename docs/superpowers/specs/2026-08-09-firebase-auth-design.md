@@ -111,8 +111,18 @@ sigue teniendo sesión abierta.
 
 Lo que cambia es **cómo se protege cambiarlo**. Hoy basta la contraseña, que
 está en `localStorage` al alcance del mismo atacante. Con Auth, cambiar el
-PIN exige **reautenticarse** (`reauthenticateWithCredential`: teclear la
-contraseña de nuevo, o un Google fresco). Eso cierra el hallazgo que la
+PIN exige **reautenticarse**: `reauthenticateWithCredential` en el cliente
+—teclear la contraseña de nuevo, o un Google fresco—.
+
+**Y el servidor tiene que comprobarlo, o no sirve de nada.** Un atacante con
+el dispositivo tiene un token válido y puede llamar a `cambiarPin`
+directamente, saltándose la pantalla: si la reautenticación vive solo en el
+cliente, es teatro. Así que `cambiarPin` verifica en el servidor que la
+sesión sea **reciente**, leyendo el claim `auth_time` del token y exigiendo
+que no supere unos minutos. Reautenticarse actualiza ese claim; el token
+viejo del atacante no lo tiene.
+
+Esa comprobación del servidor es lo que cierra de verdad el hallazgo que la
 auditoría marcó como el más grave.
 
 ## Qué cambia en el código
@@ -128,8 +138,15 @@ auditoría marcó como el más grave.
   apellido, pin})`**, que el cliente llama una vez tras registrarse. Se
   eligió una llamada explícita en vez de un disparador de Auth por ser más
   simple de probar y no depender de la semántica de triggers entre v1 y v2.
-- **La lista de grupos deja de necesitar una función.** El cliente lee su
-  propio documento directamente (ver reglas).
+- **La lista de grupos sigue necesitando una función**, renombrada a
+  **`misGrupos()`** y autorizada por `uid`. Es lo que hoy hace la segunda
+  mitad de `iniciarSesionCuenta`: resolver cada código contra `grupos/`,
+  descartar los que ya no existen, y **borrar del mapa las claves muertas**.
+  Esa limpieza es una escritura sobre `usuarios/{uid}`, que sigue cerrada al
+  cliente, así que no puede hacerse desde la app por mucho que ahora pueda
+  leer su propio documento.
+- **Lo que el cliente sí gana con las reglas nuevas** es leer su perfil
+  —nombre, apellido, correo— sin gastar una llamada. Los grupos no.
 - **`bcryptjs` se queda, pero solo para el PIN.**
 - **`verificarCuenta` desaparece**; `autorizar` recibe el `uid` ya
   verificado por Firebase.
