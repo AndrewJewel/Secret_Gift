@@ -96,11 +96,10 @@ class TextosEs extends Textos {
   String get errorFaltanDatos => 'Falta información obligatoria.';
 
   @override
-  String get errorFaltanDatosGrupo =>
-      'Falta la ocasión, el nombre del grupo o el PIN maestro.';
+  String get errorFaltanDatosGrupo => 'Falta la ocasión o el nombre del grupo.';
 
   @override
-  String get errorFaltanDatosParticipante => 'Falta el nombre o el PIN.';
+  String get errorFaltanDatosParticipante => 'Falta el grupo o el nombre.';
 
   @override
   String get errorNicknameLargo =>
@@ -152,6 +151,9 @@ class TextosEs extends Textos {
 
   @override
   String get errorNoEstasEnElGrupo => 'Todavía no estás inscrito en este grupo';
+
+  @override
+  String get errorYaEstasEnElGrupo => 'Ya tienes una plaza en este grupo';
 
   @override
   String get errorGrupoYaSorteado =>
@@ -389,7 +391,7 @@ class TextosEs extends Textos {
   String get registroYaTieneAmigo => 'Ya tiene su amigo secreto';
 
   @override
-  String get registroSalirGrupo => 'Salir del grupo (con tu PIN)';
+  String get registroSalirGrupo => 'Salir del grupo';
 
   @override
   String get registroVerAmigo => 'VER MI AMIGO SECRETO';

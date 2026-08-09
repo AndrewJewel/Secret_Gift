@@ -32,8 +32,8 @@
   "errorGrupoNoExiste": "Ese grupo ya no existe.",
   "errorParticipanteNoExiste": "Esa persona ya no está en el grupo.",
   "errorFaltanDatos": "Falta información obligatoria.",
-  "errorFaltanDatosGrupo": "Falta la ocasión, el nombre del grupo o el PIN maestro.",
-  "errorFaltanDatosParticipante": "Falta el nombre o el PIN.",
+  "errorFaltanDatosGrupo": "Falta la ocasión o el nombre del grupo.",
+  "errorFaltanDatosParticipante": "Falta el grupo o el nombre.",
   "errorNicknameLargo": "El nickname debe tener entre 3 y 24 caracteres.",
   "errorNicknameEnUso": "Ese nickname ya está en uso. Elige otro.",
   "errorNicknameNoExiste": "Ese nickname no existe.",
@@ -49,6 +49,7 @@
   "errorPinFormato": "El PIN tiene que ser de 4 dígitos exactos",
   "errorNoEresOrganizador": "Solo el organizador del grupo puede hacer esto",
   "errorNoEstasEnElGrupo": "Todavía no estás inscrito en este grupo",
+  "errorYaEstasEnElGrupo": "Ya tienes una plaza en este grupo",
   "errorGrupoYaSorteado": "El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera.",
   "errorPinBloqueado": "Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.",
 
@@ -125,7 +126,7 @@
   "registroVacioNormal": "Todavía no hay participantes.",
   "registroVacioPersonaje": "Todavía no hay personajes.",
   "registroYaTieneAmigo": "Ya tiene su amigo secreto",
-  "registroSalirGrupo": "Salir del grupo (con tu PIN)",
+  "registroSalirGrupo": "Salir del grupo",
   "registroVerAmigo": "VER MI AMIGO SECRETO",
 
   "organizadorEditarGrupo": "Editar el grupo",

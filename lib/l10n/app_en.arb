@@ -33,8 +33,8 @@
   "errorGrupoNoExiste": "This group no longer exists.",
   "errorParticipanteNoExiste": "That person is no longer in the group.",
   "errorFaltanDatos": "Some required information is missing.",
-  "errorFaltanDatosGrupo": "The occasion, group name or master PIN is missing.",
-  "errorFaltanDatosParticipante": "The name or the PIN is missing.",
+  "errorFaltanDatosGrupo": "The occasion or the group name is missing.",
+  "errorFaltanDatosParticipante": "The group or the name is missing.",
   "errorNicknameLargo": "The nickname must be between 3 and 24 characters.",
   "errorNicknameEnUso": "That nickname is taken. Pick another one.",
   "errorNicknameNoExiste": "That nickname does not exist.",
@@ -50,6 +50,7 @@
   "errorPinFormato": "The PIN must be exactly 4 digits",
   "errorNoEresOrganizador": "Only the group organizer can do this",
   "errorNoEstasEnElGrupo": "You are not signed up in this group yet",
+  "errorYaEstasEnElGrupo": "You already have a spot in this group",
   "errorGrupoYaSorteado": "The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.",
   "errorPinBloqueado": "Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.",
 
@@ -134,7 +135,7 @@
   "registroVacioNormal": "No members yet.",
   "registroVacioPersonaje": "No characters yet.",
   "registroYaTieneAmigo": "Already has their secret friend",
-  "registroSalirGrupo": "Leave the group (with your PIN)",
+  "registroSalirGrupo": "Leave the group",
   "registroVerAmigo": "SEE MY SECRET FRIEND",
 
   "organizadorEditarGrupo": "Edit the group",

@@ -4,6 +4,7 @@ import 'almacen_local.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_editar_grupo.dart' show SelectorTematica;
 import 'pantalla_registro.dart';
@@ -112,6 +113,13 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
           ocasion: _ocasion,
           valorMinimo: _valorMinimoController.text.trim(),
           nombreGrupo: _nombreGrupoController.text.trim(),
+          // Acabas de crear el grupo: eres su organizador y todavía no
+          // tienes plaza. Es exactamente lo que `crearGrupo` guardó en la
+          // cuenta, así que se pasa sin preguntárselo al servidor. Sin
+          // esto la pantalla te trataba como a un desconocido y no
+          // enseñaba ni el lápiz de editar ni el botón de sortear en tu
+          // propio grupo recién creado.
+          vinculo: const MiVinculo(rol: 'organizador'),
         ),
       ),
     );

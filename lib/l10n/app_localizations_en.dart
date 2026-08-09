@@ -98,10 +98,11 @@ class TextosEn extends Textos {
 
   @override
   String get errorFaltanDatosGrupo =>
-      'The occasion, group name or master PIN is missing.';
+      'The occasion or the group name is missing.';
 
   @override
-  String get errorFaltanDatosParticipante => 'The name or the PIN is missing.';
+  String get errorFaltanDatosParticipante =>
+      'The group or the name is missing.';
 
   @override
   String get errorNicknameLargo =>
@@ -152,6 +153,9 @@ class TextosEn extends Textos {
 
   @override
   String get errorNoEstasEnElGrupo => 'You are not signed up in this group yet';
+
+  @override
+  String get errorYaEstasEnElGrupo => 'You already have a spot in this group';
 
   @override
   String get errorGrupoYaSorteado =>
@@ -387,7 +391,7 @@ class TextosEn extends Textos {
   String get registroYaTieneAmigo => 'Already has their secret friend';
 
   @override
-  String get registroSalirGrupo => 'Leave the group (with your PIN)';
+  String get registroSalirGrupo => 'Leave the group';
 
   @override
   String get registroVerAmigo => 'SEE MY SECRET FRIEND';

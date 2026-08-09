@@ -268,13 +268,13 @@ abstract class Textos {
   /// No description provided for @errorFaltanDatosGrupo.
   ///
   /// In en, this message translates to:
-  /// **'The occasion, group name or master PIN is missing.'**
+  /// **'The occasion or the group name is missing.'**
   String get errorFaltanDatosGrupo;
 
   /// No description provided for @errorFaltanDatosParticipante.
   ///
   /// In en, this message translates to:
-  /// **'The name or the PIN is missing.'**
+  /// **'The group or the name is missing.'**
   String get errorFaltanDatosParticipante;
 
   /// No description provided for @errorNicknameLargo.
@@ -366,6 +366,12 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'You are not signed up in this group yet'**
   String get errorNoEstasEnElGrupo;
+
+  /// No description provided for @errorYaEstasEnElGrupo.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a spot in this group'**
+  String get errorYaEstasEnElGrupo;
 
   /// No description provided for @errorGrupoYaSorteado.
   ///
@@ -789,7 +795,7 @@ abstract class Textos {
   /// No description provided for @registroSalirGrupo.
   ///
   /// In en, this message translates to:
-  /// **'Leave the group (with your PIN)'**
+  /// **'Leave the group'**
   String get registroSalirGrupo;
 
   /// No description provided for @registroVerAmigo.

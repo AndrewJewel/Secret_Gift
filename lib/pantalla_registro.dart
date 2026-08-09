@@ -177,8 +177,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       // Sigue dentro: la lista simplemente iba atrasada.
       if (doc.exists) return;
       if (!mounted || _vinculo?.participanteId != id) return;
-      // Se conserva el rol: quien creó el grupo sigue siendo su
-      // organizador aunque le hayan sacado como participante.
+      // Se conserva el rol, y el servidor hace lo mismo: al borrar una
+      // plaza cuya cuenta es la del organizador, `borrarParticipante`
+      // mantiene la entrada del mapa con `participanteId: null` en vez de
+      // borrarla. Quien creó el grupo sigue siendo su organizador aunque
+      // se saque —o le saquen— como participante.
       setState(() => _vinculo = MiVinculo(
           rol: _vinculo!.rol, sorteado: _vinculo!.sorteado));
     } catch (_) {
@@ -910,10 +913,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                       ? Text(t.registroYaTieneAmigo,
                           style: const TextStyle(fontSize: 12, color: Colors.black54))
                       : null,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: _esOrganizador
-                        ? [
+                  trailing: _esOrganizador
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             IconButton(
                               icon: Icon(Icons.edit_outlined, color: _color.shade700),
                               tooltip: t.organizadorCorregirNombre,
@@ -925,15 +928,21 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                               tooltip: t.organizadorSacar,
                               onPressed: () => _borrarComoOrganizador(id, nombre),
                             ),
-                          ]
-                        : [
-                            IconButton(
+                          ],
+                        )
+                      // Quien no es organizador solo puede salirse a sí
+                      // mismo, así que el botón va únicamente en SU fila.
+                      // Antes salía en todas: pedía el PIN de esa persona,
+                      // que hacía de barrera legible. Sin PIN, tocar la
+                      // fila de otro abría una confirmación seria delante
+                      // de una llamada que el servidor siempre rechaza.
+                      : id == _vinculo?.participanteId
+                          ? IconButton(
                               icon: Icon(Icons.logout, color: _color.shade700),
                               tooltip: t.registroSalirGrupo,
                               onPressed: () => _salirDelGrupo(id),
-                            ),
-                          ],
-                  ),
+                            )
+                          : null,
                 ),
               ),
             );
