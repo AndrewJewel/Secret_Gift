@@ -8,13 +8,12 @@ import 'package:share_plus/share_plus.dart';
 import 'avatar.dart';
 import 'funciones.dart';
 import 'glass.dart';
-import 'hoja_identidad.dart';
-import 'identidad_local.dart';
 import 'l10n/app_localizations.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_chat.dart';
 import 'pantalla_editar_grupo.dart';
-import 'pantalla_login.dart';
+import 'pantalla_secreta.dart';
 import 'sesion.dart';
 import 'tematica.dart';
 
@@ -54,12 +53,19 @@ class PantallaRegistro extends StatefulWidget {
   final String valorMinimo;
   final String nombreGrupo;
 
+  /// Tu relación con este grupo, o null si todavía no tienes ninguna
+  /// (llegaste por un QR a un grupo en el que no estás). Se recibe en vez
+  /// de consultarse porque quien navega aquí ya lo tiene: Mis grupos en su
+  /// lista, y el portero en `resultado.grupos`.
+  final MiVinculo? vinculo;
+
   const PantallaRegistro({
     super.key,
     required this.codigo,
     required this.ocasion,
     required this.valorMinimo,
     this.nombreGrupo = '',
+    this.vinculo,
   });
 
   @override
@@ -68,7 +74,6 @@ class PantallaRegistro extends StatefulWidget {
 
 class _PantallaRegistroState extends State<PantallaRegistro> {
   final TextEditingController _nombreController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
   final TextEditingController _deseosController = TextEditingController();
 
   late final DocumentReference<Map<String, dynamic>> _grupoRef =
@@ -76,20 +81,37 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   late final CollectionReference participantesRef = _grupoRef.collection('participantes');
 
-  /// Un solo stream para los dos usos: pintar la lista y vigilar que la
-  /// identidad guardada siga siendo válida. `snapshots()` devuelve un
-  /// stream de difusión, así que escucharlo dos veces no abre dos
-  /// suscripciones contra Firestore. Si cada uno pidiera el suyo, se
-  /// pagarían las lecturas por duplicado.
+  /// Un solo stream, con un solo suscriptor: el `listen` de `initState`.
+  ///
+  /// Antes la lista se pintaba con un `StreamBuilder` que se suscribía
+  /// aparte, ADEMÁS del `listen` de aquí abajo. La razón que se daba era
+  /// ahorrar lecturas —`snapshots()` es un stream de difusión, así que
+  /// escucharlo dos veces no duplica las consultas a Firestore— y eso es
+  /// cierto, pero no es el problema. El problema es que un stream de
+  /// difusión NO reproduce lo ya emitido: quien se suscribe tarde se
+  /// pierde cualquier evento anterior y solo recibe los que vengan
+  /// después. La primera vez que se entra al grupo, la respuesta viaja
+  /// por red y da tiempo a que el primer `build` ya haya montado el
+  /// `StreamBuilder` antes de que llegue. Pero al reentrar, Firestore
+  /// sirve la colección desde caché local casi al instante, ANTES de que
+  /// el `StreamBuilder` llegue a suscribirse: se pierde el único evento
+  /// y la lista se queda esperando uno que no vuelve a salir mientras
+  /// nadie más toque el grupo. Por eso ahora hay un solo suscriptor: el
+  /// `listen` de `initState`, que guarda lo recibido en `_participantes`
+  /// y de ahí lo pinta `_listaParticipantes`. Si alguna vez se necesita
+  /// un segundo consumidor de este stream, que lea del campo, no que
+  /// vuelva a suscribirse.
   late final Stream<QuerySnapshot> _streamParticipantes =
       participantesRef.orderBy('fecha', descending: true).snapshots();
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _suscripcionGrupo;
   StreamSubscription<QuerySnapshot>? _suscripcionParticipantes;
 
-  /// Última lista recibida, para poder revisar la identidad en cuanto
-  /// termine de leerse del disco aunque el stream ya hubiera emitido.
-  List<QueryDocumentSnapshot>? _ultimosParticipantes;
+  /// Últimos participantes recibidos del stream único de arriba. Null
+  /// mientras no ha llegado nada todavía (spinner); lista vacía si el
+  /// grupo no tiene a nadie; con contenido en cualquier otro caso. Los
+  /// pinta `_listaParticipantes` directamente, sin un segundo `listen`.
+  List<QueryDocumentSnapshot>? _participantes;
 
   /// Evita lanzar varias comprobaciones contra el servidor a la vez.
   bool _comprobandoIdentidad = false;
@@ -104,11 +126,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     reglas: '',
   );
 
-  /// Modo organizador: se desbloquea UNA vez con el PIN maestro y desde
-  /// ahí todos los controles de creador quedan a la mano, en vez de que
-  /// cada acción vuelva a pedir el mismo PIN.
-  bool _esOrganizador = false;
-  String _pinMaestro = '';
+  /// Tu vínculo con este grupo. Arranca con el que llegó por parámetro y
+  /// se actualiza al darte de alta. Null = no estás dentro → formulario.
+  late MiVinculo? _vinculo = widget.vinculo;
+
+  bool get _esOrganizador => _vinculo?.esOrganizador ?? false;
 
   bool _reglasAbiertas = false;
 
@@ -116,20 +138,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   /// el resto del formulario en una sola llamada.
   String? _avatarBase64;
 
-  /// Quién eres TÚ en este grupo, si ya te registraste. Mientras sea
-  /// null se ofrece el formulario de alta; en cuanto hay identidad, el
-  /// formulario desaparece.
-  ///
-  /// Sin esto la pantalla le ofrecía darse de alta a todo el mundo
-  /// siempre, y quien entrara desde otro dispositivo se registraba dos
-  /// veces y salía duplicado en el sorteo.
-  IdentidadGrupo? _yo;
-  bool _identidadCargada = false;
-
   @override
   void initState() {
     super.initState();
-    _cargarIdentidad();
     _suscripcionGrupo = _grupoRef.snapshots().listen((snap) {
       if (!mounted) return;
       // El grupo dejó de existir: su organizador lo eliminó mientras
@@ -148,10 +159,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     // una letra— y ahora consulta al servidor. Así corre solo cuando la
     // lista cambia de verdad.
     _suscripcionParticipantes = _streamParticipantes.listen((snap) {
-      _ultimosParticipantes = snap.docs;
+      if (!mounted) return;
+      setState(() => _participantes = snap.docs);
       _revisarIdentidadContraLista(snap.docs);
     }, onError: (_) {
-      // Sin conexión no se revisa nada: se conserva lo guardado.
+      // Sin conexión no se revisa nada: se conserva el vínculo.
     });
   }
 
@@ -160,80 +172,47 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     _suscripcionGrupo?.cancel();
     _suscripcionParticipantes?.cancel();
     _nombreController.dispose();
-    _pinController.dispose();
     _deseosController.dispose();
     super.dispose();
   }
 
   MaterialColor get _color => _info.color;
 
-  Future<void> _cargarIdentidad() async {
-    final guardada = await leerIdentidad(widget.codigo);
-    if (!mounted) return;
-    setState(() {
-      _yo = guardada;
-      _identidadCargada = true;
-    });
-    // El disco y el stream corren en paralelo: si la lista llegó primero,
-    // aquella emisión se revisó sin identidad cargada. Se repasa ahora.
-    final ultimos = _ultimosParticipantes;
-    if (ultimos != null) _revisarIdentidadContraLista(ultimos);
-  }
-
-  /// Si el organizador te sacó del grupo, la identidad guardada apunta a
-  /// alguien que ya no existe. Se descarta para no dejar la pantalla
-  /// bloqueada sin formulario ni participante.
+  /// Si el organizador te sacó del grupo, tu vínculo apunta a alguien que
+  /// ya no existe. Se descarta para no dejar la pantalla bloqueada sin
+  /// formulario ni participante.
   ///
   /// La decisión NO puede tomarse desde la lista: va por detrás de las
   /// altas recién hechas. Al crear un grupo y registrarte el primero, la
   /// lista que la app tiene en ese instante está VACÍA, así que no
-  /// encontrarse a uno mismo no prueba nada — y se borraba la identidad
-  /// de quien acababa de entrar. El síntoma era desconcertante: tu
-  /// nombre aparecía en la lista (el servidor te tenía) pero el
-  /// formulario de alta seguía delante (tu dispositivo ya no sabía cuál
-  /// de esos participantes eras). Y no se recuperaba ni recargando,
-  /// porque olvidarIdentidad borra de shared_preferences.
-  ///
-  /// Por eso, cuando faltas de la lista, se le pregunta al servidor por
-  /// tu documento concreto. Solo si de verdad no existe se olvida.
+  /// encontrarse a uno mismo no prueba nada. Por eso, cuando faltas de la
+  /// lista, se le pregunta al servidor por tu documento concreto.
   Future<void> _revisarIdentidadContraLista(List<QueryDocumentSnapshot> docs) async {
-    final yo = _yo;
-    if (yo == null || _comprobandoIdentidad) return;
-    if (docs.any((d) => d.id == yo.participanteId)) return;
+    final id = _vinculo?.participanteId;
+    if (id == null || id.isEmpty || _comprobandoIdentidad) return;
+    if (docs.any((d) => d.id == id)) return;
 
     _comprobandoIdentidad = true;
     try {
       final doc = await participantesRef
-          .doc(yo.participanteId)
+          .doc(id)
           .get(const GetOptions(source: Source.server));
       // Sigue dentro: la lista simplemente iba atrasada.
       if (doc.exists) return;
-      await olvidarIdentidad(widget.codigo);
-      // Puede haber cambiado mientras se preguntaba (otro registro, o
-      // "dejar de ser yo"): solo se borra si sigue siendo la misma.
-      if (!mounted || _yo?.participanteId != yo.participanteId) return;
-      setState(() => _yo = null);
+      if (!mounted || _vinculo?.participanteId != id) return;
+      // Se conserva el rol, y el servidor hace lo mismo: al borrar una
+      // plaza cuya cuenta es la del organizador, `borrarParticipante`
+      // mantiene la entrada del mapa con `participanteId: null` en vez de
+      // borrarla. Quien creó el grupo sigue siendo su organizador aunque
+      // se saque —o le saquen— como participante.
+      setState(() => _vinculo = MiVinculo(
+          rol: _vinculo!.rol, sorteado: _vinculo!.sorteado));
     } catch (_) {
-      // Sin red no se decide nada y se conserva la identidad.
-      // Equivocarse hacia "sigues dentro" se corrige en la siguiente
-      // emisión; borrar la nota no tiene vuelta atrás.
+      // Sin red no se decide nada y se conserva el vínculo. Equivocarse
+      // hacia "sigues dentro" se corrige en la siguiente emisión.
     } finally {
       _comprobandoIdentidad = false;
     }
-  }
-
-  Future<void> _decirQuienSoy() async {
-    final identidad = await HojaIdentidad.mostrar(context, widget.codigo, _color);
-    if (identidad == null || !mounted) return;
-    await guardarIdentidad(widget.codigo, identidad);
-    if (!mounted) return;
-    setState(() => _yo = identidad);
-  }
-
-  Future<void> _dejarDeSerYo() async {
-    await olvidarIdentidad(widget.codigo);
-    if (!mounted) return;
-    setState(() => _yo = null);
   }
 
   void _avisar(String mensaje) {
@@ -252,37 +231,41 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   Future<void> _agregar() async {
     final t = Textos.of(context);
     final nombreLimpio = _nombreController.text.trim();
-    final pinLimpio = _pinController.text.trim();
     final deseosLimpios = _deseosController.text.trim();
 
-    if (nombreLimpio.isEmpty || pinLimpio.isEmpty) {
+    if (nombreLimpio.isEmpty) {
       _avisar('⚠️ ${_info.tematica.usaPersonajes ? t.registroFaltaPersonaje : t.registroFaltaNombre}');
       return;
     }
 
     try {
       final sesion = await leerSesion();
+      if (sesion == null) {
+        // Antes esto se mandaba sin credenciales y la persona se unía al
+        // grupo EN SILENCIO, sin que apareciera en su Mis grupos. Ahora
+        // el servidor lo rechaza, así que se avisa aquí antes de gastar
+        // la llamada.
+        _avisar('⚠️ ${t.errorSesionInvalida}');
+        return;
+      }
       final creado = await llamarFuncion('agregarParticipante', {
         'codigo': widget.codigo,
         'nombre': nombreLimpio,
-        'pin': pinLimpio,
         'deseos': deseosLimpios,
         if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
-        if (sesion != null) 'nickname': sesion.nickname,
-        if (sesion != null) 'password': sesion.password,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
-      // A partir de aquí esta persona YA está dentro: se recuerda para
-      // que no le vuelva a aparecer el formulario de alta ni se registre
-      // dos veces.
-      final identidad = IdentidadGrupo(creado['id'] as String, pinLimpio);
-      await guardarIdentidad(widget.codigo, identidad);
       _nombreController.clear();
-      _pinController.clear();
       _deseosController.clear();
       if (!mounted) return;
       setState(() {
         _avatarBase64 = null;
-        _yo = identidad;
+        _vinculo = MiVinculo(
+          rol: _vinculo?.rol ?? 'participante',
+          participanteId: creado['id'] as String,
+          sorteado: _vinculo?.sorteado ?? false,
+        );
       });
       FocusScope.of(context).unfocus();
     } catch (e) {
@@ -301,20 +284,33 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }
   }
 
-  // --- Modo organizador -----------------------------------------------
+  /// Las credenciales que autorizan cualquier acción de esta pantalla.
+  /// Devuelve null si no hay sesión, que a estas alturas no debería pasar
+  /// —no se llega aquí sin cuenta— pero tumbar la app sería peor.
+  Future<Map<String, String>?> _credenciales() async {
+    final s = await leerSesion();
+    if (s == null) return null;
+    return {'nickname': s.nickname, 'password': s.password};
+  }
 
-  Future<void> _desbloquearOrganizador() async {
+  /// Pide el PIN global y abre la pantalla del amigo secreto.
+  ///
+  /// El PIN se pide CADA VEZ, a propósito. Si se cacheara dejaría de ser
+  /// una segunda barrera y volvería a ser decorado, que es el problema del
+  /// que viene todo este rediseño. Revelar tu amigo secreto se hace una
+  /// vez por grupo y temporada, no cada rato.
+  Future<void> _verAmigoSecreto() async {
     final t = Textos.of(context);
     final pinController = TextEditingController();
     final pin = await showDialog<String>(
       context: context,
       builder: (c) => AlertDialog(
-        icon: Icon(Icons.shield_outlined, color: _color.shade700, size: 36),
-        title: Text(t.organizadorEntrar),
+        icon: Icon(Icons.lock_outline, color: _color.shade700, size: 36),
+        title: Text(t.verAmigoPinTitulo),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(t.organizadorPinTexto, style: const TextStyle(fontSize: 13)),
+            Text(t.verAmigoPinTexto, style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 16),
             TextField(
               controller: pinController,
@@ -322,7 +318,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
               obscureText: true,
               autofocus: true,
               textAlign: TextAlign.center,
-              decoration: InputDecoration(labelText: t.organizadorPinCampo),
+              decoration: InputDecoration(labelText: t.cuentaPin),
               onSubmitted: (v) => Navigator.pop(c, v.trim()),
             ),
           ],
@@ -336,31 +332,36 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
         ],
       ),
     );
-    if (pin == null || pin.isEmpty) return;
+    if (pin == null || pin.isEmpty || !mounted) return;
 
+    final cred = await _credenciales();
+    if (cred == null || !mounted) {
+      _avisar('⚠️ ${t.errorSesionInvalida}');
+      return;
+    }
     try {
-      await llamarFuncion('verificarOrganizador', {
+      final data = await llamarFuncion('verAmigoSecreto', {
         'codigo': widget.codigo,
-        'pinMaestro': pin,
+        'pin': pin,
+        ...cred,
       });
       if (!mounted) return;
-      setState(() {
-        _esOrganizador = true;
-        _pinMaestro = pin;
-      });
-      _avisar('✅ ${t.organizadorActivado}');
+      final deseos = data['deseosAmigo'] as String? ?? '';
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaSecreta(
+            ocasion: _info.ocasion,
+            tematica: _info.tematica,
+            nombre: data['nombre'] as String? ?? '',
+            nombreAmigo: data['nombreAmigo'] as String? ?? '',
+            deseosAmigo: deseos.isEmpty ? t.secretaSinSugerencias : deseos,
+          ),
+        ),
+      );
     } catch (e) {
       _avisarError(e);
     }
-  }
-
-  void _salirDeOrganizador() {
-    final t = Textos.of(context);
-    setState(() {
-      _esOrganizador = false;
-      _pinMaestro = '';
-    });
-    _avisar(t.organizadorDesactivado);
   }
 
   Future<void> _abrirEdicionGrupo() async {
@@ -370,7 +371,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       MaterialPageRoute(
         builder: (_) => PantallaEditarGrupo(
           codigo: widget.codigo,
-          pinMaestro: _pinMaestro,
+          // El backend autoriza por cuenta (Tasks 2-4) y PantallaEditarGrupo
+          // ya no declara `pinMaestro` (Task 10): las credenciales de sesión
+          // se leen dentro de la propia pantalla.
           ocasion: _info.ocasion,
           nombreGrupo: _info.nombreGrupo,
           valorMinimo: _info.valorMinimo,
@@ -406,11 +409,13 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (confirmado != true) return;
 
+    final cred = await _credenciales();
+    if (cred == null) {
+      _avisar('⚠️ ${t.errorSesionInvalida}');
+      return;
+    }
     try {
-      await llamarFuncion('ejecutarSorteo', {
-        'codigo': widget.codigo,
-        'pinMaestro': _pinMaestro,
-      });
+      await llamarFuncion('ejecutarSorteo', {'codigo': widget.codigo, ...cred});
       _avisar('🎲 ${t.sorteoListo}');
     } catch (e) {
       _avisarError(e);
@@ -473,49 +478,57 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (confirmado != true) return;
 
+    final cred = await _credenciales();
+    if (cred == null) {
+      _avisar('⚠️ ${t.errorSesionInvalida}');
+      return;
+    }
     try {
       await llamarFuncion('borrarParticipante', {
         'codigo': widget.codigo,
         'participanteId': participanteId,
-        'pin': _pinMaestro,
+        ...cred,
       });
     } catch (e) {
       _avisarError(e);
     }
   }
 
-  /// Para quien NO es organizador: puede sacarse a sí mismo con su PIN.
-  Future<void> _borrarConPinPropio(String participanteId) async {
+  /// Para quien NO es organizador: puede sacarse a sí mismo.
+  ///
+  /// Antes se pedía aquí el PIN individual del participante. Ese PIN ya no
+  /// existe —Step 4 dejó de guardarlo al darte de alta— y el servidor
+  /// tampoco lo mira: `borrarParticipante` autoriza por cuenta, dejando
+  /// pasar tu propia plaza sin más prueba que la sesión. Pedir un dato que
+  /// ya no se guarda solo podía confundir, así que el diálogo pasa a ser
+  /// una simple confirmación.
+  Future<void> _salirDelGrupo(String participanteId) async {
     final t = Textos.of(context);
-    final pinController = TextEditingController();
-    final pin = await showDialog<String>(
+    final confirmado = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         title: Text(t.registroSalirGrupo),
-        content: TextField(
-          controller: pinController,
-          keyboardType: TextInputType.number,
-          obscureText: true,
-          autofocus: true,
-          decoration: InputDecoration(labelText: t.registroTuPin),
-          onSubmitted: (v) => Navigator.pop(c, v.trim()),
-        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: Text(t.cancelar)),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
           FilledButton(
-            onPressed: () => Navigator.pop(c, pinController.text.trim()),
+            onPressed: () => Navigator.pop(c, true),
             child: Text(t.confirmar),
           ),
         ],
       ),
     );
-    if (pin == null || pin.isEmpty) return;
+    if (confirmado != true) return;
 
+    final cred = await _credenciales();
+    if (cred == null) {
+      _avisar('⚠️ ${t.errorSesionInvalida}');
+      return;
+    }
     try {
       await llamarFuncion('borrarParticipante', {
         'codigo': widget.codigo,
         'participanteId': participanteId,
-        'pin': pin,
+        ...cred,
       });
     } catch (e) {
       _avisarError(e);
@@ -549,12 +562,17 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (nuevo == null || nuevo.isEmpty || nuevo == nombreActual) return;
 
+    final cred = await _credenciales();
+    if (cred == null) {
+      _avisar('⚠️ ${t.errorSesionInvalida}');
+      return;
+    }
     try {
       await llamarFuncion('editarParticipante', {
         'codigo': widget.codigo,
         'participanteId': participanteId,
         'nuevoNombre': nuevo,
-        'pinMaestro': _pinMaestro,
+        ...cred,
       });
     } catch (e) {
       _avisarError(e);
@@ -599,22 +617,14 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 ? '${_info.ocasion.emoji} ${_info.nombreGrupo}'
                 : '${_info.ocasion.emoji} ${_info.ocasion.titulo(t)}'),
             actions: [
-              if (_esOrganizador) ...[
+              // El botón para desbloquear el modo organizador desapareció:
+              // serlo ya no es un modo que se active, lo dice `_vinculo`
+              // desde antes de pintar el primer frame.
+              if (_esOrganizador)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
                   tooltip: t.organizadorEditarGrupo,
                   onPressed: _abrirEdicionGrupo,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.lock_open),
-                  tooltip: t.organizadorSalir,
-                  onPressed: _salirDeOrganizador,
-                ),
-              ] else
-                IconButton(
-                  icon: const Icon(Icons.shield_outlined),
-                  tooltip: t.organizadorEntrar,
-                  onPressed: _desbloquearOrganizador,
                 ),
             ],
           ),
@@ -637,12 +647,12 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   // El formulario de alta solo aparece si NO estás dentro.
-                  // Mientras se lee la identidad guardada no se muestra
-                  // nada: enseñarlo y quitarlo medio segundo después es
-                  // peor que esperar ese instante.
-                  child: !_identidadCargada
-                      ? const SizedBox.shrink()
-                      : (_yo == null ? _formularioRegistro(t) : _tarjetaYaDentro(t)),
+                  // Ya no hace falta un estado de "cargando identidad": el
+                  // vínculo llega con el widget, no del disco, así que se
+                  // conoce desde el primer frame.
+                  child: _vinculo?.estoyDentro == true
+                      ? _tarjetaYaDentro(t)
+                      : _formularioRegistro(t),
                 ),
                 _listaParticipantes(t),
                 Padding(
@@ -660,16 +670,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                       ],
                       GlassOutlineButton(
                         color: _color,
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (c) => PantallaLogin(
-                              codigo: widget.codigo,
-                              ocasion: _info.ocasion,
-                              tematica: _info.tematica,
-                            ),
-                          ),
-                        ),
+                        // Solo tiene sentido si estás dentro: sin plaza no
+                        // hay amigo asignado.
+                        onPressed:
+                            _vinculo?.estoyDentro == true ? _verAmigoSecreto : null,
                         icon: Icons.visibility,
                         label: t.registroVerAmigo,
                       ),
@@ -683,8 +687,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                               codigo: widget.codigo,
                               ocasion: _info.ocasion,
                               tematica: _info.tematica,
-                              esOrganizador: _esOrganizador,
-                              pinMaestro: _pinMaestro,
+                              vinculo: _vinculo,
                             ),
                           ),
                         ),
@@ -789,7 +792,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   Widget _tarjetaYaDentro(Textos t) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: participantesRef
-          .doc(_yo!.participanteId)
+          .doc(_vinculo!.participanteId)
           .snapshots()
           .cast<DocumentSnapshot<Map<String, dynamic>>>(),
       builder: (context, snapshot) {
@@ -797,35 +800,22 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
         final nombre = data?['nombre'] as String? ?? '';
         return GlassCard(
           color: _color,
-          child: Column(
+          child: Row(
             children: [
-              Row(
-                children: [
-                  AvatarParticipante(
-                      url: data?['avatarUrl'] as String?, color: _color, radio: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(t.grupoYaDentro(nombre),
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, color: _color.shade900)),
-                        const SizedBox(height: 2),
-                        Text(t.grupoYaDentroAyuda,
-                            style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _dejarDeSerYo,
-                  child: Text(t.grupoNoEresTu,
-                      style: TextStyle(color: _color.shade700, fontSize: 12)),
+              AvatarParticipante(
+                  url: data?['avatarUrl'] as String?, color: _color, radio: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.grupoYaDentro(nombre),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: _color.shade900)),
+                    const SizedBox(height: 2),
+                    Text(t.grupoYaDentroAyuda,
+                        style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  ],
                 ),
               ),
             ],
@@ -873,32 +863,12 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
             icon: Icons.card_giftcard,
             textCapitalization: TextCapitalization.sentences,
           ),
-          const SizedBox(height: 10),
-          GlassTextField(
-            color: _color,
-            controller: _pinController,
-            labelText: t.registroPin,
-            helperText: t.registroPinAyuda,
-            icon: Icons.lock,
-            keyboardType: TextInputType.number,
-            obscureText: true,
-          ),
           const SizedBox(height: 12),
           GlassButton(
             color: Colors.green.shade700,
             onPressed: _agregar,
             icon: Icons.save,
             label: t.registroBoton,
-          ),
-          // Salida para quien ya se dio de alta en otro dispositivo o
-          // limpió el navegador. Sin esto se registraría otra vez y
-          // saldría duplicado en el sorteo.
-          TextButton.icon(
-            onPressed: _decirQuienSoy,
-            icon: Icon(Icons.how_to_reg_outlined, size: 18, color: _color.shade700),
-            label: Text(t.grupoYaEstoyDentro,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _color.shade700, fontSize: 13)),
           ),
         ],
       ),
@@ -907,91 +877,95 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   Widget _listaParticipantes(Textos t) {
     final colorTextoSuelto = _info.tematica.fondoOscuro ? Colors.white70 : Colors.black54;
-    return StreamBuilder<QuerySnapshot>(
-      // El mismo stream que vigila la identidad en initState. La revisión
-      // vive allí: build() solo pinta, no decide ni escribe.
-      stream: _streamParticipantes,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator(color: _color.shade700)),
-          );
-        }
-        final docs = snapshot.data!.docs;
-        if (docs.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Text(
-                _info.tematica.usaPersonajes ? t.registroVacioPersonaje : t.registroVacioNormal,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: colorTextoSuelto),
-              ),
-            ),
-          );
-        }
-        // Va dentro de la lista exterior, así que no scrollea por su
-        // cuenta: se deja medir por su contenido.
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final data = docs[index].data() as Map<String, dynamic>;
-            final id = docs[index].id;
-            final nombre = data['nombre'] as String? ?? '';
-            final yaTieneAmigo = data['tieneAmigo'] == true;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: GlassCard(
+    // Se pinta desde `_participantes`, no desde un StreamBuilder propio:
+    // el único suscriptor del stream es el `listen` de initState, que ya
+    // guarda ahí cada emisión (ver el comentario de `_streamParticipantes`).
+    final docs = _participantes;
+    if (docs == null) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator(color: _color.shade700)),
+      );
+    }
+    if (docs.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Text(
+            _info.tematica.usaPersonajes ? t.registroVacioPersonaje : t.registroVacioNormal,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: colorTextoSuelto),
+          ),
+        ),
+      );
+    }
+    // Va dentro de la lista exterior, así que no scrollea por su
+    // cuenta: se deja medir por su contenido.
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: docs.length,
+      itemBuilder: (context, index) {
+        final data = docs[index].data() as Map<String, dynamic>;
+        final id = docs[index].id;
+        final nombre = data['nombre'] as String? ?? '';
+        final yaTieneAmigo = data['tieneAmigo'] == true;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GlassCard(
+            color: _color,
+            radius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: AvatarParticipante(
+                url: data['avatarUrl'] as String?,
                 color: _color,
-                radius: 16,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: AvatarParticipante(
-                    url: data['avatarUrl'] as String?,
-                    color: _color,
-                    yaTieneAmigo: yaTieneAmigo,
-                  ),
-                  title: Text(
-                      id == _yo?.participanteId ? '$nombre (${t.grupoTuEtiqueta})' : nombre,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.black87)),
-                  subtitle: yaTieneAmigo
-                      ? Text(t.registroYaTieneAmigo,
-                          style: const TextStyle(fontSize: 12, color: Colors.black54))
-                      : null,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: _esOrganizador
-                        ? [
-                            IconButton(
-                              icon: Icon(Icons.edit_outlined, color: _color.shade700),
-                              tooltip: t.organizadorCorregirNombre,
-                              onPressed: () => _editarNombre(id, nombre),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.person_remove_outlined,
-                                  color: Colors.red.shade700),
-                              tooltip: t.organizadorSacar,
-                              onPressed: () => _borrarComoOrganizador(id, nombre),
-                            ),
-                          ]
-                        : [
-                            IconButton(
-                              icon: Icon(Icons.logout, color: _color.shade700),
-                              tooltip: t.registroSalirGrupo,
-                              onPressed: () => _borrarConPinPropio(id),
-                            ),
-                          ],
-                  ),
-                ),
+                yaTieneAmigo: yaTieneAmigo,
               ),
-            );
-          },
+              title: Text(
+                  id == _vinculo?.participanteId
+                      ? '$nombre (${t.grupoTuEtiqueta})'
+                      : nombre,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black87)),
+              subtitle: yaTieneAmigo
+                  ? Text(t.registroYaTieneAmigo,
+                      style: const TextStyle(fontSize: 12, color: Colors.black54))
+                  : null,
+              trailing: _esOrganizador
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit_outlined, color: _color.shade700),
+                          tooltip: t.organizadorCorregirNombre,
+                          onPressed: () => _editarNombre(id, nombre),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.person_remove_outlined,
+                              color: Colors.red.shade700),
+                          tooltip: t.organizadorSacar,
+                          onPressed: () => _borrarComoOrganizador(id, nombre),
+                        ),
+                      ],
+                    )
+                  // Quien no es organizador solo puede salirse a sí
+                  // mismo, así que el botón va únicamente en SU fila.
+                  // Antes salía en todas: pedía el PIN de esa persona,
+                  // que hacía de barrera legible. Sin PIN, tocar la
+                  // fila de otro abría una confirmación seria delante
+                  // de una llamada que el servidor siempre rechaza.
+                  : id == _vinculo?.participanteId
+                      ? IconButton(
+                          icon: Icon(Icons.logout, color: _color.shade700),
+                          tooltip: t.registroSalirGrupo,
+                          onPressed: () => _salirDelGrupo(id),
+                        )
+                      : null,
+            ),
+          ),
         );
       },
     );

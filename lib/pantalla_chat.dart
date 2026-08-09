@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import 'hoja_identidad.dart';
-import 'identidad_local.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'mascara.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
+import 'sesion.dart';
 import 'tematica.dart';
 
 /// Chat grupal anónimo.
@@ -21,16 +21,17 @@ class PantallaChat extends StatefulWidget {
   final String codigo;
   final Ocasion ocasion;
   final Tematica tematica;
-  final bool esOrganizador;
-  final String pinMaestro;
+
+  /// Tu vínculo con el grupo: dice si eres organizador (para moderar) y
+  /// qué participante eres (para resaltar tus mensajes).
+  final MiVinculo? vinculo;
 
   const PantallaChat({
     super.key,
     required this.codigo,
     required this.ocasion,
     required this.tematica,
-    this.esOrganizador = false,
-    this.pinMaestro = '',
+    this.vinculo,
   });
 
   @override
@@ -41,10 +42,8 @@ class _PantallaChatState extends State<PantallaChat> {
   final TextEditingController _mensajeController = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
-  IdentidadGrupo? _yo;
   int? _miMascara;
   bool _enviando = false;
-  bool _pidiendoIdentidad = false;
 
   late final Query<Map<String, dynamic>> _chatRef = FirebaseFirestore.instance
       .collection('grupos')
@@ -58,7 +57,7 @@ class _PantallaChatState extends State<PantallaChat> {
   @override
   void initState() {
     super.initState();
-    _recuperarIdentidad();
+    _cargarMiMascara();
   }
 
   @override
@@ -68,32 +67,21 @@ class _PantallaChatState extends State<PantallaChat> {
     super.dispose();
   }
 
-  /// Recupera de este dispositivo quién dijo ser la última vez. Si no hay
-  /// nada guardado, se le pregunta al primer intento de escribir, no al
-  /// entrar: leer el chat no exige identificarse.
-  Future<void> _recuperarIdentidad() async {
-    final guardada = await leerIdentidad(widget.codigo);
-    if (guardada == null || !mounted) return;
-    setState(() => _yo = guardada);
-    _cargarMiMascara();
-  }
-
   Future<void> _cargarMiMascara() async {
-    final yo = _yo;
-    if (yo == null) return;
+    if (widget.vinculo?.estoyDentro != true) return;
+    final sesion = await leerSesion();
+    if (sesion == null) return;
     try {
       final datos = await llamarFuncion('miMascara', {
         'codigo': widget.codigo,
-        'participanteId': yo.participanteId,
-        'pin': yo.pin,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
       if (!mounted) return;
       setState(() => _miMascara = datos['mascara'] as int?);
     } catch (_) {
-      // Si el PIN guardado ya no sirve (la sacaron del grupo, cambió el
-      // grupo), se olvida y se vuelve a preguntar al escribir.
-      await olvidarIdentidad(widget.codigo);
-      if (mounted) setState(() => _yo = null);
+      // Sin máscara solo se pierde el resaltado de los propios mensajes;
+      // leer el chat sigue funcionando.
     }
   }
 
@@ -102,52 +90,21 @@ class _PantallaChatState extends State<PantallaChat> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
   }
 
-  // --- Identificarse ----------------------------------------------------
-
-  Future<bool> _asegurarIdentidad() async {
-    if (_yo != null) return true;
-    if (_pidiendoIdentidad) return false;
-
-    setState(() => _pidiendoIdentidad = true);
-    try {
-      final elegida = await HojaIdentidad.mostrar(context, widget.codigo, _color);
-      if (elegida == null || !mounted) return false;
-      await guardarIdentidad(widget.codigo, elegida);
-      if (!mounted) return false;
-      setState(() => _yo = elegida);
-      _cargarMiMascara();
-      return true;
-    } finally {
-      if (mounted) setState(() => _pidiendoIdentidad = false);
-    }
-  }
-
-  Future<void> _cambiarPersona() async {
-    await olvidarIdentidad(widget.codigo);
-    if (!mounted) return;
-    setState(() {
-      _yo = null;
-      _miMascara = null;
-    });
-    await _asegurarIdentidad();
-  }
-
   // --- Enviar -----------------------------------------------------------
 
   Future<void> _enviar() async {
     final texto = _mensajeController.text.trim();
     if (texto.isEmpty || _enviando) return;
-    if (!await _asegurarIdentidad()) return;
-    final yo = _yo;
-    if (yo == null || !mounted) return;
+    final sesion = await leerSesion();
+    if (sesion == null || !mounted) return;
 
     setState(() => _enviando = true);
     try {
       final datos = await llamarFuncion('enviarMensaje', {
         'codigo': widget.codigo,
-        'participanteId': yo.participanteId,
-        'pin': yo.pin,
         'texto': texto,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
       _mensajeController.clear();
       if (!mounted) return;
@@ -186,10 +143,13 @@ class _PantallaChatState extends State<PantallaChat> {
     if (confirmado != true) return;
 
     try {
+      final sesion = await leerSesion();
+      if (sesion == null) return;
       await llamarFuncion('borrarMensaje', {
         'codigo': widget.codigo,
         'mensajeId': mensajeId,
-        'pinMaestro': widget.pinMaestro,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
     } catch (e) {
       if (!mounted) return;
@@ -218,14 +178,6 @@ class _PantallaChatState extends State<PantallaChat> {
           appBar: GlassAppBar(
             title: Text(t.chatTitulo),
             color: _color,
-            actions: [
-              if (_yo != null)
-                IconButton(
-                  icon: const Icon(Icons.switch_account_outlined),
-                  tooltip: t.chatCambiarPersona,
-                  onPressed: _cambiarPersona,
-                ),
-            ],
           ),
           body: SafeArea(
             child: Column(
@@ -302,7 +254,7 @@ class _PantallaChatState extends State<PantallaChat> {
               repeticion: repeticion,
               esMia: _miMascara != null && _miMascara == mascara,
               color: _color,
-              onBorrar: widget.esOrganizador ? () => _borrarMensaje(doc.id) : null,
+              onBorrar: widget.vinculo?.esOrganizador == true ? () => _borrarMensaje(doc.id) : null,
             );
           },
         );
@@ -331,7 +283,9 @@ class _PantallaChatState extends State<PantallaChat> {
             width: 52,
             height: 52,
             child: FilledButton(
-              onPressed: _enviando ? null : _enviar,
+              onPressed: (_enviando || widget.vinculo?.estoyDentro != true)
+                  ? null
+                  : _enviar,
               style: FilledButton.styleFrom(
                 backgroundColor: _color.shade600,
                 padding: EdgeInsets.zero,

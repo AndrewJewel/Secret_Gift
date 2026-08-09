@@ -36,6 +36,9 @@ class TextosEn extends Textos {
   String get unMomento => 'One moment...';
 
   @override
+  String get reintentar => 'Try again';
+
+  @override
   String get idioma => 'Language';
 
   @override
@@ -43,6 +46,34 @@ class TextosEn extends Textos {
 
   @override
   String get idiomaEspanol => 'Español';
+
+  @override
+  String get configuracion => 'Settings';
+
+  @override
+  String get configuracionIdioma => 'Language';
+
+  @override
+  String get configuracionCambiarPin => 'Change my PIN';
+
+  @override
+  String get cambiarPinTitulo => 'Change my PIN';
+
+  @override
+  String get cambiarPinTexto =>
+      'Your account password is asked because it is the only way back if you forget the PIN.';
+
+  @override
+  String get cambiarPinPassword => 'Account password';
+
+  @override
+  String get cambiarPinNuevo => 'New 4-digit PIN';
+
+  @override
+  String get cambiarPinGuardar => 'Save the new PIN';
+
+  @override
+  String get cambiarPinGuardado => 'PIN changed';
 
   @override
   String errorInesperado(String detalle) {
@@ -67,10 +98,11 @@ class TextosEn extends Textos {
 
   @override
   String get errorFaltanDatosGrupo =>
-      'The occasion, group name or master PIN is missing.';
+      'The occasion or the group name is missing.';
 
   @override
-  String get errorFaltanDatosParticipante => 'The name or the PIN is missing.';
+  String get errorFaltanDatosParticipante =>
+      'The group or the name is missing.';
 
   @override
   String get errorNicknameLargo =>
@@ -114,6 +146,34 @@ class TextosEn extends Textos {
       'Could not create the group, please try again.';
 
   @override
+  String get errorPinFormato => 'The PIN must be exactly 4 digits';
+
+  @override
+  String get errorNoEresOrganizador => 'Only the group organizer can do this';
+
+  @override
+  String get errorNoEstasEnElGrupo => 'You are not signed up in this group yet';
+
+  @override
+  String get errorYaEstasEnElGrupo => 'You already have a spot in this group';
+
+  @override
+  String get errorGrupoYaSorteado =>
+      'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.';
+
+  @override
+  String get errorGrupoCerrado =>
+      'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.';
+
+  @override
+  String get errorSorteoYaHecho =>
+      'This group has already drawn. The draw can\'t be run twice.';
+
+  @override
+  String get errorPinBloqueado =>
+      'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.';
+
+  @override
   String get inicioSubtitulo => 'Group Manager';
 
   @override
@@ -147,20 +207,13 @@ class TextosEn extends Textos {
   String get crearNombreGrupoPista => 'e.g. The Smiths, Office 2026';
 
   @override
-  String get crearPinMaestro => 'Group master PIN';
-
-  @override
-  String get crearPinMaestroAyuda =>
-      'You will need it to draw names and to edit the group. You choose it.';
-
-  @override
   String get crearValorMinimo => 'Minimum gift value (optional)';
 
   @override
   String get crearValorMinimoPista => 'e.g. \$50';
 
   @override
-  String get crearFaltanDatos => 'The group name or the master PIN is missing';
+  String get crearFaltanDatos => 'The group name is missing';
 
   @override
   String get crearBoton => 'Create group';
@@ -224,6 +277,34 @@ class TextosEn extends Textos {
   String get cuentaCambiarACrear => 'No account yet? Create one';
 
   @override
+  String get cuentaFraseGancho =>
+      'Create your account to discover who sends you the secret gifts';
+
+  @override
+  String cuentaInvitadoA(String grupo) {
+    return 'You\'ve been invited to “$grupo”';
+  }
+
+  @override
+  String get cuentaYaTengoCuenta => 'Already have an account? Sign in';
+
+  @override
+  String get cuentaNoTengoCuenta => 'No account yet? Create one';
+
+  @override
+  String get cuentaPin => '4-digit PIN';
+
+  @override
+  String get cuentaPinAyuda =>
+      'You will type it to reveal your secret friend, in every group. Only you know it.';
+
+  @override
+  String get cuentaPinConfirmar => 'Confirm PIN';
+
+  @override
+  String get cuentaPinNoCoinciden => 'The PINs do not match';
+
+  @override
   String misGruposSaludo(String nickname) {
     return 'Hi, $nickname';
   }
@@ -240,6 +321,12 @@ class TextosEn extends Textos {
 
   @override
   String get misGruposCerrarSesion => 'Sign out';
+
+  @override
+  String get misGruposCrear => 'Create a new group';
+
+  @override
+  String get misGruposUnirse => 'Join with a code';
 
   @override
   String grupoCodigo(String codigo) {
@@ -294,20 +381,13 @@ class TextosEn extends Textos {
       'Nobody knows who you are, so this is the only clue your gift giver will have.';
 
   @override
-  String get registroPin => 'Secret PIN';
-
-  @override
-  String get registroPinAyuda =>
-      'With this PIN you will see who you have to give a gift to.';
-
-  @override
   String get registroBoton => 'ADD TO THE LIST';
 
   @override
-  String get registroFaltaNombre => 'The name or the PIN is missing';
+  String get registroFaltaNombre => 'The name is missing';
 
   @override
-  String get registroFaltaPersonaje => 'The character or the PIN is missing';
+  String get registroFaltaPersonaje => 'The character is missing';
 
   @override
   String get registroVacioNormal => 'No members yet.';
@@ -319,32 +399,10 @@ class TextosEn extends Textos {
   String get registroYaTieneAmigo => 'Already has their secret friend';
 
   @override
-  String get registroSalirGrupo => 'Leave the group (with your PIN)';
-
-  @override
-  String get registroTuPin => 'Your secret PIN';
+  String get registroSalirGrupo => 'Leave the group';
 
   @override
   String get registroVerAmigo => 'SEE MY SECRET FRIEND';
-
-  @override
-  String get organizadorEntrar => 'Organizer mode';
-
-  @override
-  String get organizadorSalir => 'Exit organizer mode';
-
-  @override
-  String get organizadorPinTexto =>
-      'Type the master PIN you chose when you created the group. It is asked only once.';
-
-  @override
-  String get organizadorPinCampo => 'Master PIN';
-
-  @override
-  String get organizadorActivado => 'Organizer mode on';
-
-  @override
-  String get organizadorDesactivado => 'Organizer mode off';
 
   @override
   String get organizadorEditarGrupo => 'Edit the group';
@@ -427,15 +485,19 @@ class TextosEn extends Textos {
   String get editarEliminarConfirmar => 'Yes, delete it';
 
   @override
+  String editarEliminarEscribeNombre(String grupo) {
+    return 'To delete it, type the group name exactly: $grupo';
+  }
+
+  @override
   String get editarEliminado => 'Group deleted';
 
   @override
-  String get loginTitulo => 'Who are you?';
+  String get verAmigoPinTitulo => 'Type your PIN';
 
   @override
-  String loginHola(String nombre) {
-    return 'Hi $nombre';
-  }
+  String get verAmigoPinTexto =>
+      'Nobody else should see this. Your PIN is asked every time.';
 
   @override
   String get secretaTitulo => 'Your secret friend is...';
@@ -537,12 +599,6 @@ class TextosEn extends Textos {
       'Your entry is saved. Nobody has to sign up twice.';
 
   @override
-  String get grupoYaEstoyDentro => 'I already signed up on another device';
-
-  @override
-  String get grupoNoEresTu => 'Not you?';
-
-  @override
   String get grupoTuEtiqueta => 'you';
 
   @override
@@ -560,13 +616,6 @@ class TextosEn extends Textos {
 
   @override
   String get chatEnviar => 'Send';
-
-  @override
-  String get chatQuienEres => 'Who are you?';
-
-  @override
-  String get chatQuienEresTexto =>
-      'Pick your name and type your PIN. It is asked only once on this device.';
 
   @override
   String chatTuMascara(String mascara) {
@@ -587,9 +636,6 @@ class TextosEn extends Textos {
       'It disappears for the whole group. You will not find out who wrote it.';
 
   @override
-  String get chatCambiarPersona => 'I am someone else';
-
-  @override
   String get errorMensajeVacio => 'The message is empty.';
 
   @override
@@ -597,6 +643,10 @@ class TextosEn extends Textos {
 
   @override
   String get errorMuyRapido => 'Wait a moment before writing again.';
+
+  @override
+  String get errorSesionInvalida =>
+      'Your account session is no longer valid. Please sign in again.';
 
   @override
   String get mascaraZorro => 'Fox';

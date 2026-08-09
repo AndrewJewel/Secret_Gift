@@ -4,18 +4,18 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
+import 'sesion.dart';
 import 'tematica.dart';
 
 /// Pantalla de organizador: cambiar nombre, valor mínimo, temática y
 /// reglas del grupo, o eliminarlo entero.
 ///
-/// Solo se llega aquí con el modo organizador ya desbloqueado, así que el
-/// PIN maestro llega verificado y no se vuelve a pedir para cada cambio.
-/// La única excepción es eliminar el grupo, que sí pide confirmación
-/// aparte por ser irreversible.
+/// Solo se llega aquí con el modo organizador ya desbloqueado por cuenta,
+/// así que las credenciales de sesión ya están verificadas y no se vuelven
+/// a pedir para cada cambio. La única excepción es eliminar el grupo, que
+/// sí pide confirmación aparte por ser irreversible.
 class PantallaEditarGrupo extends StatefulWidget {
   final String codigo;
-  final String pinMaestro;
   final Ocasion ocasion;
   final String nombreGrupo;
   final String valorMinimo;
@@ -25,7 +25,6 @@ class PantallaEditarGrupo extends StatefulWidget {
   const PantallaEditarGrupo({
     super.key,
     required this.codigo,
-    required this.pinMaestro,
     required this.ocasion,
     required this.nombreGrupo,
     required this.valorMinimo,
@@ -93,13 +92,19 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
 
     setState(() => _guardando = true);
     try {
+      final sesion = await leerSesion();
+      if (sesion == null) {
+        _avisar('⚠️ ${t.errorSesionInvalida}');
+        return;
+      }
       await llamarFuncion('editarGrupo', {
         'codigo': widget.codigo,
-        'pinMaestro': widget.pinMaestro,
         'nombreGrupo': nombre,
         'valorMinimo': _valorMinimo.text.trim(),
         'tematica': _tematica.id,
         'reglas': _reglas.text.trim(),
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.guardado);
@@ -116,27 +121,22 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
     final t = Textos.of(context);
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (c) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
-        title: Text(t.editarEliminarTitulo),
-        content: Text(t.editarEliminarTexto(widget.nombreGrupo)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
-            onPressed: () => Navigator.pop(c, true),
-            child: Text(t.editarEliminarConfirmar),
-          ),
-        ],
-      ),
+      builder: (c) => DialogoEliminarGrupo(nombreGrupo: widget.nombreGrupo),
     );
     if (confirmado != true) return;
 
     setState(() => _guardando = true);
     try {
+      final sesion = await leerSesion();
+      if (sesion == null) {
+        _avisar('⚠️ ${t.errorSesionInvalida}');
+        if (mounted) setState(() => _guardando = false);
+        return;
+      }
       await llamarFuncion('eliminarGrupo', {
         'codigo': widget.codigo,
-        'pinMaestro': widget.pinMaestro,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.eliminado);
@@ -300,6 +300,68 @@ class SelectorTematica extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Confirmación de borrado de grupo. Vive en su propio widget para poder
+/// probarlo sin montar la pantalla entera ni tocar Firebase.
+///
+/// Exige teclear el nombre exacto porque el PIN maestro, que antes hacía
+/// de freno sin querer, ya no existe. Se eligió esto y no la contraseña de
+/// la cuenta a propósito: acostumbrar a la gente a teclear su contraseña
+/// dentro de la app para acciones corrientes es el hábito del que viven
+/// los engaños.
+class DialogoEliminarGrupo extends StatefulWidget {
+  final String nombreGrupo;
+
+  const DialogoEliminarGrupo({super.key, required this.nombreGrupo});
+
+  @override
+  State<DialogoEliminarGrupo> createState() => _DialogoEliminarGrupoState();
+}
+
+class _DialogoEliminarGrupoState extends State<DialogoEliminarGrupo> {
+  final _confirmacion = TextEditingController();
+
+  @override
+  void dispose() {
+    _confirmacion.dispose();
+    super.dispose();
+  }
+
+  bool get _coincide => _confirmacion.text.trim() == widget.nombreGrupo.trim();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Textos.of(context);
+    return AlertDialog(
+      icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
+      title: Text(t.editarEliminarTitulo),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(t.editarEliminarTexto(widget.nombreGrupo)),
+          const SizedBox(height: 16),
+          Text(t.editarEliminarEscribeNombre(widget.nombreGrupo),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _confirmacion,
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.cancelar)),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+          onPressed: _coincide ? () => Navigator.pop(context, true) : null,
+          child: Text(t.editarEliminarConfirmar),
+        ),
+      ],
     );
   }
 }

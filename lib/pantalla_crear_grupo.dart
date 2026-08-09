@@ -4,6 +4,7 @@ import 'almacen_local.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_editar_grupo.dart' show SelectorTematica;
 import 'pantalla_registro.dart';
@@ -21,7 +22,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   Ocasion _ocasion = Ocasion.amigoSecreto;
   Tematica _tematica = Tematica.ninguna;
   final TextEditingController _nombreGrupoController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
   final TextEditingController _valorMinimoController = TextEditingController();
   bool _creando = false;
 
@@ -31,7 +31,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   @override
   void dispose() {
     _nombreGrupoController.dispose();
-    _pinController.dispose();
     _valorMinimoController.dispose();
     super.dispose();
   }
@@ -44,10 +43,9 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   Future<void> _crearGrupo() async {
     final t = Textos.of(context);
     final nombreGrupo = _nombreGrupoController.text.trim();
-    final pin = _pinController.text.trim();
     final valorMinimo = _valorMinimoController.text.trim();
 
-    if (nombreGrupo.isEmpty || pin.isEmpty) {
+    if (nombreGrupo.isEmpty) {
       _avisar('⚠️ ${t.crearFaltanDatos}');
       return;
     }
@@ -55,17 +53,20 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     setState(() => _creando = true);
     try {
       final sesion = await leerSesion();
+      if (sesion == null) {
+        _avisar('⚠️ ${t.errorSesionInvalida}');
+        return;
+      }
       final datos = await llamarFuncion('crearGrupo', {
         'ocasion': _ocasion.id,
         'nombreGrupo': nombreGrupo,
-        'pinMaestro': pin,
         'valorMinimo': valorMinimo,
         'tematica': _tematica.id,
         // Arranca con las reglas propias de la temática; el organizador
         // las puede reescribir después desde "Editar grupo".
         'reglas': _tematica.reglasPorDefecto(t),
-        if (sesion != null) 'nickname': sesion.nickname,
-        if (sesion != null) 'password': sesion.password,
+        'nickname': sesion.nickname,
+        'password': sesion.password,
       });
       final codigo = datos['codigo'] as String;
       if (!mounted) return;
@@ -112,6 +113,13 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
           ocasion: _ocasion,
           valorMinimo: _valorMinimoController.text.trim(),
           nombreGrupo: _nombreGrupoController.text.trim(),
+          // Acabas de crear el grupo: eres su organizador y todavía no
+          // tienes plaza. Es exactamente lo que `crearGrupo` guardó en la
+          // cuenta, así que se pasa sin preguntárselo al servidor. Sin
+          // esto la pantalla te trataba como a un desconocido y no
+          // enseñaba ni el lápiz de editar ni el botón de sortear en tu
+          // propio grupo recién creado.
+          vinculo: const MiVinculo(rol: 'organizador'),
         ),
       ),
     );
@@ -176,16 +184,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
                   hintText: t.crearNombreGrupoPista,
                   icon: Icons.label_outline,
                   textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                GlassTextField(
-                  color: _color,
-                  controller: _pinController,
-                  labelText: t.crearPinMaestro,
-                  helperText: t.crearPinMaestroAyuda,
-                  icon: Icons.lock_outline,
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
                 ),
                 const SizedBox(height: 16),
                 GlassTextField(

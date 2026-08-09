@@ -55,6 +55,15 @@ extension MensajeLocalizado on FuncionError {
         'mensaje_vacio' => t.errorMensajeVacio,
         'mensaje_largo' => t.errorMensajeLargo,
         'muy_rapido' => t.errorMuyRapido,
+        'sesion_invalida' => t.errorSesionInvalida,
+        'pin_formato' => t.errorPinFormato,
+        'no_eres_organizador' => t.errorNoEresOrganizador,
+        'no_estas_en_el_grupo' => t.errorNoEstasEnElGrupo,
+        'ya_estas_en_el_grupo' => t.errorYaEstasEnElGrupo,
+        'grupo_ya_sorteado' => t.errorGrupoYaSorteado,
+        'grupo_cerrado' => t.errorGrupoCerrado,
+        'sorteo_ya_hecho' => t.errorSorteoYaHecho,
+        'pin_bloqueado' => t.errorPinBloqueado,
         _ => mensaje,
       };
 }

@@ -151,6 +151,12 @@ abstract class Textos {
   /// **'One moment...'**
   String get unMomento;
 
+  /// No description provided for @reintentar.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get reintentar;
+
   /// No description provided for @idioma.
   ///
   /// In en, this message translates to:
@@ -168,6 +174,60 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Español'**
   String get idiomaEspanol;
+
+  /// No description provided for @configuracion.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get configuracion;
+
+  /// No description provided for @configuracionIdioma.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get configuracionIdioma;
+
+  /// No description provided for @configuracionCambiarPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change my PIN'**
+  String get configuracionCambiarPin;
+
+  /// No description provided for @cambiarPinTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Change my PIN'**
+  String get cambiarPinTitulo;
+
+  /// No description provided for @cambiarPinTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account password is asked because it is the only way back if you forget the PIN.'**
+  String get cambiarPinTexto;
+
+  /// No description provided for @cambiarPinPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Account password'**
+  String get cambiarPinPassword;
+
+  /// No description provided for @cambiarPinNuevo.
+  ///
+  /// In en, this message translates to:
+  /// **'New 4-digit PIN'**
+  String get cambiarPinNuevo;
+
+  /// No description provided for @cambiarPinGuardar.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the new PIN'**
+  String get cambiarPinGuardar;
+
+  /// No description provided for @cambiarPinGuardado.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN changed'**
+  String get cambiarPinGuardado;
 
   /// No description provided for @errorInesperado.
   ///
@@ -208,13 +268,13 @@ abstract class Textos {
   /// No description provided for @errorFaltanDatosGrupo.
   ///
   /// In en, this message translates to:
-  /// **'The occasion, group name or master PIN is missing.'**
+  /// **'The occasion or the group name is missing.'**
   String get errorFaltanDatosGrupo;
 
   /// No description provided for @errorFaltanDatosParticipante.
   ///
   /// In en, this message translates to:
-  /// **'The name or the PIN is missing.'**
+  /// **'The group or the name is missing.'**
   String get errorFaltanDatosParticipante;
 
   /// No description provided for @errorNicknameLargo.
@@ -289,6 +349,54 @@ abstract class Textos {
   /// **'Could not create the group, please try again.'**
   String get errorCodigoNoGenerado;
 
+  /// No description provided for @errorPinFormato.
+  ///
+  /// In en, this message translates to:
+  /// **'The PIN must be exactly 4 digits'**
+  String get errorPinFormato;
+
+  /// No description provided for @errorNoEresOrganizador.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group organizer can do this'**
+  String get errorNoEresOrganizador;
+
+  /// No description provided for @errorNoEstasEnElGrupo.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not signed up in this group yet'**
+  String get errorNoEstasEnElGrupo;
+
+  /// No description provided for @errorYaEstasEnElGrupo.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a spot in this group'**
+  String get errorYaEstasEnElGrupo;
+
+  /// No description provided for @errorGrupoYaSorteado.
+  ///
+  /// In en, this message translates to:
+  /// **'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.'**
+  String get errorGrupoYaSorteado;
+
+  /// Someone tried to join a group whose draw already ran
+  ///
+  /// In en, this message translates to:
+  /// **'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.'**
+  String get errorGrupoCerrado;
+
+  /// The organiser tried to run the draw on a group that already drew
+  ///
+  /// In en, this message translates to:
+  /// **'This group has already drawn. The draw can\'t be run twice.'**
+  String get errorSorteoYaHecho;
+
+  /// No description provided for @errorPinBloqueado.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.'**
+  String get errorPinBloqueado;
+
   /// No description provided for @inicioSubtitulo.
   ///
   /// In en, this message translates to:
@@ -349,18 +457,6 @@ abstract class Textos {
   /// **'e.g. The Smiths, Office 2026'**
   String get crearNombreGrupoPista;
 
-  /// No description provided for @crearPinMaestro.
-  ///
-  /// In en, this message translates to:
-  /// **'Group master PIN'**
-  String get crearPinMaestro;
-
-  /// No description provided for @crearPinMaestroAyuda.
-  ///
-  /// In en, this message translates to:
-  /// **'You will need it to draw names and to edit the group. You choose it.'**
-  String get crearPinMaestroAyuda;
-
   /// No description provided for @crearValorMinimo.
   ///
   /// In en, this message translates to:
@@ -376,7 +472,7 @@ abstract class Textos {
   /// No description provided for @crearFaltanDatos.
   ///
   /// In en, this message translates to:
-  /// **'The group name or the master PIN is missing'**
+  /// **'The group name is missing'**
   String get crearFaltanDatos;
 
   /// No description provided for @crearBoton.
@@ -499,6 +595,54 @@ abstract class Textos {
   /// **'No account yet? Create one'**
   String get cuentaCambiarACrear;
 
+  /// No description provided for @cuentaFraseGancho.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account to discover who sends you the secret gifts'**
+  String get cuentaFraseGancho;
+
+  /// No description provided for @cuentaInvitadoA.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been invited to “{grupo}”'**
+  String cuentaInvitadoA(String grupo);
+
+  /// No description provided for @cuentaYaTengoCuenta.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get cuentaYaTengoCuenta;
+
+  /// No description provided for @cuentaNoTengoCuenta.
+  ///
+  /// In en, this message translates to:
+  /// **'No account yet? Create one'**
+  String get cuentaNoTengoCuenta;
+
+  /// No description provided for @cuentaPin.
+  ///
+  /// In en, this message translates to:
+  /// **'4-digit PIN'**
+  String get cuentaPin;
+
+  /// No description provided for @cuentaPinAyuda.
+  ///
+  /// In en, this message translates to:
+  /// **'You will type it to reveal your secret friend, in every group. Only you know it.'**
+  String get cuentaPinAyuda;
+
+  /// No description provided for @cuentaPinConfirmar.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get cuentaPinConfirmar;
+
+  /// No description provided for @cuentaPinNoCoinciden.
+  ///
+  /// In en, this message translates to:
+  /// **'The PINs do not match'**
+  String get cuentaPinNoCoinciden;
+
   /// No description provided for @misGruposSaludo.
   ///
   /// In en, this message translates to:
@@ -528,6 +672,18 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Sign out'**
   String get misGruposCerrarSesion;
+
+  /// No description provided for @misGruposCrear.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new group'**
+  String get misGruposCrear;
+
+  /// No description provided for @misGruposUnirse.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with a code'**
+  String get misGruposUnirse;
 
   /// No description provided for @grupoCodigo.
   ///
@@ -612,18 +768,6 @@ abstract class Textos {
   /// **'Nobody knows who you are, so this is the only clue your gift giver will have.'**
   String get registroDeseosAyudaPersonaje;
 
-  /// No description provided for @registroPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Secret PIN'**
-  String get registroPin;
-
-  /// No description provided for @registroPinAyuda.
-  ///
-  /// In en, this message translates to:
-  /// **'With this PIN you will see who you have to give a gift to.'**
-  String get registroPinAyuda;
-
   /// No description provided for @registroBoton.
   ///
   /// In en, this message translates to:
@@ -633,13 +777,13 @@ abstract class Textos {
   /// No description provided for @registroFaltaNombre.
   ///
   /// In en, this message translates to:
-  /// **'The name or the PIN is missing'**
+  /// **'The name is missing'**
   String get registroFaltaNombre;
 
   /// No description provided for @registroFaltaPersonaje.
   ///
   /// In en, this message translates to:
-  /// **'The character or the PIN is missing'**
+  /// **'The character is missing'**
   String get registroFaltaPersonaje;
 
   /// No description provided for @registroVacioNormal.
@@ -663,56 +807,14 @@ abstract class Textos {
   /// No description provided for @registroSalirGrupo.
   ///
   /// In en, this message translates to:
-  /// **'Leave the group (with your PIN)'**
+  /// **'Leave the group'**
   String get registroSalirGrupo;
-
-  /// No description provided for @registroTuPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Your secret PIN'**
-  String get registroTuPin;
 
   /// No description provided for @registroVerAmigo.
   ///
   /// In en, this message translates to:
   /// **'SEE MY SECRET FRIEND'**
   String get registroVerAmigo;
-
-  /// No description provided for @organizadorEntrar.
-  ///
-  /// In en, this message translates to:
-  /// **'Organizer mode'**
-  String get organizadorEntrar;
-
-  /// No description provided for @organizadorSalir.
-  ///
-  /// In en, this message translates to:
-  /// **'Exit organizer mode'**
-  String get organizadorSalir;
-
-  /// No description provided for @organizadorPinTexto.
-  ///
-  /// In en, this message translates to:
-  /// **'Type the master PIN you chose when you created the group. It is asked only once.'**
-  String get organizadorPinTexto;
-
-  /// No description provided for @organizadorPinCampo.
-  ///
-  /// In en, this message translates to:
-  /// **'Master PIN'**
-  String get organizadorPinCampo;
-
-  /// No description provided for @organizadorActivado.
-  ///
-  /// In en, this message translates to:
-  /// **'Organizer mode on'**
-  String get organizadorActivado;
-
-  /// No description provided for @organizadorDesactivado.
-  ///
-  /// In en, this message translates to:
-  /// **'Organizer mode off'**
-  String get organizadorDesactivado;
 
   /// No description provided for @organizadorEditarGrupo.
   ///
@@ -858,23 +960,29 @@ abstract class Textos {
   /// **'Yes, delete it'**
   String get editarEliminarConfirmar;
 
+  /// No description provided for @editarEliminarEscribeNombre.
+  ///
+  /// In en, this message translates to:
+  /// **'To delete it, type the group name exactly: {grupo}'**
+  String editarEliminarEscribeNombre(String grupo);
+
   /// No description provided for @editarEliminado.
   ///
   /// In en, this message translates to:
   /// **'Group deleted'**
   String get editarEliminado;
 
-  /// No description provided for @loginTitulo.
+  /// No description provided for @verAmigoPinTitulo.
   ///
   /// In en, this message translates to:
-  /// **'Who are you?'**
-  String get loginTitulo;
+  /// **'Type your PIN'**
+  String get verAmigoPinTitulo;
 
-  /// No description provided for @loginHola.
+  /// No description provided for @verAmigoPinTexto.
   ///
   /// In en, this message translates to:
-  /// **'Hi {nombre}'**
-  String loginHola(String nombre);
+  /// **'Nobody else should see this. Your PIN is asked every time.'**
+  String get verAmigoPinTexto;
 
   /// No description provided for @secretaTitulo.
   ///
@@ -1056,18 +1164,6 @@ abstract class Textos {
   /// **'Your entry is saved. Nobody has to sign up twice.'**
   String get grupoYaDentroAyuda;
 
-  /// No description provided for @grupoYaEstoyDentro.
-  ///
-  /// In en, this message translates to:
-  /// **'I already signed up on another device'**
-  String get grupoYaEstoyDentro;
-
-  /// No description provided for @grupoNoEresTu.
-  ///
-  /// In en, this message translates to:
-  /// **'Not you?'**
-  String get grupoNoEresTu;
-
   /// No description provided for @grupoTuEtiqueta.
   ///
   /// In en, this message translates to:
@@ -1104,18 +1200,6 @@ abstract class Textos {
   /// **'Send'**
   String get chatEnviar;
 
-  /// No description provided for @chatQuienEres.
-  ///
-  /// In en, this message translates to:
-  /// **'Who are you?'**
-  String get chatQuienEres;
-
-  /// No description provided for @chatQuienEresTexto.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick your name and type your PIN. It is asked only once on this device.'**
-  String get chatQuienEresTexto;
-
   /// No description provided for @chatTuMascara.
   ///
   /// In en, this message translates to:
@@ -1146,12 +1230,6 @@ abstract class Textos {
   /// **'It disappears for the whole group. You will not find out who wrote it.'**
   String get chatBorrarTexto;
 
-  /// No description provided for @chatCambiarPersona.
-  ///
-  /// In en, this message translates to:
-  /// **'I am someone else'**
-  String get chatCambiarPersona;
-
   /// No description provided for @errorMensajeVacio.
   ///
   /// In en, this message translates to:
@@ -1169,6 +1247,12 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Wait a moment before writing again.'**
   String get errorMuyRapido;
+
+  /// No description provided for @errorSesionInvalida.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account session is no longer valid. Please sign in again.'**
+  String get errorSesionInvalida;
 
   /// No description provided for @mascaraZorro.
   ///
