@@ -194,20 +194,34 @@ exports.iniciarSesionCuenta = onCall(async (request) => {
   return {nickname: datos.nickname, grupos: detalles};
 });
 
-// Verifica nickname+password (si vienen) y vincula un grupo a esa cuenta.
-// Si no vienen credenciales, no hace nada — vincular cuenta es opcional.
-async function vincularCuentaSiAplica(nickname, password, entrada) {
-  if (!nickname || !password) return;
+/**
+ * Comprueba las credenciales ANTES de tocar nada. Si no valen, la acción
+ * entera se aborta sin dejar rastro: ni grupo huérfano, ni participante
+ * inscrito, ni avatar subido.
+ *
+ * Devuelve la clave normalizada de la cuenta, o null si no se mandó
+ * cuenta (la vinculación es opcional en la llamada, no la validez).
+ */
+async function verificarCuentaSiAplica(nickname, password) {
+  if (!nickname || !password) return null;
   const clave = normalizarNickname(nickname);
-  const ref = usuarioRef(clave);
-  const snap = await ref.get();
+  const snap = await usuarioRef(clave).get();
   if (!snap.exists || !bcrypt.compareSync(password, snap.data().hash)) {
     // Antes se ignoraba en silencio para no romper el alta por un extra.
     // Con la cuenta ya obligatoria eso deja de valer: el grupo no
     // aparecería en "Mis grupos" y nadie sabría por qué.
     throw new HttpsError("unauthenticated", "La sesión de tu cuenta no es válida. Vuelve a entrar.", {clave: "sesion_invalida"});
   }
-  await ref.update({grupos: admin.firestore.FieldValue.arrayUnion(entrada)});
+  return clave;
+}
+
+/**
+ * Añade el grupo a una cuenta YA verificada. Se llama después de la
+ * escritura principal, cuando ya existe el id al que apuntar.
+ */
+async function vincularCuenta(clave, entrada) {
+  if (!clave) return;
+  await usuarioRef(clave).update({grupos: admin.firestore.FieldValue.arrayUnion(entrada)});
 }
 
 exports.crearGrupo = onCall(async (request) => {
@@ -225,6 +239,10 @@ exports.crearGrupo = onCall(async (request) => {
   if (!ocasion || !pinMaestro || !nombreGrupo) {
     throw new HttpsError("invalid-argument", "Falta la ocasión, el nombre del grupo o el PIN maestro.", {clave: "faltan_datos_grupo"});
   }
+
+  // Se verifica antes de escribir nada: si las credenciales no valen, la
+  // creación del grupo se aborta entera y no queda un grupo huérfano.
+  const claveCuenta = await verificarCuentaSiAplica(nickname, password);
 
   // Reintenta si el código generado (poco probable) ya existe.
   for (let intento = 0; intento < 5; intento++) {
@@ -246,7 +264,7 @@ exports.crearGrupo = onCall(async (request) => {
         });
         tx.set(grupoPrivadoRef(codigo), {pinMaestro});
       });
-      await vincularCuentaSiAplica(nickname, password, {codigo, rol: "organizador"});
+      await vincularCuenta(claveCuenta, {codigo, rol: "organizador"});
       return {codigo};
     } catch (e) {
       if (e instanceof HttpsError && e.message === "código repetido, reintentar") {
@@ -275,6 +293,10 @@ exports.agregarParticipante = onCall(async (request) => {
     throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
   }
 
+  // Se verifica antes de subir el avatar: si las credenciales no valen,
+  // no queda un avatar huérfano en Storage ni un participante inscrito.
+  const claveCuenta = await verificarCuentaSiAplica(nickname, password);
+
   const ref = grupoRef(codigo).collection("participantes").doc();
   // La imagen se sube antes de escribir en Firestore: si falla, no queda
   // un participante a medias apuntando a un avatar que no existe.
@@ -295,7 +317,7 @@ exports.agregarParticipante = onCall(async (request) => {
     deseos_asignado: "",
   });
   await batch.commit();
-  await vincularCuentaSiAplica(nickname, password, {codigo, participanteId: ref.id, rol: "participante"});
+  await vincularCuenta(claveCuenta, {codigo, participanteId: ref.id, rol: "participante"});
   return {id: ref.id};
 });
 
