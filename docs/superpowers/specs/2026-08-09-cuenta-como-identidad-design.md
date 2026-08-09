@@ -154,6 +154,41 @@ participante, lo único que `PantallaSecreta` necesitaba de la lista que
 conserva la espera entre mensajes y el campo `ultimoMensajeMs`; solo
 cambia de dónde saca el `participanteId`. Quitarlo es una decisión de P3.
 
+### Tras el sorteo no se puede sacar a nadie
+
+`borrarParticipante` pasa a rechazar la llamada si el grupo ya sorteó
+(clave `grupo_ya_sorteado`).
+
+**Por qué.** Hoy borra los dos documentos y el avatar y no toca el sorteo
+(`functions/index.js:366`). Quien tenía asignada a esa persona se queda
+apuntando a un fantasma: su `nombre_asignado` sigue ahí, pero ya no hay a
+quién regalarle. El diálogo actual solo habla de lo que pierde el sacado,
+no de que le rompe el juego a un tercero que ni se entera.
+
+La salida no es avisar mejor ni recoser la cadena: es **reemplazar** a la
+persona conservando su plaza, que es P4. Mientras P4 no exista, la
+prohibición evita que nadie rompa una cadena. Antes del sorteo, sacar a
+alguien sigue funcionando igual que hoy.
+
+**`ejecutarSorteo` marca el grupo con `sorteado: true`.** Sin ese campo,
+saber si el grupo sorteó exige leer todos los participantes buscando un
+`tieneAmigo: true`. Con él, el dato viaja en el documento del grupo — que
+la pantalla ya escucha en vivo (`lib/pantalla_registro.dart:133`), así que
+tanto el bloqueo como el futuro icono de reemplazar salen sin una lectura
+extra.
+
+### Eliminar un grupo pide escribir su nombre
+
+El diálogo de `_confirmarEliminar` (`lib/pantalla_editar_grupo.dart:115`)
+ya es serio: icono rojo, "punto sin retorno", y un texto que enumera lo
+que se pierde. Lo que P2 le quita es el PIN maestro que venía **antes**.
+
+Para reponer esa fricción sin inventar una credencial nueva, el botón rojo
+queda inactivo hasta que se teclee el nombre exacto del grupo. Es
+imposible de hacer sin querer y no acostumbra a nadie a teclear su
+contraseña dentro de la app para acciones corrientes — que es el hábito
+del que viven los engaños.
+
 ### Campos que desaparecen de Firestore
 
 - `grupos/{cod}/participantes/{id}/privado/data.pin`
@@ -274,8 +309,9 @@ hoy "falta el nombre **o el PIN**"; el PIN ya no está en ese formulario.
 
 **Nacen:** el campo de PIN en crear cuenta y su ayuda; el diálogo que pide
 el PIN al revelar; el título y los campos de la hoja de configuración y de
-cambiar PIN; y las claves de error `pin_formato`, `no_eres_organizador`,
-`no_estas_en_el_grupo`.
+cambiar PIN; la instrucción de teclear el nombre del grupo para
+confirmar su borrado; y las claves de error `pin_formato`,
+`no_eres_organizador`, `no_estas_en_el_grupo` y `grupo_ya_sorteado`.
 
 Los dos ARB deben quedar con **el mismo número de claves entre sí**, que es
 la invariante que importa. El total cambiará respecto a los 206 de hoy:
@@ -328,6 +364,12 @@ ella.
   grupo una vez en Mis grupos, revelar el amigo secreto con el PIN,
   cambiar el PIN desde Configuración, y comprobar que un participante que
   no es organizador no ve los controles de organizador.
+- **La prohibición tras el sorteo**, en los dos sentidos: sacar a alguien
+  antes del sorteo funciona; después, el servidor la rechaza con
+  `grupo_ya_sorteado` y la app lo explica. Se prueba contra las funciones
+  desplegadas, no solo en la interfaz — el bloqueo tiene que estar en el
+  servidor, porque esconder un botón no impide nada.
+- **Eliminar un grupo** con el nombre mal escrito deja el botón inactivo.
 
 ## Decisiones conscientes
 
@@ -341,8 +383,38 @@ descuido:
 2. **El PIN global no se cachea.** Se teclea en cada revelación. La
    fricción es el punto, no un efecto secundario.
 3. **Cerrar sesión se muda dentro de Configuración.**
+4. **Tras el sorteo se prohíbe sacar a nadie**, en vez de avisar mejor o
+   recoser la cadena automáticamente. Conservar la plaza (P4) mantiene
+   intacta la asignación de quien regala a esa posición; recoser la habría
+   cambiado a espaldas de un tercero.
+5. **Eliminar un grupo pide teclear su nombre**, no la contraseña de la
+   cuenta.
 
 ## Fuera de alcance
+
+- **P4 — reemplazar un participante.** La contrapartida obligatoria de la
+  prohibición que P2 introduce. Flujo ya decidido:
+  - El icono *Reemplazar participante* aparece **solo para el organizador
+    y solo si `sorteado === true`**.
+  - Al activarlo, un aviso explica qué implica: la persona actual pierde
+    el acceso, la plaza conserva su posición en la cadena, y quien regalaba
+    a esa plaza pasará a regalarle a la persona nueva. Debe decir también
+    lo inevitable: **si la persona saliente ya reveló su amigo secreto, esa
+    información se fue con ella** y no hay forma de recuperarla.
+  - Al aceptar, se genera un **QR / enlace de un solo uso para esa plaza
+    concreta**. Quien lo abre con su cuenta la toma y queda vinculado.
+    Reutiliza la maquinaria de invitaciones, no hay lista donde elegir ni
+    ambigüedad con dos vacantes, y nadie puede tomar una plaza que no le
+    ofrecieron.
+  - **Hay que reescribir los deseos, no solo el nombre.** El sorteo copia
+    la lista de deseos al ejecutarse: `deseos_asignado` se guarda junto a
+    `nombre_asignado` (`functions/index.js:475-480`). Sin actualizar ambos,
+    quien regala a esa plaza seguiría viendo los deseos de la persona que
+    se fue.
+  - **Repone a propósito lo que P2 borra.** P2 elimina la hoja de "¿cuál
+    de estos eres?" porque la cuenta ya dice quién eres; un reemplazo es
+    justo el caso en que todavía no lo dice. El enlace de un solo uso es
+    esa reposición, hecha adrede y acotada, no por accidente.
 
 - **P3 — el chat sin máscaras.** Documento del mensaje de
   `{mascara, repeticion, texto, fecha}` a `{texto, color, fecha}`; color
@@ -363,7 +435,12 @@ descuido:
 
 ## Orden
 
-**P2** (este documento) → **P3** (chat) → **P1** (invitaciones QR).
+**P2** (este documento) → **P4** (reemplazar participante) → **P3** (chat)
+→ **P1** (invitaciones QR).
+
+P4 va inmediatamente después de P2 porque P2 prohíbe sacar a nadie tras el
+sorteo y P4 es la única salida que queda: hasta que exista, un grupo que
+sorteó no tiene forma de resolver que alguien se caiga.
 
 P3 depende de P2 porque necesita saber quién puede escribir. P1 es
-independiente de los dos y es el más pequeño.
+independiente de todos y es el más pequeño.
