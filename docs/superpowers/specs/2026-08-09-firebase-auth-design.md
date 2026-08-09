@@ -35,17 +35,26 @@ releer.
 
 ## Con qué se entra
 
-**Dos caminos:**
+**Un solo camino: correo y contraseña.** La recuperación la cubre
+`sendPasswordResetEmail`, que es lo que hoy no existe y el motivo principal
+de toda esta migración.
 
-- **Google.** Un toque en Android, que es donde vive esta app. Google ya
-  verificó el correo, así que Firebase lo marca verificado solo.
-- **Correo y contraseña.** Para quien no tenga cuenta de Google o prefiera
-  no vincularla. La recuperación la cubre `sendPasswordResetEmail`.
+**Se descartó añadir Google a propósito**, aun siendo un toque en Android.
+Un segundo proveedor trae ramificación por `providerData` en cada sitio que
+reautentique, manejo de ventana emergente con su alternativa por
+redirección, y dos caminos que mantener y probar en vez de uno. No compensa
+para una app de este tamaño.
 
-Se descartó el modelo sin contraseña (enlace por correo) porque obliga a ir
-al buzón **en el momento de escanear un QR**, que es el peor sitio posible
-para meter fricción en esta app. Y se descartó "solo Google" por dejar
-fuera a quien no quiera vincular su cuenta.
+También se descartó el modelo sin contraseña (enlace por correo) porque
+obliga a ir al buzón **en el momento de escanear un QR**, que es el peor
+sitio posible para meter fricción aquí.
+
+**La consecuencia de quedarse con un solo método, dicha claramente:** Google
+era el camino que se saltaba la verificación del correo, porque Google ya la
+ha hecho. Sin él, **el enlace de verificación lo recibe el 100% de los
+registros**, incluido quien escanea un QR en una fiesta. Se asume: es el
+precio de que la recuperación funcione de verdad, y añadir Google más
+adelante sigue siendo posible sin rehacer nada de lo demás.
 
 ### La verificación del correo es obligatoria y bloqueante
 
@@ -63,8 +72,8 @@ nada — el problema que veníamos a resolver, intacto.
 pero no revelar tu amigo") es un estado más que mantener y probar, y deja a
 gente a medias durante semanas sin enterarse.
 
-**Por qué la fricción es asumible.** Con Google no ocurre nunca. Y el camino
-del QR **ya sobrevive a una interrupción**: la invitación se persiste en
+**Por qué la fricción es asumible.** El camino del QR **ya sobrevive a una
+interrupción**: la invitación se persiste en
 disco y el código sigue en la URL — se construyó en P2 justamente para que
 alguien pudiera recargar a mitad del registro sin perder el grupo. Ir al
 buzón y volver es ese mismo caso.
@@ -77,7 +86,7 @@ buzón y volver es ese mismo caso.
 
 | Campo | De dónde sale |
 |---|---|
-| `nombre`, `apellido` | del formulario, o de `displayName` con Google |
+| `nombre`, `apellido` | del formulario de registro |
 | `correo` | de Auth |
 | `pinHash` | bcrypt, como hoy |
 | `grupos` | el mapa por código que ya existe, sin cambios |
@@ -111,8 +120,9 @@ sigue teniendo sesión abierta.
 
 Lo que cambia es **cómo se protege cambiarlo**. Hoy basta la contraseña, que
 está en `localStorage` al alcance del mismo atacante. Con Auth, cambiar el
-PIN exige **reautenticarse**: `reauthenticateWithCredential` en el cliente
-—teclear la contraseña de nuevo, o un Google fresco—.
+PIN exige **reautenticarse**: `reauthenticateWithCredential` en el cliente,
+tecleando la contraseña de nuevo. Y ahora la contraseña **no** está guardada
+en ningún sitio del que el atacante pueda sacarla.
 
 **Y el servidor tiene que comprobarlo, o no sirve de nada.** Un atacante con
 el dispositivo tiene un token válido y puede llamar a `cambiarPin`
@@ -125,24 +135,14 @@ viejo del atacante no lo tiene.
 Esa comprobación del servidor es lo que cierra de verdad el hallazgo que la
 auditoría marcó como el más grave.
 
-**Y la pantalla tiene que ramificar según cómo entró esa persona.** Quien
-accedió con Google **no tiene contraseña en esta app** — Firebase no guarda
-ninguna para esas cuentas —, así que pedirle "tu contraseña" no tiene
-respuesta posible. Se resuelve mirando `providerData` del usuario:
+**Con un solo proveedor, la pantalla no ramifica:** siempre es un campo de
+contraseña. Esa simplicidad es parte de por qué se descartó Google — con
+dos proveedores habría que mirar `providerData` en cada sitio que
+reautentique y ofrecer un botón distinto a cada quien.
 
-| Proveedor | Qué se le pide |
-|---|---|
-| `password` | La contraseña, en un campo |
-| `google.com` | Un botón *"Confirma con Google"* que reabre el diálogo y devuelve una credencial fresca |
-| Los dos vinculados | Cualquiera de los dos; se ofrece sin obligar a elegir |
-
-Los dos caminos acaban en `reauthenticateWithCredential` y los dos
-actualizan `auth_time`, que es lo único que el servidor mira.
-
-**Detalle de web que muerde:** el diálogo de Google es una ventana
-emergente y los bloqueadores la frenan. Hay que dejar preparado el camino
-por redirección (`reauthenticateWithRedirect`) como alternativa, igual que
-para el inicio de sesión.
+Si algún día se añade Google, **este es uno de los sitios a revisar**: quien
+entre por ahí no tendrá contraseña que teclear y necesitará un botón de
+*"confirma con Google"* en su lugar.
 
 ## Qué cambia en el código
 
@@ -193,10 +193,35 @@ El resto de reglas **no cambia**, incluido el `allow list: if false` de
   y refresca el token solo. No hay nada que guardar ni que leer.
 - **`lib/acceso_cuenta.dart` se reescribe** contra `FirebaseAuth`.
 - **La pantalla de crear cuenta cambia de campos**: correo, contraseña,
-  nombre, apellido y PIN, más el botón de Google.
+  nombre, apellido y PIN.
 - **Pantalla nueva de espera de verificación**, con reenviar y comprobar.
+- **Enlace *"he olvidado mi contraseña"* en la pantalla de entrar** (ver
+  abajo).
 - **`lib/hoja_configuracion.dart`**: cambiar el PIN pasa por
   reautenticación.
+
+### Recuperar la contraseña
+
+Siendo el único método de entrada, **este es el único camino de vuelta a
+una cuenta**. No es un extra: es la mitad del motivo de migrar.
+
+- Un enlace *"he olvidado mi contraseña"* bajo el formulario de entrar,
+  que pide el correo y llama a `sendPasswordResetEmail`.
+- **La respuesta es siempre la misma**, exista la cuenta o no: *"si esa
+  dirección tiene cuenta, te hemos mandado un enlace"*. Decir *"ese correo
+  no está registrado"* recrearía el oráculo de existencia que la migración
+  viene a cerrar — el mismo fallo que hoy tiene `iniciarSesionCuenta`, en
+  una pantalla nueva.
+- **La pantalla de poner la contraseña nueva la aloja Firebase.** No hay
+  que construirla. Su idioma sale de `FirebaseAuth.instance.setLanguageCode`,
+  así que hay que fijarlo con el idioma elegido antes de mandar el correo o
+  el mensaje llega en inglés a todo el mundo.
+
+**Lo que la recuperación NO recupera: el PIN.** Su hash lo guardamos
+nosotros y nadie puede releerlo. Quien olvide el PIN lo cambia
+reautenticándose —es decir, con la contraseña—, que es justo lo que sigue
+teniendo tras recuperarla. **Los dos secretos no se pueden perder a la
+vez**, y eso es lo que hace que el diseño se sostenga.
 
 ### El detalle que rompe tarde si no se ve pronto
 
@@ -219,17 +244,17 @@ limpio, igual que se hizo en P2. Cero código de compatibilidad.
 
 - `flutter analyze` sin advertencias y todos los tests en verde.
 - Los dos ARB con el mismo conjunto de claves. Habrá claves nuevas: la
-  pantalla de verificación, el botón de Google, los campos de nombre y
-  apellido, la reautenticación, y los errores de Auth traducidos.
+  pantalla de verificación, los campos de nombre y apellido, la
+  recuperación de contraseña, la reautenticación, y los errores de Auth
+  traducidos.
 - **`scripts/probar.mjs` hay que rehacerlo.** Hoy autentica con apodo y
   contraseña. Con Auth tiene que pedir tokens a la API REST de Firebase Auth
   (`signUp` / `signInWithPassword` con la clave web del proyecto) y mandarlos
   como *bearer*. Se puede sin dependencias nuevas, pero es trabajo real —
   y es la única prueba de verdad que tiene el backend, así que no es
   opcional.
-- En dispositivo: registrarse con correo, **comprobar que no se entra sin
-  verificar**, verificar y entrar; registrarse con Google y comprobar que no
-  pide verificación; recuperar la contraseña desde el enlace; y cambiar el
+- En dispositivo: registrarse, **comprobar que no se entra sin verificar**,
+  verificar y entrar; recuperar la contraseña desde el enlace; y cambiar el
   PIN comprobando que **exige reautenticarse**.
 
 ## Lo que esta migración NO arregla
@@ -272,14 +297,17 @@ descuido:
    participantes.
 2. **La verificación del correo bloquea el acceso**, con la fricción que eso
    mete en el camino del QR.
-3. **Dos métodos de entrada en vez de uno**, con el mantenimiento que
-   implica, para no dejar fuera a quien no quiera vincular Google.
+3. **Un solo método de entrada.** Se renunció a Google —un toque en
+   Android— por no mantener dos caminos. El coste es que ya nadie se salta
+   la verificación del correo.
 4. **El perfil se crea con una llamada explícita**, no con un disparador de
    Auth.
 
 ## Fuera de alcance
 
-- **Más proveedores** (Apple, teléfono).
+- **Google y cualquier otro proveedor** (Apple, teléfono). Añadir Google
+  más adelante no obliga a rehacer nada, pero sí a revisar los sitios que
+  reautentican.
 - **Segundo factor.**
 - **Exponer el nombre real al organizador** — el dato queda disponible, la
   decisión no está tomada.
