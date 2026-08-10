@@ -7,7 +7,6 @@ import 'l10n/app_localizations.dart';
 import 'mascara.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
-import 'sesion.dart';
 import 'tematica.dart';
 
 /// Chat grupal anónimo.
@@ -69,13 +68,9 @@ class _PantallaChatState extends State<PantallaChat> {
 
   Future<void> _cargarMiMascara() async {
     if (widget.vinculo?.estoyDentro != true) return;
-    final sesion = await leerSesion();
-    if (sesion == null) return;
     try {
       final datos = await llamarFuncion('miMascara', {
         'codigo': widget.codigo,
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       if (!mounted) return;
       setState(() => _miMascara = datos['mascara'] as int?);
@@ -95,16 +90,12 @@ class _PantallaChatState extends State<PantallaChat> {
   Future<void> _enviar() async {
     final texto = _mensajeController.text.trim();
     if (texto.isEmpty || _enviando) return;
-    final sesion = await leerSesion();
-    if (sesion == null || !mounted) return;
 
     setState(() => _enviando = true);
     try {
       final datos = await llamarFuncion('enviarMensaje', {
         'codigo': widget.codigo,
         'texto': texto,
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       _mensajeController.clear();
       if (!mounted) return;
@@ -143,13 +134,9 @@ class _PantallaChatState extends State<PantallaChat> {
     if (confirmado != true) return;
 
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) return;
       await llamarFuncion('borrarMensaje', {
         'codigo': widget.codigo,
         'mensajeId': mensajeId,
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
     } catch (e) {
       if (!mounted) return;

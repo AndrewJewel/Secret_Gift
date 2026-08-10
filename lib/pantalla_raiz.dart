@@ -335,11 +335,8 @@ Future<void> irADondeToque(BuildContext context, ResultadoAcceso resultado) asyn
   // Mis grupos queda como única ruta y raíz de todo lo demás.
   navegador.pushAndRemoveUntil(
     MaterialPageRoute(
-      // `nickname` es el nombre viejo del parámetro: PantallaMisGrupos
-      // no se renombra hasta la Tarea 8. Aquí ya se le pasa el dato
-      // nuevo.
       builder: (_) =>
-          PantallaMisGrupos(nickname: resultado.nombre, grupos: resultado.grupos),
+          PantallaMisGrupos(nombre: resultado.nombre, grupos: resultado.grupos),
     ),
     (r) => false,
   );

@@ -14,7 +14,6 @@ import 'ocasion.dart';
 import 'pantalla_chat.dart';
 import 'pantalla_editar_grupo.dart';
 import 'pantalla_secreta.dart';
-import 'sesion.dart';
 import 'tematica.dart';
 
 /// Los datos del grupo que se muestran en pantalla. Llegan primero como
@@ -239,22 +238,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }
 
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        // Antes esto se mandaba sin credenciales y la persona se unía al
-        // grupo EN SILENCIO, sin que apareciera en su Mis grupos. Ahora
-        // el servidor lo rechaza, así que se avisa aquí antes de gastar
-        // la llamada.
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        return;
-      }
       final creado = await llamarFuncion('agregarParticipante', {
         'codigo': widget.codigo,
         'nombre': nombreLimpio,
         'deseos': deseosLimpios,
         if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       _nombreController.clear();
       _deseosController.clear();
@@ -282,15 +270,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       if (!mounted) return;
       _avisar('⚠️ ${Textos.of(context).avatarNoGaleria(e.toString())}');
     }
-  }
-
-  /// Las credenciales que autorizan cualquier acción de esta pantalla.
-  /// Devuelve null si no hay sesión, que a estas alturas no debería pasar
-  /// —no se llega aquí sin cuenta— pero tumbar la app sería peor.
-  Future<Map<String, String>?> _credenciales() async {
-    final s = await leerSesion();
-    if (s == null) return null;
-    return {'nickname': s.nickname, 'password': s.password};
   }
 
   /// Pide el PIN global y abre la pantalla del amigo secreto.
@@ -334,16 +313,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (pin == null || pin.isEmpty || !mounted) return;
 
-    final cred = await _credenciales();
-    if (cred == null || !mounted) {
-      _avisar('⚠️ ${t.errorSesionInvalida}');
-      return;
-    }
     try {
       final data = await llamarFuncion('verAmigoSecreto', {
         'codigo': widget.codigo,
         'pin': pin,
-        ...cred,
       });
       if (!mounted) return;
       final deseos = data['deseosAmigo'] as String? ?? '';
@@ -409,13 +382,8 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (confirmado != true) return;
 
-    final cred = await _credenciales();
-    if (cred == null) {
-      _avisar('⚠️ ${t.errorSesionInvalida}');
-      return;
-    }
     try {
-      await llamarFuncion('ejecutarSorteo', {'codigo': widget.codigo, ...cred});
+      await llamarFuncion('ejecutarSorteo', {'codigo': widget.codigo});
       _avisar('🎲 ${t.sorteoListo}');
     } catch (e) {
       _avisarError(e);
@@ -478,16 +446,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (confirmado != true) return;
 
-    final cred = await _credenciales();
-    if (cred == null) {
-      _avisar('⚠️ ${t.errorSesionInvalida}');
-      return;
-    }
     try {
       await llamarFuncion('borrarParticipante', {
         'codigo': widget.codigo,
         'participanteId': participanteId,
-        ...cred,
       });
     } catch (e) {
       _avisarError(e);
@@ -519,16 +481,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (confirmado != true) return;
 
-    final cred = await _credenciales();
-    if (cred == null) {
-      _avisar('⚠️ ${t.errorSesionInvalida}');
-      return;
-    }
     try {
       await llamarFuncion('borrarParticipante', {
         'codigo': widget.codigo,
         'participanteId': participanteId,
-        ...cred,
       });
     } catch (e) {
       _avisarError(e);
@@ -562,17 +518,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     );
     if (nuevo == null || nuevo.isEmpty || nuevo == nombreActual) return;
 
-    final cred = await _credenciales();
-    if (cred == null) {
-      _avisar('⚠️ ${t.errorSesionInvalida}');
-      return;
-    }
     try {
       await llamarFuncion('editarParticipante', {
         'codigo': widget.codigo,
         'participanteId': participanteId,
         'nuevoNombre': nuevo,
-        ...cred,
       });
     } catch (e) {
       _avisarError(e);

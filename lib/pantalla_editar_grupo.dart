@@ -4,7 +4,6 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
-import 'sesion.dart';
 import 'tematica.dart';
 
 /// Pantalla de organizador: cambiar nombre, valor mínimo, temática y
@@ -92,19 +91,12 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
 
     setState(() => _guardando = true);
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        return;
-      }
       await llamarFuncion('editarGrupo', {
         'codigo': widget.codigo,
         'nombreGrupo': nombre,
         'valorMinimo': _valorMinimo.text.trim(),
         'tematica': _tematica.id,
         'reglas': _reglas.text.trim(),
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.guardado);
@@ -127,16 +119,8 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
 
     setState(() => _guardando = true);
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        if (mounted) setState(() => _guardando = false);
-        return;
-      }
       await llamarFuncion('eliminarGrupo', {
         'codigo': widget.codigo,
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.eliminado);

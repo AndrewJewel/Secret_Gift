@@ -8,7 +8,6 @@ import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_editar_grupo.dart' show SelectorTematica;
 import 'pantalla_registro.dart';
-import 'sesion.dart';
 import 'tematica.dart';
 
 class PantallaCrearGrupo extends StatefulWidget {
@@ -52,11 +51,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
 
     setState(() => _creando = true);
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        return;
-      }
       final datos = await llamarFuncion('crearGrupo', {
         'ocasion': _ocasion.id,
         'nombreGrupo': nombreGrupo,
@@ -65,8 +59,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
         // Arranca con las reglas propias de la temática; el organizador
         // las puede reescribir después desde "Editar grupo".
         'reglas': _tematica.reglasPorDefecto(t),
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       final codigo = datos['codigo'] as String;
       if (!mounted) return;

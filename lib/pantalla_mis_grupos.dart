@@ -11,13 +11,12 @@ import 'pantalla_unirse_grupo.dart';
 import 'ruta_observer.dart';
 import 'tematica.dart';
 import 'pantalla_registro.dart';
-import 'sesion.dart';
 
 class PantallaMisGrupos extends StatefulWidget {
-  final String nickname;
+  final String nombre;
   final List<Map<String, dynamic>> grupos;
 
-  const PantallaMisGrupos({super.key, required this.nickname, required this.grupos});
+  const PantallaMisGrupos({super.key, required this.nombre, required this.grupos});
 
   @override
   State<PantallaMisGrupos> createState() => _PantallaMisGruposState();
@@ -81,7 +80,7 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: GlassAppBar(
-            title: Text(t.misGruposSaludo(widget.nickname)),
+            title: Text(t.misGruposSaludo(widget.nombre)),
             color: colorNeutro,
             actions: [
               IconButton(
@@ -90,7 +89,7 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                 onPressed: () => HojaConfiguracion.mostrar(
                   context,
                   alCerrarSesion: () async {
-                    await cerrarSesion();
+                    await salir();
                     if (!context.mounted) return;
                     // Se cierra la hoja y se vuelve a la raíz por nombre de
                     // ruta, no importando el portero. Importarlo aquí
