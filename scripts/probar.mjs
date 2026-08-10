@@ -153,6 +153,15 @@ async function llamar(nombre, datos, idToken) {
   return j.result || {};
 }
 
+// Decodifica el payload de un JWT (la parte de en medio, JSON en base64url).
+// Hace falta para leer `email_verified` de verdad: que entrar() devuelva un
+// idToken no dice nada sobre si el correo está verificado — Identity
+// Toolkit lo entrega igual de contento con la cuenta sin verificar, así que
+// solo comprobar "hay token" da un OK falso y el fallo real aparece varios
+// casos más tarde, con `correo_sin_verificar`, lejos de la causa.
+const claims = (idToken) =>
+  JSON.parse(Buffer.from(idToken.split(".")[1], "base64").toString());
+
 function ok(titulo, condicion, detalle = "") {
   if (condicion) {
     console.log(`  OK  ${titulo}`);
@@ -276,7 +285,24 @@ async function seguir(emailOrganizador, emailParticipante) {
 
   const {idToken: tokenOrg} = await entrar(emailOrganizador, PASSWORD);
   const {idToken: tokenPart} = await entrar(emailParticipante, PASSWORD);
-  ok("las dos cuentas ya verificadas entran", !!tokenOrg && !!tokenPart);
+  const verificadaOrg = claims(tokenOrg).email_verified === true;
+  const verificadaPart = claims(tokenPart).email_verified === true;
+  ok("las dos cuentas ya verificadas entran", verificadaOrg && verificadaPart,
+      `organizadora ${emailOrganizador}: verificada=${verificadaOrg}; ` +
+      `participante ${emailParticipante}: verificada=${verificadaPart}`);
+  // Si alguna de las dos no está verificada, los treinta y tantos casos que
+  // siguen fallarán en cascada por la misma causa (empezando por
+  // `correo_sin_verificar`) y enterrarán el motivo real. Mejor cortar aquí
+  // con un mensaje que diga cuál cuenta falta por confirmar.
+  if (!verificadaOrg || !verificadaPart) {
+    console.error("\nFalta verificar el correo de:");
+    if (!verificadaOrg) console.error(`  - organizadora: ${emailOrganizador}`);
+    if (!verificadaPart) console.error(`  - participante: ${emailParticipante}`);
+    console.error("Pincha el enlace de verificación de esa cuenta (o márcala a mano");
+    console.error("en Google Cloud Console → Identity Platform → Users) y repite:");
+    console.error(`\n  node scripts/probar.mjs --seguir ${emailOrganizador} ${emailParticipante}\n`);
+    process.exit(1);
+  }
 
   await debeFallar("guardarPerfil rechaza un PIN de 3 dígitos", "pin_formato",
       () => llamar("guardarPerfil", {nombre: "Organiza", apellido: "Dora", pin: "123"}, tokenOrg));
