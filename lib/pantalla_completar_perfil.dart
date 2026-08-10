@@ -45,6 +45,7 @@ class _PantallaCompletarPerfilState extends State<PantallaCompletarPerfil> {
           nombre: _nombre.text, apellido: _apellido.text, pin: _pin.text);
       if (!mounted) return;
       await widget.alCompletar(context);
+      if (mounted) setState(() => _guardando = false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

@@ -84,19 +84,23 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
         ],
       ),
     );
-    if (confirmado != true || !mounted) return;
-
-    setState(() => _cambiandoPin = true);
-    try {
-      await reautenticar(password.text);
-      await llamarFuncion('cambiarPin', {'pinNuevo': pinNuevo.text.trim()});
-      _avisar('✅ ${t.cambiarPinGuardado}');
-    } catch (e) {
-      if (!mounted) return;
-      _avisar('⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
-    } finally {
-      if (mounted) setState(() => _cambiandoPin = false);
+    if (confirmado == true && mounted) {
+      setState(() => _cambiandoPin = true);
+      try {
+        await reautenticar(password.text);
+        await llamarFuncion('cambiarPin', {'pinNuevo': pinNuevo.text.trim()});
+        _avisar('✅ ${t.cambiarPinGuardado}');
+      } catch (e) {
+        if (mounted) {
+          _avisar(
+              '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
+        }
+      } finally {
+        if (mounted) setState(() => _cambiandoPin = false);
+      }
     }
+    password.dispose();
+    pinNuevo.dispose();
   }
 
   @override
