@@ -11,8 +11,12 @@ import 'pantalla_verificar_correo.dart';
 import 'selector_idioma.dart';
 import 'tematica.dart';
 
-/// Misma exigencia que valida el servidor: 8+, mayúscula, minúscula,
-/// número y símbolo. Se comprueba aquí para no gastar una llamada.
+/// Esta comprobación es solo del cliente: el servidor ya no valida el
+/// formato de la contraseña, porque desde esta migración la guarda Firebase
+/// Auth, no nuestro código. La política de verdad (longitud mínima,
+/// caracteres exigidos) se configura en la consola de Firebase; este regex
+/// es un adelanto para no gastar una llamada con algo que se va a rechazar
+/// igual, no la fuente de verdad.
 final RegExp _regexPassword =
     RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
 
