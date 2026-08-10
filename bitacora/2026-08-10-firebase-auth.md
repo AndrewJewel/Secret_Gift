@@ -152,18 +152,66 @@ reputación cero, y desde noviembre de 2025 Gmail **rechaza** en el SMTP lo
 mal autenticado en vez de mandarlo a spam. Autoalojar habría empeorado el
 problema que veníamos a resolver.
 
+## La prueba en dispositivo, y el fallo que ninguna prueba podía ver
+
+Con todo desplegado y 37/37 en verde, la app **no dejaba crear una cuenta**.
+Tres causas distintas, encadenadas, y ninguna era código nuestro.
+
+**1. El dominio no estaba autorizado.** Al conectar `secretgift.app` a
+Hosting se me pasó añadirlo a la lista de dominios autorizados de
+Authentication. Firebase Auth se niega a trabajar desde un dominio que no
+esté en esa lista. Se comprobó consultando la configuración pública del
+proyecto —`authorizedDomains`— en vez de suponerlo.
+
+**2. El fallo gordo: el registro de plugins de web estaba caducado.**
+
+Flutter genera un fichero que dice qué plugins activar en web. Los que había
+eran del 8 y el 9 de agosto — de **antes** de añadir `firebase_auth`— y
+ninguno registraba `FirebaseAuthWeb`. Así que la app se compiló una y otra
+vez sin la implementación web de Auth, y cada llamada se iba a una interfaz
+sin nada detrás. Síntoma: `channel-error`.
+
+`flutter clean` lo regeneró.
+
+**La lección, que es lo que importa:** añadir una dependencia con parte
+nativa o de web **no basta con `pub get`**. Hay que limpiar antes de
+compilar, o se arrastra el registro viejo.
+
+Y lo que lo hace peligroso: **`flutter analyze` estaba limpio y los 36 tests
+en verde con la app completamente rota.** Ninguna de las dos cosas ejecuta
+la app en un navegador, así que ninguna podía verlo. Tampoco los 37 casos de
+integración, que hablan con el servidor por HTTP y no pasan por el cliente
+Flutter.
+
+Lo encontró el humano abriendo la app, en dos minutos. Es la justificación
+más clara que ha dado esta sesión de por qué la verificación en dispositivo
+no es un trámite.
+
+**3. Un `unknown` al volver de verificar el correo**, que dejó de aparecer
+con la sesión ya creada por la compilación limpia. La explicación más
+probable es que fuera una sesión heredada de la compilación rota. Se
+verificó después el camino completo —crear cuenta, ir al buzón, volver a la
+misma pestaña sin recargar y confirmar— y entra correctamente.
+
+**De paso quedaron dos mejoras en los mensajes de error**, salidas de lo mal
+que se diagnosticó todo esto:
+
+- `unauthorized-domain` tiene ahora su propio texto. Es un fallo de
+  configuración, no del usuario: decirle «vuelve a intentarlo» era mentirle.
+- El comodín de códigos desconocidos **enseña el código y el mensaje de
+  Firebase**. Sin eso, «algo salió mal» no se puede diagnosticar a distancia
+  — que es exactamente lo que pasó durante media hora.
+
 ## Estado y pendientes
 
-**La rama `auth-como-identidad` está desplegada en producción pero NO
-fusionada a `main`.** Es un estado poco habitual y deliberado: falta la
-verificación en dispositivo, y no se fusiona hasta tenerla.
+**Verificado en dispositivo y fusionado a `main`.**
 
-1. **Probar en el navegador.** Dos casos que ninguna prueba automática
-   cubre: registrarse, verificar desde el buzón y **volver sin recargar la
-   app** —el fallo crítico de arriba—, y que cambiar el PIN rechaza una
-   sesión de más de cinco minutos.
-2. **Fusionar a `main` y empujar** cuando lo anterior esté confirmado.
-3. **Terminar la verificación del dominio de correo** y comprobar si sale
+Queda pendiente **una** comprobación manual que no se llegó a hacer: que
+cambiar el PIN rechaza una sesión de más de cinco minutos. Es el único
+punto de la revisión que sigue sin confirmar con los ojos, y probarlo
+automáticamente exigiría un `sleep` de cinco minutos.
+
+1. **Terminar la verificación del dominio de correo** y comprobar si sale
    de spam. Después, quitar Resend de «Configuración del SMTP» y borrar sus
    tres registros DNS sueltos (`send.secretgift.app` MX y TXT, y
    `resend._domainkey`), que hoy no molestan.
