@@ -11,15 +11,61 @@
 // segundo cuerpo real: la cuenta ORGANIZADORA crea el grupo y se apunta ella
 // misma, y la cuenta PARTICIPANTE entra y sale para completar el aforo.
 //
-// Uso:  node scripts/probar.mjs
-// Crea un grupo de usar y tirar y lo borra al terminar. Las DOS CUENTAS de
-// prueba (prueba_<marca de tiempo> y prueba2_<marca de tiempo>) se quedan:
-// no hay ninguna función que borre cuentas, y añadirla solo para esto
-// abriría una superficie que nadie más necesita. Son documentos pequeños y
-// con prefijo reconocible; si molestan, se limpian a mano desde la consola
-// de Firebase.
+// La identidad ya no es apodo+contraseña: es Firebase Auth. El script pide
+// tokens a la API REST de Identity Platform y los manda como
+// `Authorization: Bearer <idToken>` a cada función, igual que hace la app.
+//
+// ⚠️ La verificación de correo es BLOQUEANTE y este script no tiene buzón.
+// La API REST no deja marcar `emailVerified` sin el enlace del correo, y el
+// Admin SDK sí podría — pero eso exigiría credenciales de administrador que
+// este script no tiene ni debería tener. Una función de servidor que marque
+// cuentas como verificadas sería una puerta trasera permanente para
+// ahorrarse dos clics, así que no existe. Se ejecuta en dos pasos:
+//
+//   1. node scripts/probar.mjs --crear
+//      Crea las dos cuentas de prueba, comprueba que SIN verificar el
+//      servidor responde `correo_sin_verificar`, e imprime los dos correos
+//      (y el comando exacto del paso 3).
+//   2. Marcarlos como verificados a mano en la consola de Firebase:
+//      Authentication → el usuario → ⋮ → editar → Email verified.
+//   3. node scripts/probar.mjs --seguir <correo1> <correo2>
+//      Entra con esas dos cuentas ya verificadas y ejecuta el resto de la
+//      batería completa.
+//
+// Es más incómodo que antes y es el precio de que la verificación sea de
+// verdad: si el script pudiera saltársela, no probaría nada sobre ella.
+//
+// Las DOS CUENTAS de prueba (prueba.organizador.<marca> y
+// prueba.participante.<marca>, dominio example.com) se quedan: no hay
+// ninguna función que borre cuentas de Auth, y añadirla solo para esto
+// abriría una superficie que nadie más necesita. Si molestan, se borran a
+// mano desde la consola de Firebase (Authentication) — borrar solo el
+// documento de Firestore no basta, la cuenta de Auth seguiría viva.
+//
+// El grupo de prueba SÍ se borra al terminar (eliminarGrupo), como antes.
 
 const BASE = "https://us-central1-santa-secreto-860c3.cloudfunctions.net";
+
+// La clave web del proyecto. No es un secreto: va incrustada en el cliente
+// web (ver lib/main.dart) y sirve para identificar el proyecto, no para
+// autorizar nada.
+const API_KEY = "AIzaSyC3rWS4cYcXpdrO2NCturmoiaoqmkzpjE8";
+const IDENTITY = "https://identitytoolkit.googleapis.com/v1";
+
+async function authRest(metodo, cuerpo) {
+  const r = await fetch(`${IDENTITY}/accounts:${metodo}?key=${API_KEY}`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({...cuerpo, returnSecureToken: true}),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(`${metodo}: ${j.error?.message || r.status}`);
+  return j;
+}
+
+const registrar = (email, password) => authRest("signUp", {email, password});
+const entrar = (email, password) => authRest("signInWithPassword", {email, password});
+
 // Para leer documentos directamente y comprobar lo que el servidor escribió,
 // no solo lo que responde. `grupos/{codigo}` y sus participantes son de
 // lectura pública por diseño (ver firestore.rules); la colección NO se puede
@@ -38,11 +84,14 @@ const JPEG_1PX =
 const sufijo = Date.now().toString(36);
 // Organizadora: crea el grupo, se apunta como "Yo mismo" y es a quien se le
 // comprueba el ciclo completo de PIN (revelación, cambio, bloqueo, rescate).
-const NICK_ORGANIZADOR = `prueba_${sufijo}`;
+const EMAIL_ORGANIZADOR = `prueba.organizador.${sufijo}@example.com`;
 // Participante: solo existe para dar cuerpo a "otra persona" — se le saca
 // del grupo y se le vuelve a meter, pero nunca se le revela su amigo
-// secreto, así que su PIN no importa más allá de cumplir el formato.
-const NICK_PARTICIPANTE = `prueba2_${sufijo}`;
+// secreto, así que su PIN no importa más allá de cumplir el formato. Antes
+// de tener perfil también hace de "cuenta autenticada sin vínculo": el
+// primer uso que se le da tras verificar el correo es intentar entrar a un
+// grupo SIN haber llamado a guardarPerfil todavía.
+const EMAIL_PARTICIPANTE = `prueba.participante.${sufijo}@example.com`;
 const PASSWORD = "Prueba123!";
 const PIN = "4321";
 const PIN_PARTICIPANTE = "6789";
@@ -57,19 +106,24 @@ const MAX_INTENTOS_PIN = 5;
 
 let fallos = 0;
 
-async function llamar(nombre, datos) {
-  const resp = await fetch(`${BASE}/${nombre}`, {
+// Igual que antes, pero ahora manda el idToken como bearer en vez de
+// nickname/password en el cuerpo. `idToken` puede ser null (sin cabecera) o
+// una cadena cualquiera (token roto): las dos formas de "no autoriza nada".
+async function llamar(nombre, datos, idToken) {
+  const headers = {"Content-Type": "application/json"};
+  if (idToken) headers["Authorization"] = `Bearer ${idToken}`;
+  const r = await fetch(`${BASE}/${nombre}`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers,
     body: JSON.stringify({data: datos}),
   });
-  const body = await resp.json();
-  if (body.error) {
-    const err = new Error(body.error.message);
-    err.clave = body.error.details?.clave;
-    throw err;
+  const j = await r.json();
+  if (j.error) {
+    const e = new Error(j.error.message);
+    e.clave = j.error.details?.clave || "";
+    throw e;
   }
-  return body.result;
+  return j.result || {};
 }
 
 function ok(titulo, condicion, detalle = "") {
@@ -93,55 +147,142 @@ async function debeFallar(titulo, claveEsperada, fn) {
   }
 }
 
-async function main() {
-  console.log(`Cuenta organizadora: ${NICK_ORGANIZADOR}`);
-  console.log(`Cuenta participante: ${NICK_PARTICIPANTE}`);
+// --- Paso 1: crear las dos cuentas y probar lo que solo se puede probar
+// ANTES de verificar el correo ------------------------------------------
+async function crear() {
+  console.log(`Cuenta organizadora: ${EMAIL_ORGANIZADOR}`);
+  console.log(`Cuenta participante: ${EMAIL_PARTICIPANTE}`);
 
-  await debeFallar("registrarCuenta rechaza un PIN de 3 dígitos", "pin_formato",
-      () => llamar("registrarCuenta", {nickname: NICK_ORGANIZADOR, password: PASSWORD, pin: "123"}));
+  await registrar(EMAIL_ORGANIZADOR, PASSWORD);
+  await registrar(EMAIL_PARTICIPANTE, PASSWORD);
+  ok("las dos cuentas se registran en Firebase Auth", true);
 
-  const registro = await llamar("registrarCuenta",
-      {nickname: NICK_ORGANIZADOR, password: PASSWORD, pin: PIN});
-  ok("registrarCuenta con PIN de 4 dígitos", registro.nickname === NICK_ORGANIZADOR, `llegó ${registro.nickname}`);
+  // Con contraseña equivocada, Firebase Auth ni siquiera llega a darnos un
+  // token: la comprobación pasa por su lado, no por el nuestro. Es la otra
+  // mitad de "una contraseña equivocada no autoriza nada" — la mitad de
+  // nuestro backend está en la sección --seguir, con el token roto.
+  let rechazoPasswordMala = false;
+  try {
+    await entrar(EMAIL_ORGANIZADOR, "OtraCosa456!");
+  } catch (e) {
+    rechazoPasswordMala = true;
+  }
+  ok("una contraseña equivocada no autentica", rechazoPasswordMala);
 
-  // Segunda cuenta, la que hará de "otra persona" más abajo.
-  const registroParticipante = await llamar("registrarCuenta",
-      {nickname: NICK_PARTICIPANTE, password: PASSWORD, pin: PIN_PARTICIPANTE});
-  ok("registrarCuenta de la segunda cuenta (participante)",
-      registroParticipante.nickname === NICK_PARTICIPANTE, `llegó ${registroParticipante.nickname}`);
+  // Token de una cuenta recién creada: el correo TODAVÍA no está verificado.
+  // Este es el único momento en que se puede probar `correo_sin_verificar`
+  // de verdad — en cuanto se marque la cuenta como verificada en la
+  // consola, cualquier entrar() nuevo trae un token que ya no sirve para
+  // esta prueba.
+  const {idToken: tokenSinVerificar} = await entrar(EMAIL_ORGANIZADOR, PASSWORD);
+  await debeFallar("sin verificar el correo no se entra", "correo_sin_verificar",
+      () => llamar("misGrupos", {}, tokenSinVerificar));
 
-  const credOrganizador = {nickname: NICK_ORGANIZADOR, password: PASSWORD};
-  const credParticipante = {nickname: NICK_PARTICIPANTE, password: PASSWORD};
+  console.log("\nAhora marca las dos cuentas como verificadas en la consola");
+  console.log("de Firebase (Authentication → usuario → ⋮ → editar → Email");
+  console.log("verified) y sigue con:\n");
+  console.log(`  node scripts/probar.mjs --seguir ${EMAIL_ORGANIZADOR} ${EMAIL_PARTICIPANTE}\n`);
+
+  console.log(fallos === 0 ? "Paso 1 en verde." : `Paso 1: ${fallos} fallo(s).`);
+  process.exit(fallos === 0 ? 0 : 1);
+}
+
+// --- Paso 2: el resto de la batería, con las dos cuentas ya verificadas -
+async function seguir(emailOrganizador, emailParticipante) {
+  if (!emailOrganizador || !emailParticipante) {
+    console.error("Uso: node scripts/probar.mjs --seguir <correoOrganizador> <correoParticipante>");
+    process.exit(1);
+  }
+  console.log(`Cuenta organizadora: ${emailOrganizador}`);
+  console.log(`Cuenta participante: ${emailParticipante}`);
+
+  // SIN NINGUNA cabecera de identidad: es la comprobación más importante de
+  // todo el fichero. Si esta pasa a verde por accidente, la app entera está
+  // abierta — cualquiera podría llamar a cualquier función sin haber
+  // entrado nunca.
+  await debeFallar("sin token no se autoriza", "sesion_invalida",
+      () => llamar("misGrupos", {}, null));
+  // Un token que no es un JWT válido tiene que fallar igual que no mandar
+  // ninguno — no vale con comprobar que la cabecera existe.
+  await debeFallar("un token basura tampoco autoriza", "sesion_invalida",
+      () => llamar("misGrupos", {}, "esto-no-es-un-token"));
+
+  const {idToken: tokenOrg} = await entrar(emailOrganizador, PASSWORD);
+  const {idToken: tokenPart} = await entrar(emailParticipante, PASSWORD);
+  ok("las dos cuentas ya verificadas entran", !!tokenOrg && !!tokenPart);
+
+  await debeFallar("guardarPerfil rechaza un PIN de 3 dígitos", "pin_formato",
+      () => llamar("guardarPerfil", {nombre: "Organiza", apellido: "Dora", pin: "123"}, tokenOrg));
+
+  await llamar("guardarPerfil", {nombre: "Organiza", apellido: "Dora", pin: PIN}, tokenOrg);
+  ok("guardarPerfil con PIN de 4 dígitos", true);
+
+  // guardarPerfil usa create(), no set(): una segunda llamada con datos
+  // DISTINTOS tiene que ser un no-op silencioso, no reescribir el PIN. Se
+  // comprueba aquí que no revienta y más abajo (verAmigoSecreto con PIN, no
+  // con "0000") que de verdad no se reescribió.
+  await llamar("guardarPerfil", {nombre: "Otro", apellido: "Nombre", pin: "0000"}, tokenOrg);
+  ok("guardarPerfil es idempotente (no revienta la segunda vez)", true);
+
+  // La cuenta participante, en cambio, TODAVÍA no ha llamado a
+  // guardarPerfil. Es el estado exacto de alguien que se registró y
+  // verificó el correo pero se fue antes de completar el perfil.
+  const antesDePerfil = await llamar("misGrupos", {}, tokenPart);
+  ok("misGrupos antes de completar el perfil no revienta",
+      antesDePerfil.perfilCompleto === false && antesDePerfil.grupos.length === 0,
+      `llegó ${JSON.stringify(antesDePerfil)}`);
 
   const {codigo} = await llamar("crearGrupo", {
-    ...credOrganizador, ocasion: "amigoSecreto", nombreGrupo: "Grupo de prueba",
+    ocasion: "amigoSecreto", nombreGrupo: "Grupo de prueba",
     valorMinimo: "10", tematica: "", reglas: "",
-  });
-  ok("crearGrupo sin PIN maestro", typeof codigo === "string");
+  }, tokenOrg);
+  ok("crearGrupo", typeof codigo === "string");
+
+  // Con perfil pero sin haberse apuntado a NADA, agregarParticipante no
+  // puede autorizar: `autorizar` lee usuarios/{uid} y, si el documento no
+  // existe, lanza `perfil_incompleto` en vez de tratar a esa cuenta como
+  // "sin vínculo". Es una distinción real: `misGrupos` (arriba) degrada sin
+  // reventar porque no hace falta ningún vínculo para responder "no tienes
+  // grupos"; `autorizar` sí necesita el documento para poder decir CUÁL es
+  // tu vínculo, y sin documento no hay nada que decir.
+  await debeFallar("autorizar exige perfil antes que vínculo", "perfil_incompleto",
+      () => llamar("agregarParticipante",
+          {codigo, nombre: "Sin perfil todavía", deseos: ""}, tokenPart));
+
+  await llamar("guardarPerfil", {nombre: "Partici", apellido: "Pante", pin: PIN_PARTICIPANTE}, tokenPart);
+  ok("guardarPerfil de la cuenta participante", true);
 
   // EL BUG QUE ORIGINÓ TODO ESTO: crear un grupo y apuntarse a él lo sacaba
   // DOS veces en Mis grupos, porque arrayUnion guardaba dos entradas.
-  const {id} = await llamar("agregarParticipante", {
-    ...credOrganizador, codigo, nombre: "Yo mismo", deseos: "Nada",
-  });
+  const {id} = await llamar("agregarParticipante",
+      {codigo, nombre: "Yo mismo", deseos: "Nada"}, tokenOrg);
 
-  const sesion = await llamar("iniciarSesionCuenta", credOrganizador);
-  const deEsteGrupo = sesion.grupos.filter((g) => g.codigo === codigo);
+  const misGruposOrg = await llamar("misGrupos", {}, tokenOrg);
+  const deEsteGrupo = misGruposOrg.grupos.filter((g) => g.codigo === codigo);
   ok("el grupo sale UNA sola vez tras crearlo y apuntarse",
       deEsteGrupo.length === 1, `salió ${deEsteGrupo.length} veces`);
   ok("conserva el rol de organizador", deEsteGrupo[0]?.rol === "organizador");
   ok("trae el participanteId", deEsteGrupo[0]?.participanteId === id);
   ok("todavía sin sortear", deEsteGrupo[0]?.sorteado === false);
 
-  await debeFallar("verAmigoSecreto rechaza un PIN equivocado", "pin_incorrecto",
-      () => llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: "0000"}));
+  // La cuenta participante SÍ tiene perfil ya, pero todavía no tiene
+  // vínculo con ESTE grupo: `autorizar` no lanza (ver arriba), devuelve
+  // `rol: null` / `participanteId: null`. Lo que hace que eso no sea un
+  // agujero es que cada función que exige un rol concreto lo comprueba y
+  // rechaza con SU clave — no falla en silencio ni deja pasar por defecto.
+  await debeFallar("cuenta con perfil pero sin vínculo: rol null no es organizador",
+      "no_eres_organizador",
+      () => llamar("borrarParticipante", {codigo, participanteId: id}, tokenPart));
+  await debeFallar("cuenta con perfil pero sin vínculo: participanteId null no está en el grupo",
+      "no_estas_en_el_grupo",
+      () => llamar("verAmigoSecreto", {codigo, pin: PIN}, tokenPart));
 
-  await debeFallar("una contraseña equivocada no autoriza nada", "sesion_invalida",
-      () => llamar("ejecutarSorteo", {nickname: NICK_ORGANIZADOR, password: "Otra123!", codigo}));
+  await debeFallar("verAmigoSecreto rechaza un PIN equivocado", "pin_incorrecto",
+      () => llamar("verAmigoSecreto", {codigo, pin: "0000"}, tokenOrg));
 
   // Antes del sorteo sí se puede sacar a alguien. La organizadora YA tiene
-  // su plaza (arriba), así que quien entra aquí tiene que ser la segunda
-  // cuenta: reusar credOrganizador chocaría con "ya_estas_en_el_grupo".
+  // su plaza (arriba), así que quien entra aquí tiene que ser la cuenta
+  // participante: reusar tokenOrg chocaría con "ya_estas_en_el_grupo".
   // Entra CON avatar, y es lo único de toda la batería que toca Cloud
   // Storage. Sin esto, `guardarAvatar` y `borrarAvatarPorUrl` no los
   // ejercita nadie: son las dos únicas funciones del fichero que salen de
@@ -149,9 +290,8 @@ async function main() {
   // prueba. Se destapó al migrar a firebase-admin v14, donde
   // `admin.storage()` cambió a `getStorage()`.
   const sobrante = await llamar("agregarParticipante", {
-    ...credParticipante, codigo, nombre: "Sobrante", deseos: "",
-    avatarBase64: JPEG_1PX,
-  });
+    codigo, nombre: "Sobrante", deseos: "", avatarBase64: JPEG_1PX,
+  }, tokenPart);
   ok("agregarParticipante devuelve id con avatar", typeof sobrante.id === "string");
 
   // La URL tiene que existir de verdad, no solo estar guardada: que el
@@ -166,9 +306,9 @@ async function main() {
   ok("la imagen es públicamente accesible", imagen.ok, `HTTP ${imagen.status}`);
 
   // Sacar a otra persona (no a uno mismo) exige ser organizador —
-  // borrarParticipante lo comprueba— así que quien llama es credOrganizador.
+  // borrarParticipante lo comprueba— así que quien llama es tokenOrg.
   const borrado = await llamar("borrarParticipante",
-      {...credOrganizador, codigo, participanteId: sobrante.id});
+      {codigo, participanteId: sobrante.id}, tokenOrg);
   ok("antes del sorteo se puede sacar a alguien", borrado.ok === true);
 
   // Borrar al participante tiene que llevarse su imagen del bucket.
@@ -191,20 +331,21 @@ async function main() {
   // con una sola plaza (la organizadora); borrarParticipante limpió también
   // el vínculo de la cuenta participante con este grupo, así que puede
   // volver a apuntarse sin chocar con "ya_estas_en_el_grupo".
-  await llamar("agregarParticipante", {...credParticipante, codigo, nombre: "Otra persona", deseos: ""});
-  const sorteo = await llamar("ejecutarSorteo", {...credOrganizador, codigo});
+  await llamar("agregarParticipante", {codigo, nombre: "Otra persona", deseos: ""}, tokenPart);
+  const sorteo = await llamar("ejecutarSorteo", {codigo}, tokenOrg);
   ok("ejecutarSorteo por cuenta", sorteo.ok === true);
 
-  const trasSorteo = await llamar("iniciarSesionCuenta", credOrganizador);
+  const trasSorteo = await llamar("misGrupos", {}, tokenOrg);
   ok("el grupo queda marcado como sorteado",
       trasSorteo.grupos.find((g) => g.codigo === codigo)?.sorteado === true);
 
-  const amigo = await llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: PIN});
-  ok("verAmigoSecreto con el PIN correcto", typeof amigo.nombreAmigo === "string");
+  const amigo = await llamar("verAmigoSecreto", {codigo, pin: PIN}, tokenOrg);
+  ok("verAmigoSecreto con el PIN correcto (el que puso guardarPerfil la PRIMERA vez)",
+      typeof amigo.nombreAmigo === "string");
   ok("devuelve tu propio nombre", amigo.nombre === "Yo mismo");
 
   await debeFallar("tras el sorteo NO se puede sacar a nadie", "grupo_ya_sorteado",
-      () => llamar("borrarParticipante", {...credOrganizador, codigo, participanteId: id}));
+      () => llamar("borrarParticipante", {codigo, participanteId: id}, tokenOrg));
 
   // Las tres reglas del sorteo se sostienen entre sí, así que se prueban
   // juntas: la lista no cambia (ni sacando ni metiendo) y el sorteo no se
@@ -222,26 +363,37 @@ async function main() {
   // esta comprobación devolviera `ya_estas_en_el_grupo`, significaría que
   // el guarda nuevo NO está donde se puso.
   await debeFallar("tras el sorteo NO se puede entrar al grupo", "grupo_cerrado",
-      () => llamar("agregarParticipante",
-          {...credParticipante, codigo, nombre: "Tarde", deseos: ""}));
+      () => llamar("agregarParticipante", {codigo, nombre: "Tarde", deseos: ""}, tokenPart));
 
   // Repetirlo rebarajaría a gente que ya vio su asignación y quizá ya
   // compró el regalo.
   await debeFallar("el sorteo NO se puede repetir", "sorteo_ya_hecho",
-      () => llamar("ejecutarSorteo", {...credOrganizador, codigo}));
+      () => llamar("ejecutarSorteo", {codigo}, tokenOrg));
 
-  const cambio = await llamar("cambiarPin", {nickname: NICK_ORGANIZADOR, password: PASSWORD, pinNuevo: PIN_NUEVO});
+  // cambiarPin exige sesión RECIENTE (exigirReciente en functions/index.js):
+  // el token de más arriba ya tiene un rato, así que hace falta un
+  // entrar() fresco que renueve `auth_time` antes de cada cambio de PIN.
+  const {idToken: tokenOrgReciente1} = await entrar(emailOrganizador, PASSWORD);
+  const cambio = await llamar("cambiarPin", {pinNuevo: PIN_NUEVO}, tokenOrgReciente1);
+  ok("cambiarPin con sesión reciente", cambio.ok === true);
   await debeFallar("el PIN viejo ya no vale", "pin_incorrecto",
-      () => llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: PIN}));
-  ok("cambiarPin", cambio.ok === true);
+      () => llamar("verAmigoSecreto", {codigo, pin: PIN}, tokenOrg));
+
+  // NOTA: lo que NO se prueba aquí es que cambiarPin RECHACE una sesión de
+  // más de MAX_EDAD_SESION_S (5 minutos). Haría falta esperar cinco minutos
+  // reales dentro de una batería que por lo demás tarda segundos — un
+  // `sleep` de cinco minutos es peor prueba que ninguna, porque nadie la
+  // ejecutaría. Se verifica a mano en la Tarea 12 (Step 7, punto 6):
+  // esperar sin refrescar el token y confirmar que cambiarPin responde
+  // `requiere_reautenticacion`. Es una laguna real, anotada a propósito.
 
   // --- El bloqueo por intentos fallidos y su salida de emergencia -------
   //
   // Es la única parte del rediseño cuyo fallo es irreversible: si el bloqueo
   // se pusiera y no se levantara, esa cuenta se quedaría sin ver su amigo
   // secreto para siempre. Se ejerce entera, hasta el rescate. Todo este
-  // bloque usa credOrganizador: el PIN es una propiedad de la organizadora,
-  // la cuenta participante nunca revela nada y no le corresponde este ciclo.
+  // bloque usa la cuenta organizadora: el PIN es una propiedad suya, la
+  // cuenta participante nunca revela nada y no le corresponde este ciclo.
   //
   // El bucle no cuenta intentos exactos a propósito: el fallo de arriba ("el
   // PIN viejo ya no vale") ya gastó uno, y el intento que PROVOCA el bloqueo
@@ -251,7 +403,7 @@ async function main() {
   let claveDelBloqueo = "";
   for (let i = 0; i <= MAX_INTENTOS_PIN + 1 && claveDelBloqueo !== "pin_bloqueado"; i++) {
     try {
-      await llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: "0000"});
+      await llamar("verAmigoSecreto", {codigo, pin: "0000"}, tokenOrg);
       claveDelBloqueo = "entró con un PIN falso";
       break;
     } catch (e) {
@@ -264,27 +416,43 @@ async function main() {
   // Lo que hace que el bloqueo sirva de algo: mientras dura, el PIN correcto
   // tampoco entra. Si entrara, adivinar seguiría siendo cuestión de insistir.
   await debeFallar("bloqueado, ni el PIN correcto entra", "pin_bloqueado",
-      () => llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: PIN_NUEVO}));
+      () => llamar("verAmigoSecreto", {codigo, pin: PIN_NUEVO}, tokenOrg));
 
-  const rescate = await llamar("cambiarPin",
-      {nickname: NICK_ORGANIZADOR, password: PASSWORD, pinNuevo: PIN_RESCATE});
+  // Otro entrar() fresco: la sesión de arriba ya no cuenta como reciente
+  // para efectos de este segundo cambiarPin.
+  const {idToken: tokenOrgReciente2} = await entrar(emailOrganizador, PASSWORD);
+  const rescate = await llamar("cambiarPin", {pinNuevo: PIN_RESCATE}, tokenOrgReciente2);
   ok("cambiarPin funciona estando bloqueado", rescate.ok === true);
 
-  // LA PRUEBA QUE IMPORTA: cambiar el PIN con la contraseña de la cuenta
-  // levanta el bloqueo en el acto, sin esperar los quince minutos. Sin esto,
-  // quien se bloquea se queda fuera y la "salida de emergencia" del diseño
-  // sería una promesa sin respaldo.
-  const rescatado = await llamar("verAmigoSecreto", {...credOrganizador, codigo, pin: PIN_RESCATE});
+  // LA PRUEBA QUE IMPORTA: cambiar el PIN con una sesión reciente levanta el
+  // bloqueo en el acto, sin esperar los quince minutos. Sin esto, quien se
+  // bloquea se queda fuera y la "salida de emergencia" del diseño sería una
+  // promesa sin respaldo.
+  const rescatado = await llamar("verAmigoSecreto", {codigo, pin: PIN_RESCATE}, tokenOrg);
   ok("el PIN nuevo levanta el bloqueo y entra",
       typeof rescatado.nombreAmigo === "string");
 
-  await llamar("eliminarGrupo", {...credOrganizador, codigo});
-  const final = await llamar("iniciarSesionCuenta", credOrganizador);
+  await llamar("eliminarGrupo", {codigo}, tokenOrg);
+  const final = await llamar("misGrupos", {}, tokenOrg);
   ok("al eliminar el grupo desaparece de Mis grupos",
       final.grupos.every((g) => g.codigo !== codigo));
 
   console.log(fallos === 0 ? "\nTodo en verde." : `\n${fallos} fallo(s).`);
   process.exit(fallos === 0 ? 0 : 1);
+}
+
+async function main() {
+  const modo = process.argv[2];
+  if (modo === "--crear") {
+    await crear();
+  } else if (modo === "--seguir") {
+    await seguir(process.argv[3], process.argv[4]);
+  } else {
+    console.error("Uso:");
+    console.error("  node scripts/probar.mjs --crear");
+    console.error("  node scripts/probar.mjs --seguir <correoOrganizador> <correoParticipante>");
+    process.exit(1);
+  }
 }
 
 main().catch((e) => {
