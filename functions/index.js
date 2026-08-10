@@ -34,11 +34,11 @@ function generarCodigo() {
 }
 
 // --- Avatares ---------------------------------------------------------
-// Las imágenes entran por aquí, nunca directo del cliente al bucket: la
-// app no usa Firebase Auth, así que unas reglas de Storage que permitan
-// escribir dejarían el bucket abierto a cualquiera. Subiéndolas por la
-// función, la cuenta vinculada al grupo es la autorización, igual que en
-// el resto de la app.
+// Las imágenes entran por aquí, nunca directo del cliente al bucket. Con
+// Auth ya se podrían escribir reglas de Storage que digan "tú", pero no
+// sabrían decir "y además estás en ESTE grupo": eso vive en el mapa
+// `grupos` del usuario, que las reglas de Storage no pueden leer. Subirlas
+// por la función mantiene la misma autorización que el resto de la app.
 
 const BUCKET = "santa-secreto-860c3.firebasestorage.app";
 // El cliente ya redimensiona a 256px (unos 20KB). El tope generoso es
@@ -116,26 +116,28 @@ function participantePrivadoRef(codigo, participanteId) {
   return participanteRef(codigo, participanteId).collection("privado").doc("data");
 }
 
-// --- Cuentas (nickname + contraseña + PIN) ---------------------------
-// La cuenta es la ÚNICA credencial de autorización de la app. El PIN de 4
-// dígitos es una segunda barrera para una sola acción —revelar tu amigo
-// secreto— y no autoriza nada más.
+// --- Cuentas (Firebase Auth + PIN) ------------------------------------
+// La identidad la pone Firebase Auth: el cliente manda su ID token en la
+// cabecera Authorization y el protocolo callable rellena `request.auth`.
+// Aquí ya no se verifica ninguna contraseña — no la tenemos ni queremos
+// tenerla.
 //
-// Antes había un PIN por participante y un PIN maestro por grupo, los dos
-// en texto plano. Eran de cuando no existían las cuentas.
+// El PIN de 4 dígitos sobrevive: es la segunda barrera para una sola
+// acción —revelar tu amigo secreto— y sigue siendo nuestro, con bcrypt.
+// `bcryptjs` se queda EXCLUSIVAMENTE para eso.
 
-const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
-// El PIN es la SEGUNDA barrera, no la primera: la cuenta ya demostró
-// quién eres. Este protege de que alguien con tu teléfono desbloqueado
-// vea tu asignación, que es lo único irreversible de la app.
 const REGEX_PIN = /^\d{4}$/;
 
 // Cinco intentos y quince minutos de espera convierten 10.000 combinaciones en
 // semanas de trabajo. No deja a nadie fuera para siempre: quien se bloquee
-// cambia su PIN con la contraseña de la cuenta y sigue.
+// cambia su PIN reautenticándose y sigue.
 const MAX_INTENTOS_PIN = 5;
 const BLOQUEO_PIN_MS = 15 * 60 * 1000;
+
+// Cuánto vale una reautenticación. Cinco minutos dan de sobra para teclear
+// un PIN nuevo y son demasiado poco para que le sirvan a quien coja el
+// dispositivo más tarde.
+const MAX_EDAD_SESION_S = 5 * 60;
 
 function validarPin(pin) {
   if (!REGEX_PIN.test(pin || "")) {
@@ -143,98 +145,137 @@ function validarPin(pin) {
   }
 }
 
-function normalizarNickname(nickname) {
-  return (nickname || "").trim().toLowerCase();
+/**
+ * El uid de quien llama, ya verificado por Firebase.
+ *
+ * `exigirVerificado` es false SOLO en `guardarPerfil`: se llama justo
+ * después de registrarse, cuando el correo todavía no puede estar
+ * verificado. Exigirlo ahí dejaría a todo el mundo sin poder completar su
+ * perfil jamás.
+ */
+function uidDe(request, {exigirVerificado = true} = {}) {
+  const auth = request.auth;
+  if (!auth || !auth.uid) {
+    throw new HttpsError("unauthenticated", "Tienes que entrar en tu cuenta.", {clave: "sesion_invalida"});
+  }
+  if (exigirVerificado && auth.token.email_verified !== true) {
+    throw new HttpsError("permission-denied", "Verifica tu correo para continuar.", {clave: "correo_sin_verificar"});
+  }
+  return auth.uid;
 }
 
-function validarPassword(password) {
-  if (!REGEX_PASSWORD.test(password || "")) {
-    throw new HttpsError(
-        "invalid-argument",
-        "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.",
-        {clave: "password_debil"},
-    );
+/**
+ * Exige que la sesión sea RECIENTE, no solo válida.
+ *
+ * Sin esto, reautenticarse sería puro teatro: quien tenga el dispositivo
+ * desbloqueado tiene un token válido y puede llamar a la función directa,
+ * saltándose la pantalla que pide la contraseña. `auth_time` es el único
+ * dato del token que el cliente no puede falsear, y reautenticarse es lo
+ * único que lo actualiza.
+ */
+function exigirReciente(request) {
+  const authTime = request.auth?.token?.auth_time;
+  if (typeof authTime !== "number") {
+    throw new HttpsError("permission-denied", "Vuelve a confirmar tu contraseña.", {clave: "requiere_reautenticacion"});
+  }
+  const edad = Math.floor(Date.now() / 1000) - authTime;
+  if (edad > MAX_EDAD_SESION_S) {
+    throw new HttpsError("permission-denied", "Vuelve a confirmar tu contraseña.", {clave: "requiere_reautenticacion"});
   }
 }
 
-function usuarioRef(nicknameNormalizado) {
-  return db.collection("usuarios").doc(nicknameNormalizado);
+function usuarioRef(uid) {
+  return db.collection("usuarios").doc(uid);
 }
 
-exports.registrarCuenta = onCall(async (request) => {
-  const nickname = (request.data?.nickname || "").trim();
-  const password = request.data?.password || "";
-  const clave = normalizarNickname(nickname);
+const MAX_NOMBRE = 40;
 
-  if (clave.length < 3 || clave.length > 24) {
-    throw new HttpsError("invalid-argument", "El nickname debe tener entre 3 y 24 caracteres.", {clave: "nickname_largo"});
-  }
-  validarPassword(password);
-
+/**
+ * Crea el documento de perfil de una cuenta de Auth recién registrada.
+ *
+ * Se eligió una llamada explícita del cliente en vez de un disparador de
+ * Auth: es más simple de probar y no depende de la semántica de triggers
+ * entre v1 y v2.
+ *
+ * Usa `create()`, no `set()`: así una cuenta que ya tiene perfil no puede
+ * reescribirse el PIN desde una sesión sin verificar. Y hace la llamada
+ * idempotente de cara al cliente, que puede reintentar sin miedo.
+ */
+exports.guardarPerfil = onCall(async (request) => {
+  const uid = uidDe(request, {exigirVerificado: false});
+  const nombre = (request.data?.nombre || "").trim();
+  const apellido = (request.data?.apellido || "").trim();
   const pin = (request.data?.pin || "").trim();
+
+  if (!nombre || !apellido) {
+    throw new HttpsError("invalid-argument", "Faltan el nombre o el apellido.", {clave: "faltan_datos"});
+  }
+  if (nombre.length > MAX_NOMBRE || apellido.length > MAX_NOMBRE) {
+    throw new HttpsError("invalid-argument", `El nombre y el apellido no pueden pasar de ${MAX_NOMBRE} caracteres.`, {clave: "nombre_largo"});
+  }
   validarPin(pin);
 
-  const hash = bcrypt.hashSync(password, 10);
   try {
-    await usuarioRef(clave).create({
-      nickname,
-      hash,
-      // Con bcrypt igual que la contraseña. Son 10.000 combinaciones: este
-      // rediseño existe justamente para sacar secretos en claro de
-      // Firestore, no para meter uno nuevo.
+    await usuarioRef(uid).create({
+      nombre,
+      apellido,
+      correo: request.auth.token.email || "",
       pinHash: bcrypt.hashSync(pin, 10),
       fecha: FieldValue.serverTimestamp(),
       grupos: {},
     });
   } catch (e) {
-    if (e.code === 6 || e.code === "already-exists") {
-      throw new HttpsError("already-exists", "Ese nickname ya está en uso. Elige otro.", {clave: "nickname_en_uso"});
-    }
+    // Ya existía: es un reintento del cliente. No es un error para quien
+    // llama, y sobre todo NO se reescribe el PIN.
+    if (e.code === 6 || e.code === "already-exists") return {ok: true};
     throw e;
   }
-  return {ok: true, nickname};
+  return {ok: true};
 });
 
-// Cambiar el PIN pide la contraseña de la cuenta. No es burocracia: es la
-// ÚNICA salida si lo olvidas. Sin ella, cuatro dígitos olvidados te
-// dejarían sin ver tu amigo secreto para siempre — y esta app tampoco
-// tiene recuperación de contraseña.
+/**
+ * Cambiar el PIN exige una sesión RECIENTE, no solo válida — ver
+ * `exigirReciente`. Es también la salida de emergencia de quien olvidó el
+ * PIN o se bloqueó intentándolo: su hash es nuestro y nadie puede releerlo,
+ * así que la única vuelta es fijar uno nuevo demostrando la contraseña.
+ */
 exports.cambiarPin = onCall(async (request) => {
-  const clave = normalizarNickname(request.data?.nickname);
-  const password = request.data?.password || "";
+  const uid = uidDe(request);
+  exigirReciente(request);
   const pinNuevo = (request.data?.pinNuevo || "").trim();
-
   validarPin(pinNuevo);
 
-  const snap = await usuarioRef(clave).get();
-  if (!snap.exists || !bcrypt.compareSync(password, snap.data().hash)) {
-    throw new HttpsError("unauthenticated", "La contraseña no es correcta.", {clave: "password_incorrecta"});
-  }
-
-  await usuarioRef(clave).update({
+  await usuarioRef(uid).update({
     pinHash: bcrypt.hashSync(pinNuevo, 10),
-    // Cambiar el PIN levanta el bloqueo: es la salida de emergencia de quien se
-    // quedó fuera intentándolo. Sin esto, quien acierta su contraseña y fija un
-    // PIN nuevo seguiría bloqueado quince minutos con el PIN correcto.
+    // Cambiar el PIN levanta el bloqueo. Sin esto, quien fija un PIN nuevo
+    // seguiría bloqueado quince minutos con el PIN correcto.
     pinFallos: 0,
     pinBloqueadoHasta: 0,
   });
   return {ok: true};
 });
 
-exports.iniciarSesionCuenta = onCall(async (request) => {
-  const nickname = (request.data?.nickname || "").trim();
-  const password = request.data?.password || "";
-  const clave = normalizarNickname(nickname);
+/**
+ * El perfil y los grupos de quien llama.
+ *
+ * Sigue siendo una Cloud Function y no una lectura directa de Firestore
+ * aunque las reglas nuevas dejarían leer `usuarios/{uid}`: limpiar los
+ * grupos que ya no existen es una ESCRITURA, y la escritura sigue cerrada
+ * al cliente.
+ *
+ * `perfilCompleto: false` significa que hay cuenta de Auth pero no
+ * documento de perfil — pasa si `guardarPerfil` falló por red justo
+ * después de registrarse. El cliente lo usa para mandar a completar el
+ * perfil en vez de dejar a esa persona en una app medio rota.
+ */
+exports.misGrupos = onCall(async (request) => {
+  const uid = uidDe(request);
 
-  const snap = await usuarioRef(clave).get();
+  const snap = await usuarioRef(uid).get();
   if (!snap.exists) {
-    throw new HttpsError("not-found", "Ese nickname no existe.", {clave: "nickname_no_existe"});
+    return {perfilCompleto: false, nombre: "", apellido: "", grupos: []};
   }
   const datos = snap.data();
-  if (!bcrypt.compareSync(password, datos.hash)) {
-    throw new HttpsError("permission-denied", "Contraseña incorrecta.", {clave: "password_incorrecta"});
-  }
 
   const grupos = datos.grupos || {};
   const codigos = Object.keys(grupos);
@@ -265,44 +306,39 @@ exports.iniciarSesionCuenta = onCall(async (request) => {
     const vivos = new Set(detalles.map((d) => d.codigo));
     for (const codigo of codigos) {
       if (vivos.has(codigo)) continue;
-      await usuarioRef(clave).update(
+      await usuarioRef(uid).update(
           new FieldPath("grupos", codigo),
           FieldValue.delete(),
       );
     }
   }
 
-  return {nickname: datos.nickname, grupos: detalles};
+  return {
+    perfilCompleto: true,
+    nombre: datos.nombre || "",
+    apellido: datos.apellido || "",
+    grupos: detalles,
+  };
 });
 
 /**
- * Verifica la cuenta y devuelve tu vínculo con ese grupo.
+ * Tu vínculo con un grupo.
  *
- * Lo importante no es que sustituya a tres funciones, es de dónde sale el
- * `participanteId`: antes lo mandaba el cliente y el servidor comprobaba
- * que el PIN cuadrara; ahora el servidor lo DERIVA del vínculo. El cliente
- * ya no puede decir que es otro participante, así que suplantar deja de
- * ser cuestión de adivinar cuatro cifras guardadas en texto plano.
+ * Lo importante sigue siendo de dónde sale el `participanteId`: el
+ * servidor lo DERIVA del vínculo, nunca se lo cree al cliente. Lo que
+ * cambia con Auth es solo el primer paso — la identidad ya viene
+ * verificada por Firebase, así que ya no hace falta un paso aparte para
+ * comprobar la cuenta.
  */
-/** Solo comprueba la cuenta. La usa `crearGrupo`, donde todavía no hay
- * grupo con el que tener vínculo. */
-async function verificarCuenta(nickname, password) {
-  const clave = normalizarNickname(nickname);
-  if (!clave || !password) {
-    throw new HttpsError("unauthenticated", "Faltan las credenciales de tu cuenta.", {clave: "sesion_invalida"});
+async function autorizar(codigo, uid) {
+  const snap = await usuarioRef(uid).get();
+  if (!snap.exists) {
+    throw new HttpsError("unauthenticated", "Tu cuenta no tiene perfil. Vuelve a entrar.", {clave: "perfil_incompleto"});
   }
-  const snap = await usuarioRef(clave).get();
-  if (!snap.exists || !bcrypt.compareSync(password, snap.data().hash)) {
-    throw new HttpsError("unauthenticated", "La sesión de tu cuenta no es válida. Vuelve a entrar.", {clave: "sesion_invalida"});
-  }
-  return {clave, datos: snap.data()};
-}
-
-async function autorizar(codigo, nickname, password) {
-  const {clave, datos} = await verificarCuenta(nickname, password);
+  const datos = snap.data();
   const vinculo = (datos.grupos || {})[codigo] || null;
   return {
-    clave,
+    uid,
     rol: vinculo ? vinculo.rol : null,
     participanteId: vinculo ? (vinculo.participanteId || null) : null,
     datos,
@@ -325,9 +361,9 @@ function exigirParticipante(sesion) {
  * Al crear un grupo. La plaza de participante todavía no existe: quien
  * crea el grupo se inscribe después, como todo el mundo.
  */
-async function vincularComoOrganizador(clave, codigo) {
-  if (!clave) return;
-  await usuarioRef(clave).set(
+async function vincularComoOrganizador(uid, codigo) {
+  if (!uid) return;
+  await usuarioRef(uid).set(
       {grupos: {[codigo]: {rol: "organizador", participanteId: null}}},
       {merge: true},
   );
@@ -347,9 +383,9 @@ async function vincularComoOrganizador(clave, codigo) {
  * "Mis grupos". Con el mapa indexado por código, ese bug no se puede ni
  * escribir.
  */
-async function vincularComoParticipante(clave, codigo, participanteId) {
-  if (!clave) return;
-  const ref = usuarioRef(clave);
+async function vincularComoParticipante(uid, codigo, participanteId) {
+  if (!uid) return;
+  const ref = usuarioRef(uid);
   // Se lee para saber si ya había rol: si no lo hubiera y no lo
   // pusiéramos, la entrada quedaría sin rol y "Mis grupos" no sabría si
   // eres organizador.
@@ -372,10 +408,10 @@ exports.crearGrupo = onCall(async (request) => {
   }
 
   // La cuenta ya no es opcional: sin ella el grupo quedaría huérfano, sin
-  // organizador y sin aparecer en "Mis grupos" de nadie. Aquí se usa
-  // `verificarCuenta` y no `autorizar` porque el grupo todavía no existe:
-  // no hay vínculo que consultar.
-  const {clave} = await verificarCuenta(request.data?.nickname, request.data?.password);
+  // organizador y sin aparecer en "Mis grupos" de nadie.
+  // Aquí no se usa `autorizar` porque el grupo todavía no existe: no hay
+  // vínculo que consultar. Solo hace falta saber quién eres.
+  const uid = uidDe(request);
 
   // Reintenta si el código generado (poco probable) ya existe.
   for (let intento = 0; intento < 5; intento++) {
@@ -396,7 +432,7 @@ exports.crearGrupo = onCall(async (request) => {
           fecha: FieldValue.serverTimestamp(),
         });
       });
-      await vincularComoOrganizador(clave, codigo);
+      await vincularComoOrganizador(uid, codigo);
       return {codigo};
     } catch (e) {
       if (e instanceof HttpsError && e.message === "código repetido, reintentar") {
@@ -442,9 +478,9 @@ exports.agregarParticipante = onCall(async (request) => {
     );
   }
 
-  // Se verifica antes de subir el avatar: si las credenciales no valen,
+  // Se verifica antes de subir el avatar: si el uid no está autorizado,
   // no queda un avatar huérfano en Storage ni un participante inscrito.
-  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  const sesion = await autorizar(codigo, uidDe(request));
 
   // Una cuenta, una plaza por grupo. Sin esto, volver a entrar por el
   // código a un grupo donde ya estás creaba un SEGUNDO documento y
@@ -486,14 +522,14 @@ exports.agregarParticipante = onCall(async (request) => {
     // quién— y el grupo seguiría saliendo en su "Mis grupos" apuntando a
     // un participante que ya no existe. Este documento está cerrado a
     // cero para el cliente (ver firestore.rules).
-    cuenta: sesion.clave,
+    cuenta: sesion.uid,
     deseos: deseos || "¡Sorpréndeme!",
     asignado_a: "",
     nombre_asignado: "",
     deseos_asignado: "",
   });
   await batch.commit();
-  await vincularComoParticipante(sesion.clave, codigo, ref.id);
+  await vincularComoParticipante(sesion.uid, codigo, ref.id);
   return {id: ref.id};
 });
 
@@ -512,7 +548,7 @@ exports.borrarParticipante = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
   }
 
-  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  const sesion = await autorizar(codigo, uidDe(request));
   // O es tu propia plaza, o eres el organizador.
   if (sesion.participanteId !== participanteId) exigirOrganizador(sesion);
 
@@ -586,7 +622,7 @@ exports.cambiarAvatar = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
   }
 
-  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  const sesion = await autorizar(codigo, uidDe(request));
   if (sesion.participanteId !== participanteId) exigirOrganizador(sesion);
 
   const ref = participanteRef(codigo, participanteId);
@@ -608,7 +644,7 @@ exports.editarParticipante = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo, el participante o el nuevo nombre.", {clave: "faltan_datos"});
   }
 
-  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
 
   const ref = participanteRef(codigo, participanteId);
   const snap = await ref.get();
@@ -619,9 +655,8 @@ exports.editarParticipante = onCall(async (request) => {
   return {ok: true};
 });
 
-// Antes se llamaba `iniciarSesion`, que se confundía con
-// `iniciarSesionCuenta` y ya no describe lo que hace: no inicia ninguna
-// sesión, revela una asignación.
+// Antes se llamaba `iniciarSesion`, que no describía lo que hace: no
+// inicia ninguna sesión, revela una asignación.
 exports.verAmigoSecreto = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const pin = (request.data?.pin || "").trim();
@@ -629,7 +664,7 @@ exports.verAmigoSecreto = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
 
-  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  const sesion = await autorizar(codigo, uidDe(request));
   exigirParticipante(sesion);
 
   // El PIN es la segunda barrera: la cuenta ya demostró quién eres. Este
@@ -650,7 +685,7 @@ exports.verAmigoSecreto = onCall(async (request) => {
   // y luego se limpia—. Revelar tu amigo secreto se hace una vez por
   // grupo; el límite de intentos tiene que ser de verdad.
   const ahora = Date.now();
-  const refUsuario = usuarioRef(sesion.clave);
+  const refUsuario = usuarioRef(sesion.uid);
 
   // La transacción DEVUELVE el veredicto en vez de lanzarlo. Lanzar desde
   // dentro haría depender el comportamiento de cómo clasifique el SDK ese
@@ -711,7 +746,7 @@ exports.ejecutarSorteo = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
 
-  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
 
   // Se sortea UNA vez. Volver a hacerlo rebaraja a gente que ya vio su
   // asignación y quizá ya compró el regalo: se quedarían con un regalo
@@ -822,7 +857,7 @@ exports.enviarMensaje = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "El mensaje es demasiado largo.", {clave: "mensaje_largo"});
   }
 
-  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  const sesion = await autorizar(codigo, uidDe(request));
   exigirParticipante(sesion);
   const participanteId = sesion.participanteId;
   const privado = await obtenerPrivado(codigo, participanteId);
@@ -854,7 +889,7 @@ exports.borrarMensaje = onCall(async (request) => {
   if (!codigo || !mensajeId) {
     throw new HttpsError("invalid-argument", "Falta el grupo o el mensaje.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
   await grupoRef(codigo).collection("chat").doc(mensajeId).delete();
   return {ok: true};
 });
@@ -866,7 +901,7 @@ exports.miMascara = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  const sesion = await autorizar(codigo, request.data?.nickname, request.data?.password);
+  const sesion = await autorizar(codigo, uidDe(request));
   exigirParticipante(sesion);
   return await obtenerMascara(codigo, sesion.participanteId);
 });
@@ -885,7 +920,7 @@ exports.editarGrupo = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
 
   // Solo se tocan los campos que vengan en la petición: así la pantalla
   // puede mandar un cambio suelto sin pisar los demás.
@@ -916,14 +951,14 @@ exports.editarGrupo = onCall(async (request) => {
 
 // Irreversible: borra el grupo y todos los participantes con sus datos
 // privados. Las referencias que queden en las cuentas
-// (usuarios/{nickname}.grupos) se limpian solas al siguiente inicio de
-// sesión — ver iniciarSesionCuenta.
+// (usuarios/{uid}.grupos) se limpian solas al siguiente inicio de
+// sesión.
 exports.eliminarGrupo = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, request.data?.nickname, request.data?.password));
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
 
   // recursiveDelete baja por las subcolecciones (participantes y cada
   // privado/data) y parte el trabajo en lotes por dentro.

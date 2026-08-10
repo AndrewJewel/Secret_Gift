@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'acceso_cuenta.dart';
+import 'auth.dart';
 import 'destino_inicial.dart';
 import 'funciones.dart';
 import 'glass.dart';
@@ -10,19 +12,20 @@ import 'invitacion_pendiente.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
+import 'pantalla_completar_perfil.dart';
 import 'pantalla_crear_cuenta.dart';
 import 'pantalla_mis_grupos.dart';
 import 'pantalla_registro.dart';
-import 'sesion.dart';
+import 'pantalla_verificar_correo.dart';
 import 'tematica.dart';
 
 /// Primera pantalla real de la app: decide a dónde va cada quien.
 ///
 /// Normalmente solo muestra un indicador mientras lee disco y valida la
 /// sesión. Se queda visible únicamente si el arranque falla por algo que
-/// no invalida las credenciales (sin red, servidor caído): entonces
-/// enseña el error y un botón de reintentar, porque borrar la sesión en
-/// ese caso sería irreversible.
+/// no invalida la sesión (sin red, servidor caído): entonces enseña el
+/// error y un botón de reintentar, porque borrar la sesión en ese caso
+/// sería irreversible.
 class PantallaRaiz extends StatefulWidget {
   const PantallaRaiz({super.key});
 
@@ -71,12 +74,12 @@ class _PantallaRaizState extends State<PantallaRaiz> {
 
   Future<void> _arrancar() async {
     await _capturarInvitacionDeLaUrl();
-    final sesion = await leerSesion();
+    final u = usuarioActual;
     final invitacion = await leerInvitacion();
     if (!mounted) return;
 
     switch (decidirDestino(
-        haySesion: sesion != null, hayInvitacion: invitacion != null)) {
+        haySesion: u != null, hayInvitacion: invitacion != null)) {
       case DestinoInicial.crearCuenta:
         Navigator.pushReplacement(
           context,
@@ -93,26 +96,33 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       // hay un único sitio que construye la pila.
       case DestinoInicial.grupo:
       case DestinoInicial.misGrupos:
-        await _entrarConLaSesionGuardada(sesion!);
+        await _entrarConLaSesionDeAuth(u!);
     }
   }
 
-  /// La sesión guardada puede haber dejado de valer: contraseña cambiada
-  /// desde otro dispositivo, cuenta borrada, o simplemente no hay red.
-  /// Sin manejo de error la app se queda en el indicador de carga para
-  /// siempre, que es la peor pantalla posible.
-  Future<void> _entrarConLaSesionGuardada(Sesion sesion) async {
-    final ResultadoAcceso resultado;
+  /// La sesión de Auth persiste sola, pero puede haber dejado de valer:
+  /// cuenta borrada, contraseña cambiada desde otro sitio, o simplemente
+  /// no hay red. Sin manejo de error la app se queda en el indicador de
+  /// carga para siempre, que es la peor pantalla posible.
+  Future<void> _entrarConLaSesionDeAuth(User u) async {
+    if (!u.emailVerified) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar),
+        ),
+      );
+      return;
+    }
+    final ResultadoAcceso? resultado;
     try {
-      resultado = await entrarConCuenta(
-          nickname: sesion.nickname, password: sesion.password, registrando: false);
+      resultado = await cargarMisGrupos();
     } on FuncionError catch (e) {
-      // ÚNICAS dos claves que justifican borrar la sesión: el servidor ha
-      // dicho que esas credenciales no sirven. Cualquier otra cosa —sin
-      // red, servidor caído, clave desconocida— conserva la sesión.
-      // Esta app no tiene recuperación de contraseña: quien abra sin red
-      // y no la recuerde perdería todos sus grupos para siempre.
-      if (e.clave == 'password_incorrecta' || e.clave == 'nickname_no_existe') {
+      // ÚNICAS claves que justifican echar a alguien de su sesión: el
+      // servidor ha dicho que esta identidad no sirve. Cualquier otra
+      // cosa —sin red, servidor caído, clave desconocida— la conserva.
+      if (e.clave == 'sesion_invalida') {
         await _olvidarSesionEIrACrearCuenta();
         return;
       }
@@ -120,18 +130,44 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       setState(() => _errorArranque = e);
       return;
     } catch (e) {
-      // Excepción que ni siquiera es FuncionError: menos motivo todavía
-      // para dar la sesión por mala.
       if (!mounted) return;
       setState(() => _errorArranque = e);
       return;
     }
     if (!mounted) return;
+    if (resultado == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar),
+        ),
+      );
+      return;
+    }
     await irADondeToque(context, resultado);
   }
 
+  /// Tras verificar, se cargan los grupos y se sigue el camino normal —
+  /// el mismo que sigue quien entra con una cuenta ya verificada. No hay
+  /// `widget.alEntrar` aquí (esto es el portero, no una de las puertas):
+  /// el destino lo decide `irADondeToque` directamente.
+  Future<void> _trasVerificar(BuildContext context) async {
+    final r = await cargarMisGrupos();
+    if (!context.mounted) return;
+    if (r == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar),
+        ),
+      );
+      return;
+    }
+    await irADondeToque(context, r);
+  }
+
   Future<void> _olvidarSesionEIrACrearCuenta() async {
-    await cerrarSesion();
+    await salir();
     final invitacion = await leerInvitacion();
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -296,7 +332,7 @@ Future<void> irADondeToque(BuildContext context, ResultadoAcceso resultado) asyn
   navegador.pushAndRemoveUntil(
     MaterialPageRoute(
       builder: (_) =>
-          PantallaMisGrupos(nickname: resultado.nickname, grupos: resultado.grupos),
+          PantallaMisGrupos(nombre: resultado.nombre, grupos: resultado.grupos),
     ),
     (r) => false,
   );

@@ -33,9 +33,6 @@ class TextosEs extends Textos {
   String get salir => 'Volver';
 
   @override
-  String get unMomento => 'Un momento...';
-
-  @override
   String get reintentar => 'Reintentar';
 
   @override
@@ -49,9 +46,6 @@ class TextosEs extends Textos {
 
   @override
   String get configuracion => 'Configuración';
-
-  @override
-  String get configuracionIdioma => 'Idioma';
 
   @override
   String get configuracionCambiarPin => 'Cambiar mi PIN';
@@ -100,16 +94,6 @@ class TextosEs extends Textos {
 
   @override
   String get errorFaltanDatosParticipante => 'Falta el grupo o el nombre.';
-
-  @override
-  String get errorNicknameLargo =>
-      'El nickname debe tener entre 3 y 24 caracteres.';
-
-  @override
-  String get errorNicknameEnUso => 'Ese nickname ya está en uso. Elige otro.';
-
-  @override
-  String get errorNicknameNoExiste => 'Ese nickname no existe.';
 
   @override
   String get errorPasswordIncorrecta => 'Contraseña incorrecta.';
@@ -172,26 +156,43 @@ class TextosEs extends Textos {
       'Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.';
 
   @override
-  String get inicioSubtitulo => 'Gestión de grupos';
+  String get errorCorreoSinVerificar => 'Verifica tu correo para continuar.';
 
   @override
-  String inicioContinuarEn(String grupo) {
-    return 'Continuar en «$grupo»';
+  String get errorRequiereReautenticacion =>
+      'Por seguridad, confirma otra vez tu contraseña.';
+
+  @override
+  String get errorPerfilIncompleto =>
+      'Tu cuenta todavía no tiene perfil. Vuelve a entrar para terminarlo.';
+
+  @override
+  String get errorCorreoInvalido =>
+      'Esa dirección de correo no parece correcta.';
+
+  @override
+  String get errorCorreoEnUso =>
+      'Ese correo ya tiene cuenta. Entra en vez de crear una.';
+
+  @override
+  String get errorDemasiadosIntentos =>
+      'Demasiados intentos. Espera unos minutos y vuelve a probar.';
+
+  @override
+  String get errorCuentaDeshabilitada => 'Esta cuenta ha sido deshabilitada.';
+
+  @override
+  String errorAuthDesconocido(String codigo, String mensaje) {
+    return 'Algo salió mal al entrar. Vuelve a intentarlo. (código: $codigo — $mensaje)';
   }
 
   @override
-  String get inicioUltimoGrupoNota =>
-      '(el código de tu último grupo, guardado en este dispositivo)';
+  String get errorDominioNoAutorizado =>
+      'Esta app no está bien configurada para este sitio. Avisa a quien la administra.';
 
   @override
-  String get inicioCrearGrupo => 'Crear un grupo nuevo';
-
-  @override
-  String get inicioUnirse => 'Unirme con un código';
-
-  @override
-  String get inicioMiCuenta =>
-      'Mi cuenta (ver mis grupos desde cualquier dispositivo)';
+  String get errorNombreLargo =>
+      'El nombre y el apellido no pueden pasar de 40 caracteres cada uno.';
 
   @override
   String get crearTitulo => 'Crear grupo';
@@ -252,7 +253,13 @@ class TextosEs extends Textos {
   String get cuentaEntrarTitulo => 'Iniciar sesión';
 
   @override
-  String get cuentaNickname => 'Nickname';
+  String get cuentaCorreo => 'Correo';
+
+  @override
+  String get cuentaNombre => 'Nombre';
+
+  @override
+  String get cuentaApellido => 'Apellido';
 
   @override
   String get cuentaPassword => 'Contraseña';
@@ -265,16 +272,10 @@ class TextosEs extends Textos {
   String get cuentaConfirmar => 'Confirmar contraseña';
 
   @override
-  String get cuentaFaltanDatos => 'Falta el nickname o la contraseña';
+  String get cuentaFaltanDatos => 'Falta información obligatoria';
 
   @override
   String get cuentaNoCoinciden => 'Las contraseñas no coinciden';
-
-  @override
-  String get cuentaCambiarAEntrar => '¿Ya tienes cuenta? Inicia sesión';
-
-  @override
-  String get cuentaCambiarACrear => '¿No tienes cuenta? Créala';
 
   @override
   String get cuentaFraseGancho =>
@@ -303,6 +304,56 @@ class TextosEs extends Textos {
 
   @override
   String get cuentaPinNoCoinciden => 'Los PIN no coinciden';
+
+  @override
+  String get recuperarEnlace => 'He olvidado mi contraseña';
+
+  @override
+  String get recuperarTitulo => 'Recupera tu contraseña';
+
+  @override
+  String get recuperarTexto =>
+      'Escribe el correo con el que te registraste y te mandamos un enlace para poner una contraseña nueva.';
+
+  @override
+  String get recuperarBoton => 'Mándame el enlace';
+
+  @override
+  String get recuperarEnviado =>
+      'Si esa dirección tiene cuenta, le hemos mandado un enlace.';
+
+  @override
+  String get verificarTitulo => 'Mira tu bandeja de entrada';
+
+  @override
+  String get verificarTexto =>
+      'Te hemos mandado un enlace. Pínchalo para confirmar tu correo y vuelve aquí.';
+
+  @override
+  String get verificarComprobar => 'Ya lo confirmé';
+
+  @override
+  String get verificarComprobando => 'Comprobando…';
+
+  @override
+  String get verificarReenviar => 'Mandarlo otra vez';
+
+  @override
+  String get verificarReenviando => 'Mandando…';
+
+  @override
+  String get verificarReenviado => 'Enlace mandado';
+
+  @override
+  String get verificarTodaviaNo =>
+      'Todavía no está confirmado. Mira tu bandeja, puede estar en el correo no deseado.';
+
+  @override
+  String get completarPerfilTitulo => 'Un último paso';
+
+  @override
+  String get completarPerfilTexto =>
+      'Tu cuenta se creó pero tu perfil no se guardó. Rellénalo para continuar.';
 
   @override
   String misGruposSaludo(String nickname) {

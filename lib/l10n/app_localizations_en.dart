@@ -33,9 +33,6 @@ class TextosEn extends Textos {
   String get salir => 'Back';
 
   @override
-  String get unMomento => 'One moment...';
-
-  @override
   String get reintentar => 'Try again';
 
   @override
@@ -49,9 +46,6 @@ class TextosEn extends Textos {
 
   @override
   String get configuracion => 'Settings';
-
-  @override
-  String get configuracionIdioma => 'Language';
 
   @override
   String get configuracionCambiarPin => 'Change my PIN';
@@ -103,16 +97,6 @@ class TextosEn extends Textos {
   @override
   String get errorFaltanDatosParticipante =>
       'The group or the name is missing.';
-
-  @override
-  String get errorNicknameLargo =>
-      'The nickname must be between 3 and 24 characters.';
-
-  @override
-  String get errorNicknameEnUso => 'That nickname is taken. Pick another one.';
-
-  @override
-  String get errorNicknameNoExiste => 'That nickname does not exist.';
 
   @override
   String get errorPasswordIncorrecta => 'Wrong password.';
@@ -174,25 +158,42 @@ class TextosEn extends Textos {
       'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.';
 
   @override
-  String get inicioSubtitulo => 'Group Manager';
+  String get errorCorreoSinVerificar => 'Verify your email to continue.';
 
   @override
-  String inicioContinuarEn(String grupo) {
-    return 'Continue in \"$grupo\"';
+  String get errorRequiereReautenticacion =>
+      'For security, confirm your password again.';
+
+  @override
+  String get errorPerfilIncompleto =>
+      'Your account has no profile yet. Sign in again to finish it.';
+
+  @override
+  String get errorCorreoInvalido => 'That email address doesn\'t look right.';
+
+  @override
+  String get errorCorreoEnUso =>
+      'That email already has an account. Sign in instead.';
+
+  @override
+  String get errorDemasiadosIntentos =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get errorCuentaDeshabilitada => 'This account has been disabled.';
+
+  @override
+  String errorAuthDesconocido(String codigo, String mensaje) {
+    return 'Something went wrong signing you in. Try again. (code: $codigo — $mensaje)';
   }
 
   @override
-  String get inicioUltimoGrupoNota =>
-      '(your last group\'s code, saved on this device)';
+  String get errorDominioNoAutorizado =>
+      'This app isn\'t set up correctly for this website. Let whoever manages it know.';
 
   @override
-  String get inicioCrearGrupo => 'Create a new group';
-
-  @override
-  String get inicioUnirse => 'Join with a code';
-
-  @override
-  String get inicioMiCuenta => 'My account (find my groups from any device)';
+  String get errorNombreLargo =>
+      'Your name and surname can\'t be longer than 40 characters each.';
 
   @override
   String get crearTitulo => 'Create group';
@@ -252,7 +253,13 @@ class TextosEn extends Textos {
   String get cuentaEntrarTitulo => 'Sign in';
 
   @override
-  String get cuentaNickname => 'Nickname';
+  String get cuentaCorreo => 'Email';
+
+  @override
+  String get cuentaNombre => 'First name';
+
+  @override
+  String get cuentaApellido => 'Last name';
 
   @override
   String get cuentaPassword => 'Password';
@@ -265,16 +272,10 @@ class TextosEn extends Textos {
   String get cuentaConfirmar => 'Confirm password';
 
   @override
-  String get cuentaFaltanDatos => 'The nickname or the password is missing';
+  String get cuentaFaltanDatos => 'Some required information is missing';
 
   @override
   String get cuentaNoCoinciden => 'The passwords do not match';
-
-  @override
-  String get cuentaCambiarAEntrar => 'Already have an account? Sign in';
-
-  @override
-  String get cuentaCambiarACrear => 'No account yet? Create one';
 
   @override
   String get cuentaFraseGancho =>
@@ -303,6 +304,56 @@ class TextosEn extends Textos {
 
   @override
   String get cuentaPinNoCoinciden => 'The PINs do not match';
+
+  @override
+  String get recuperarEnlace => 'I forgot my password';
+
+  @override
+  String get recuperarTitulo => 'Recover your password';
+
+  @override
+  String get recuperarTexto =>
+      'Type the email you signed up with and we\'ll send you a link to set a new password.';
+
+  @override
+  String get recuperarBoton => 'Send me the link';
+
+  @override
+  String get recuperarEnviado =>
+      'If that address has an account, we\'ve sent it a link.';
+
+  @override
+  String get verificarTitulo => 'Check your inbox';
+
+  @override
+  String get verificarTexto =>
+      'We sent you a link. Tap it to confirm your email, then come back here.';
+
+  @override
+  String get verificarComprobar => 'I\'ve confirmed it';
+
+  @override
+  String get verificarComprobando => 'Checking…';
+
+  @override
+  String get verificarReenviar => 'Send it again';
+
+  @override
+  String get verificarReenviando => 'Sending…';
+
+  @override
+  String get verificarReenviado => 'Link sent';
+
+  @override
+  String get verificarTodaviaNo =>
+      'Not confirmed yet. Check your inbox — it may be in spam.';
+
+  @override
+  String get completarPerfilTitulo => 'One last step';
+
+  @override
+  String get completarPerfilTexto =>
+      'Your account was created but your profile wasn\'t saved. Fill it in to continue.';
 
   @override
   String misGruposSaludo(String nickname) {

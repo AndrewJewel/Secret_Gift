@@ -33,10 +33,11 @@ rules_version = '2';
 // Cero acceso de cliente. El PIN del participante que vivía aquí
 // desapareció.
 //
-// usuarios/{nickname}: cuentas (nickname + hash de contraseña + hash del
-// PIN de 4 dígitos + grupos vinculados). Cero acceso de cliente en
-// cualquier dirección — solo las Cloud Functions
-// (registrarCuenta/iniciarSesionCuenta) lo tocan.
+// usuarios/{uid}: el perfil de una cuenta de Firebase Auth (nombre,
+// apellido, correo, hash bcrypt del PIN de 4 dígitos, y el mapa de grupos
+// vinculados). Cada quien lee SOLO el suyo; escribe solo el Admin SDK
+// desde las Cloud Functions. La contraseña ya no está aquí ni en ninguna
+// parte nuestra: la guarda Firebase Auth.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /grupos/{codigo} {
@@ -69,8 +70,11 @@ service cloud.firestore {
       }
     }
 
-    match /usuarios/{nickname} {
-      allow read, write: if false;
+    match /usuarios/{uid} {
+      // Primera regla de esta app que puede decir "tú". La escritura sigue
+      // cerrada: el pinHash y el mapa `grupos` los toca solo el Admin SDK.
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
   }
 }

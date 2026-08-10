@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'acceso_cuenta.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
 import 'selector_idioma.dart';
-import 'sesion.dart';
 
 /// Ajustes de la cuenta, desde "Mis grupos".
 ///
@@ -17,7 +17,7 @@ class HojaConfiguracion extends StatefulWidget {
   /// sabe a dónde se va y cómo se vacía la pila.
   ///
   /// El tipo es `Future<void> Function()` y no `VoidCallback` porque quien
-  /// la implementa tiene que esperar a `cerrarSesion()` antes de navegar.
+  /// la implementa tiene que esperar a `salir()` antes de navegar.
   final Future<void> Function() alCerrarSesion;
 
   const HojaConfiguracion({super.key, required this.alCerrarSesion});
@@ -84,27 +84,23 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
         ],
       ),
     );
-    if (confirmado != true || !mounted) return;
-
-    setState(() => _cambiandoPin = true);
-    try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        return;
+    if (confirmado == true && mounted) {
+      setState(() => _cambiandoPin = true);
+      try {
+        await reautenticar(password.text);
+        await llamarFuncion('cambiarPin', {'pinNuevo': pinNuevo.text.trim()});
+        _avisar('✅ ${t.cambiarPinGuardado}');
+      } catch (e) {
+        if (mounted) {
+          _avisar(
+              '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
+        }
+      } finally {
+        if (mounted) setState(() => _cambiandoPin = false);
       }
-      await llamarFuncion('cambiarPin', {
-        'nickname': sesion.nickname,
-        'password': password.text,
-        'pinNuevo': pinNuevo.text.trim(),
-      });
-      _avisar('✅ ${t.cambiarPinGuardado}');
-    } catch (e) {
-      if (!mounted) return;
-      _avisar('⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
-    } finally {
-      if (mounted) setState(() => _cambiandoPin = false);
     }
+    password.dispose();
+    pinNuevo.dispose();
   }
 
   @override

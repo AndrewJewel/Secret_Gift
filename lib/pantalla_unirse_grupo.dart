@@ -8,7 +8,6 @@ import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
-import 'sesion.dart';
 import 'tematica.dart';
 import 'pantalla_registro.dart';
 
@@ -47,20 +46,18 @@ class _PantallaUnirseGrupoState extends State<PantallaUnirseGrupo> {
       final nombreGrupo = data['nombreGrupo'] as String? ?? '';
 
       // El vínculo con este grupo lo sabe la CUENTA, no el documento del
-      // grupo: `usuarios/{nick}` está cerrado al cliente (ver
+      // grupo: `usuarios/{uid}` está cerrado al cliente (ver
       // firestore.rules), así que se pregunta por la única puerta que hay,
-      // `iniciarSesionCuenta`. Sin este dato la pantalla ofrecía el
-      // formulario de alta a quien ya tiene plaza, y apuntarse otra vez le
-      // duplicaba la plaza dejando la vieja huérfana.
-      final sesion = await leerSesion();
+      // `misGrupos`. Sin este dato la pantalla ofrecía el formulario de
+      // alta a quien ya tiene plaza, y apuntarse otra vez le duplicaba la
+      // plaza dejando la vieja huérfana.
+      final acceso = await cargarMisGrupos();
       if (!mounted) return;
-      if (sesion == null) {
+      if (acceso == null) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('⚠️ ${t.errorSesionInvalida}')));
+            .showSnackBar(SnackBar(content: Text('⚠️ ${t.errorPerfilIncompleto}')));
         return;
       }
-      final acceso = await entrarConCuenta(
-          nickname: sesion.nickname, password: sesion.password, registrando: false);
       // Con un bucle y no con `firstOrNull`, por la misma razón que en
       // pantalla_raiz.dart: esa extensión vive en `package:collection`,
       // que este proyecto no importa.

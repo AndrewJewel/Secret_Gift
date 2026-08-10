@@ -145,12 +145,6 @@ abstract class Textos {
   /// **'Back'**
   String get salir;
 
-  /// No description provided for @unMomento.
-  ///
-  /// In en, this message translates to:
-  /// **'One moment...'**
-  String get unMomento;
-
   /// No description provided for @reintentar.
   ///
   /// In en, this message translates to:
@@ -180,12 +174,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Settings'**
   String get configuracion;
-
-  /// No description provided for @configuracionIdioma.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get configuracionIdioma;
 
   /// No description provided for @configuracionCambiarPin.
   ///
@@ -276,24 +264,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The group or the name is missing.'**
   String get errorFaltanDatosParticipante;
-
-  /// No description provided for @errorNicknameLargo.
-  ///
-  /// In en, this message translates to:
-  /// **'The nickname must be between 3 and 24 characters.'**
-  String get errorNicknameLargo;
-
-  /// No description provided for @errorNicknameEnUso.
-  ///
-  /// In en, this message translates to:
-  /// **'That nickname is taken. Pick another one.'**
-  String get errorNicknameEnUso;
-
-  /// No description provided for @errorNicknameNoExiste.
-  ///
-  /// In en, this message translates to:
-  /// **'That nickname does not exist.'**
-  String get errorNicknameNoExiste;
 
   /// No description provided for @errorPasswordIncorrecta.
   ///
@@ -397,41 +367,65 @@ abstract class Textos {
   /// **'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.'**
   String get errorPinBloqueado;
 
-  /// No description provided for @inicioSubtitulo.
+  /// Server rejected the call because the account's email is not verified yet
   ///
   /// In en, this message translates to:
-  /// **'Group Manager'**
-  String get inicioSubtitulo;
+  /// **'Verify your email to continue.'**
+  String get errorCorreoSinVerificar;
 
-  /// No description provided for @inicioContinuarEn.
+  /// The action needs a recent sign-in and the session is too old
   ///
   /// In en, this message translates to:
-  /// **'Continue in \"{grupo}\"'**
-  String inicioContinuarEn(String grupo);
+  /// **'For security, confirm your password again.'**
+  String get errorRequiereReautenticacion;
 
-  /// No description provided for @inicioUltimoGrupoNota.
+  /// There is an Auth account but no profile document
   ///
   /// In en, this message translates to:
-  /// **'(your last group\'s code, saved on this device)'**
-  String get inicioUltimoGrupoNota;
+  /// **'Your account has no profile yet. Sign in again to finish it.'**
+  String get errorPerfilIncompleto;
 
-  /// No description provided for @inicioCrearGrupo.
+  /// Malformed email address
   ///
   /// In en, this message translates to:
-  /// **'Create a new group'**
-  String get inicioCrearGrupo;
+  /// **'That email address doesn\'t look right.'**
+  String get errorCorreoInvalido;
 
-  /// No description provided for @inicioUnirse.
+  /// Email already registered
   ///
   /// In en, this message translates to:
-  /// **'Join with a code'**
-  String get inicioUnirse;
+  /// **'That email already has an account. Sign in instead.'**
+  String get errorCorreoEnUso;
 
-  /// No description provided for @inicioMiCuenta.
+  /// Firebase Auth rate limit hit
   ///
   /// In en, this message translates to:
-  /// **'My account (find my groups from any device)'**
-  String get inicioMiCuenta;
+  /// **'Too many attempts. Wait a few minutes and try again.'**
+  String get errorDemasiadosIntentos;
+
+  /// Account disabled from the Firebase console
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been disabled.'**
+  String get errorCuentaDeshabilitada;
+
+  /// Fallback for an Auth error code this version doesn't know
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong signing you in. Try again. (code: {codigo} — {mensaje})'**
+  String errorAuthDesconocido(String codigo, String mensaje);
+
+  /// Firebase Auth rejected the request because the site's domain is not in the project's authorized domains list — a project configuration problem, not something this person did
+  ///
+  /// In en, this message translates to:
+  /// **'This app isn\'t set up correctly for this website. Let whoever manages it know.'**
+  String get errorDominioNoAutorizado;
+
+  /// Name or surname over the server limit
+  ///
+  /// In en, this message translates to:
+  /// **'Your name and surname can\'t be longer than 40 characters each.'**
+  String get errorNombreLargo;
 
   /// No description provided for @crearTitulo.
   ///
@@ -547,11 +541,23 @@ abstract class Textos {
   /// **'Sign in'**
   String get cuentaEntrarTitulo;
 
-  /// No description provided for @cuentaNickname.
+  /// Label of the email field on the account screens
   ///
   /// In en, this message translates to:
-  /// **'Nickname'**
-  String get cuentaNickname;
+  /// **'Email'**
+  String get cuentaCorreo;
+
+  /// Label of the first name field on the account screens
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get cuentaNombre;
+
+  /// Label of the last name field on the account screens
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get cuentaApellido;
 
   /// No description provided for @cuentaPassword.
   ///
@@ -574,7 +580,7 @@ abstract class Textos {
   /// No description provided for @cuentaFaltanDatos.
   ///
   /// In en, this message translates to:
-  /// **'The nickname or the password is missing'**
+  /// **'Some required information is missing'**
   String get cuentaFaltanDatos;
 
   /// No description provided for @cuentaNoCoinciden.
@@ -582,18 +588,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The passwords do not match'**
   String get cuentaNoCoinciden;
-
-  /// No description provided for @cuentaCambiarAEntrar.
-  ///
-  /// In en, this message translates to:
-  /// **'Already have an account? Sign in'**
-  String get cuentaCambiarAEntrar;
-
-  /// No description provided for @cuentaCambiarACrear.
-  ///
-  /// In en, this message translates to:
-  /// **'No account yet? Create one'**
-  String get cuentaCambiarACrear;
 
   /// No description provided for @cuentaFraseGancho.
   ///
@@ -642,6 +636,96 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The PINs do not match'**
   String get cuentaPinNoCoinciden;
+
+  /// Link on the sign-in screen that opens the password recovery screen
+  ///
+  /// In en, this message translates to:
+  /// **'I forgot my password'**
+  String get recuperarEnlace;
+
+  /// Title of the password recovery screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recover your password'**
+  String get recuperarTitulo;
+
+  /// Body text of the password recovery screen
+  ///
+  /// In en, this message translates to:
+  /// **'Type the email you signed up with and we\'ll send you a link to set a new password.'**
+  String get recuperarTexto;
+
+  /// Button that sends the password recovery email
+  ///
+  /// In en, this message translates to:
+  /// **'Send me the link'**
+  String get recuperarBoton;
+
+  /// Confirmation shown after requesting recovery, identical whether or not the account exists, to avoid revealing which emails are registered
+  ///
+  /// In en, this message translates to:
+  /// **'If that address has an account, we\'ve sent it a link.'**
+  String get recuperarEnviado;
+
+  /// Title of the blocking email-verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'Check your inbox'**
+  String get verificarTitulo;
+
+  /// Body text of the blocking email-verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'We sent you a link. Tap it to confirm your email, then come back here.'**
+  String get verificarTexto;
+
+  /// Button that checks whether the email is now verified
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve confirmed it'**
+  String get verificarComprobar;
+
+  /// Loading label for the button that checks verification
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get verificarComprobando;
+
+  /// Button that resends the verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Send it again'**
+  String get verificarReenviar;
+
+  /// Loading label for the button that resends the verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get verificarReenviando;
+
+  /// Confirmation shown after resending the verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Link sent'**
+  String get verificarReenviado;
+
+  /// Shown when the person taps 'I've confirmed it' but the email is still unverified
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed yet. Check your inbox — it may be in spam.'**
+  String get verificarTodaviaNo;
+
+  /// Title of the screen that completes a profile left unfinished after signing up
+  ///
+  /// In en, this message translates to:
+  /// **'One last step'**
+  String get completarPerfilTitulo;
+
+  /// Body text of the screen that completes a profile left unfinished after signing up
+  ///
+  /// In en, this message translates to:
+  /// **'Your account was created but your profile wasn\'t saved. Fill it in to continue.'**
+  String get completarPerfilTexto;
 
   /// No description provided for @misGruposSaludo.
   ///

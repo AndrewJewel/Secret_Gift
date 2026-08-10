@@ -4,16 +4,15 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
-import 'sesion.dart';
 import 'tematica.dart';
 
 /// Pantalla de organizador: cambiar nombre, valor mínimo, temática y
 /// reglas del grupo, o eliminarlo entero.
 ///
 /// Solo se llega aquí con el modo organizador ya desbloqueado por cuenta,
-/// así que las credenciales de sesión ya están verificadas y no se vuelven
-/// a pedir para cada cambio. La única excepción es eliminar el grupo, que
-/// sí pide confirmación aparte por ser irreversible.
+/// así que la sesión de Auth ya está verificada y no se vuelve a pedir
+/// para cada cambio. La única excepción es eliminar el grupo, que sí pide
+/// confirmación aparte por ser irreversible.
 class PantallaEditarGrupo extends StatefulWidget {
   final String codigo;
   final Ocasion ocasion;
@@ -92,19 +91,12 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
 
     setState(() => _guardando = true);
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        return;
-      }
       await llamarFuncion('editarGrupo', {
         'codigo': widget.codigo,
         'nombreGrupo': nombre,
         'valorMinimo': _valorMinimo.text.trim(),
         'tematica': _tematica.id,
         'reglas': _reglas.text.trim(),
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.guardado);
@@ -127,16 +119,8 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
 
     setState(() => _guardando = true);
     try {
-      final sesion = await leerSesion();
-      if (sesion == null) {
-        _avisar('⚠️ ${t.errorSesionInvalida}');
-        if (mounted) setState(() => _guardando = false);
-        return;
-      }
       await llamarFuncion('eliminarGrupo', {
         'codigo': widget.codigo,
-        'nickname': sesion.nickname,
-        'password': sesion.password,
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.eliminado);
