@@ -7,6 +7,7 @@ void main() {
       expect(claveDeAuth('invalid-email'), 'correo_invalido');
       expect(claveDeAuth('email-already-in-use'), 'correo_en_uso');
       expect(claveDeAuth('weak-password'), 'password_debil');
+      expect(claveDeAuth('password-does-not-meet-requirements'), 'password_debil');
       expect(claveDeAuth('invalid-credential'), 'password_incorrecta');
       expect(claveDeAuth('wrong-password'), 'password_incorrecta');
       expect(claveDeAuth('user-not-found'), 'password_incorrecta');

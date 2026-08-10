@@ -14,7 +14,12 @@ import 'funciones.dart';
 String claveDeAuth(String code) => switch (code) {
       'invalid-email' => 'correo_invalido',
       'email-already-in-use' => 'correo_en_uso',
-      'weak-password' => 'password_debil',
+      // 'password-does-not-meet-requirements' aparece cuando el proyecto
+      // tiene activada en la consola de Firebase una política de
+      // contraseñas (mínimo de caracteres, mayúscula, minúscula, número,
+      // símbolo). Sin este mapeo caería en 'auth_desconocido' y el mensaje
+      // genérico, en vez de decir qué falta en la contraseña.
+      'weak-password' || 'password-does-not-meet-requirements' => 'password_debil',
       'invalid-credential' || 'wrong-password' || 'user-not-found' => 'password_incorrecta',
       'user-disabled' => 'cuenta_deshabilitada',
       'too-many-requests' => 'demasiados_intentos',
