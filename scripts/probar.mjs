@@ -15,19 +15,28 @@
 // tokens a la API REST de Identity Platform y los manda como
 // `Authorization: Bearer <idToken>` a cada función, igual que hace la app.
 //
-// ⚠️ La verificación de correo es BLOQUEANTE y este script no tiene buzón.
-// La API REST no deja marcar `emailVerified` sin el enlace del correo, y el
-// Admin SDK sí podría — pero eso exigiría credenciales de administrador que
-// este script no tiene ni debería tener. Una función de servidor que marque
-// cuentas como verificadas sería una puerta trasera permanente para
-// ahorrarse dos clics, así que no existe. Se ejecuta en dos pasos:
+// ⚠️ La verificación de correo es BLOQUEANTE, así que el script NO puede
+// correr de un tirón. La API REST no deja marcar `emailVerified` sin el
+// enlace, y el Admin SDK sí podría — pero exigiría credenciales de
+// administrador que este script no tiene ni debería tener. Y una función de
+// servidor que marcase cuentas como verificadas sería una puerta trasera
+// permanente para ahorrarse dos clics, así que no existe. Se ejecuta en dos
+// pasos, con una intervención humana en medio:
 //
-//   1. node scripts/probar.mjs --crear
+//   1. node scripts/probar.mjs --crear [--dominio <dominio o buzon>]
+//      Sin --dominio usa example.com, que no recibe correo: hay que marcar
+//      la verificación a mano. Con --dominio tucorreo@gmail.com se crean
+//      direcciones con + y los enlaces LLEGAN de verdad al buzón, que es la
+//      única forma de comprobar que el correo sale y que su enlace sirve.
 //      Crea las dos cuentas de prueba, comprueba que SIN verificar el
 //      servidor responde `correo_sin_verificar`, e imprime los dos correos
 //      (y el comando exacto del paso 3).
-//   2. Marcarlos como verificados a mano en la consola de Firebase:
-//      Authentication → el usuario → ⋮ → editar → Email verified.
+//   2. Verificar las dos cuentas. Con un buzón real, pinchando los dos
+//      enlaces que acaban de llegar — es el camino recomendado, porque
+//      además prueba que el correo sale. Con example.com no hay enlace que
+//      pinchar: hay que marcarlas a mano en GOOGLE CLOUD CONSOLE →
+//      Identity Platform → Users → editar → Email verified. (En la consola
+//      de Firebase ese interruptor ya no está; comprobado el 2026-08-09.)
 //   3. node scripts/probar.mjs --seguir <correo1> <correo2>
 //      Entra con esas dos cuentas ya verificadas y ejecuta el resto de la
 //      batería completa.
@@ -35,8 +44,7 @@
 // Es más incómodo que antes y es el precio de que la verificación sea de
 // verdad: si el script pudiera saltársela, no probaría nada sobre ella.
 //
-// Las DOS CUENTAS de prueba (prueba.organizador.<marca> y
-// prueba.participante.<marca>, dominio example.com) se quedan: no hay
+// Las DOS CUENTAS de prueba se quedan: no hay
 // ninguna función que borre cuentas de Auth, y añadirla solo para esto
 // abriría una superficie que nadie más necesita. Si molestan, se borran a
 // mano desde la consola de Firebase (Authentication) — borrar solo el
@@ -82,16 +90,34 @@ const JPEG_1PX =
   "AAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==";
 
 const sufijo = Date.now().toString(36);
+
+// Dominio de las cuentas de prueba. Por defecto `example.com`, que está
+// reservado por la RFC 2606 y no entrega correo a nadie — con él hay que
+// marcar la verificación a mano en la consola.
+//
+// Pasando `--dominio <algo>` se usa otro. Con un buzón real y direcciones
+// con `+` —tucorreo+org@gmail.com— los enlaces de verificación LLEGAN, y
+// eso prueba de punta a punta algo que ninguna otra comprobación toca: que
+// el correo se manda de verdad y que su enlace funciona. Es más lento,
+// pero es la única forma de saberlo.
+const iDominio = process.argv.indexOf("--dominio");
+const DOMINIO = iDominio > -1 ? process.argv[iDominio + 1] : "example.com";
+// Con un buzón real hace falta el `+`: si no, las dos cuentas de prueba
+// serían la misma dirección y la segunda chocaría con EMAIL_EXISTS.
+const dir = (quien) => DOMINIO.includes("@") ?
+  DOMINIO.replace("@", `+${quien}.${sufijo}@`) :
+  `prueba.${quien}.${sufijo}@${DOMINIO}`;
+
 // Organizadora: crea el grupo, se apunta como "Yo mismo" y es a quien se le
 // comprueba el ciclo completo de PIN (revelación, cambio, bloqueo, rescate).
-const EMAIL_ORGANIZADOR = `prueba.organizador.${sufijo}@example.com`;
+const EMAIL_ORGANIZADOR = dir("organizador");
 // Participante: solo existe para dar cuerpo a "otra persona" — se le saca
 // del grupo y se le vuelve a meter, pero nunca se le revela su amigo
 // secreto, así que su PIN no importa más allá de cumplir el formato. Antes
 // de tener perfil también hace de "cuenta autenticada sin vínculo": el
 // primer uso que se le da tras verificar el correo es intentar entrar a un
 // grupo SIN haber llamado a guardarPerfil todavía.
-const EMAIL_PARTICIPANTE = `prueba.participante.${sufijo}@example.com`;
+const EMAIL_PARTICIPANTE = dir("participante");
 const PASSWORD = "Prueba123!";
 const PIN = "4321";
 const PIN_PARTICIPANTE = "6789";
@@ -196,9 +222,22 @@ async function crear() {
   await debeFallar("sin verificar el correo no se entra", "correo_sin_verificar",
       () => llamar("misGrupos", {}, tokenSinVerificar));
 
-  console.log("\nAhora marca las dos cuentas como verificadas en la consola");
-  console.log("de Firebase (Authentication → usuario → ⋮ → editar → Email");
-  console.log("verified) y sigue con:\n");
+  // Con un dominio real, se mandan los enlaces de verificación de verdad.
+  // Es la única parte de todo esto que prueba que el correo SALE y que su
+  // enlace funciona; el resto de la batería da eso por hecho.
+  if (DOMINIO !== "example.com") {
+    for (const [quien, reg] of [["organizadora", regOrg], ["participante", regPart]]) {
+      await authRest("sendOobCode", {requestType: "VERIFY_EMAIL", idToken: reg.idToken});
+      console.log(`  enlace de verificación mandado a la cuenta ${quien}`);
+    }
+    console.log("\nPincha los DOS enlaces que te han llegado al buzón y sigue con:\n");
+  } else {
+    console.log("\nEstas cuentas son de example.com y no reciben correo. Marca");
+    console.log("las dos como verificadas a mano — Google Cloud Console →");
+    console.log("Identity Platform → Users → editar → Email verified — o repite");
+    console.log("con `--dominio tucorreo@gmail.com` para verificarlas de verdad.");
+    console.log("Luego sigue con:\n");
+  }
   console.log(`  node scripts/probar.mjs --seguir ${EMAIL_ORGANIZADOR} ${EMAIL_PARTICIPANTE}\n`);
 
   console.log(fallos === 0 ? "Paso 1 en verde." : `Paso 1: ${fallos} fallo(s).`);
