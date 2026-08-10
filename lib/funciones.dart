@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import 'auth.dart';
@@ -81,7 +82,21 @@ Future<Map<String, dynamic>> llamarFuncion(String nombre, Map<String, dynamic> d
   // pone por nosotros: hay que adjuntarla a mano. Si falta, las quince
   // funciones ven `request.auth` vacío y la app entera deja de autorizar.
   final headers = <String, String>{'Content-Type': 'application/json'};
-  final token = await tokenActual();
+
+  // El token se pide aquí dentro, no antes de este try, porque
+  // getIdToken() también puede fallar (token caducado, red caída al
+  // refrescarlo) y ese fallo necesita el mismo tratamiento que el del
+  // http.post de abajo: convertirse en un FuncionError con su propia
+  // clave, no salir crudo y perder la traducción fina que esta tarea
+  // construyó.
+  String? token;
+  try {
+    token = await tokenActual();
+  } on FirebaseAuthException catch (e) {
+    throw comoFuncionError(e);
+  } catch (e) {
+    throw FuncionError('unavailable', 'sin_conexion', 'No se pudo conectar: $e');
+  }
   if (token != null) headers['Authorization'] = 'Bearer $token';
 
   final http.Response resp;
