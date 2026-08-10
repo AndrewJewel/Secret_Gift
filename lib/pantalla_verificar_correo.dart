@@ -58,7 +58,7 @@ class _PantallaVerificarCorreoState extends State<PantallaVerificarCorreo> {
   Future<void> _salir() async {
     await salir();
     if (!mounted) return;
-    Navigator.of(context).popUntil((r) => r.isFirst);
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
   }
 
   @override

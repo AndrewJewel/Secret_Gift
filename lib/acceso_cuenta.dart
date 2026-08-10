@@ -53,7 +53,9 @@ Future<void> entrar({required String correo, required String password}) =>
 /// del correo, y sin esto le llega en inglés a todo el mundo.
 Future<void> mandarVerificacion() async {
   final u = FirebaseAuth.instance.currentUser;
-  if (u == null) return;
+  if (u == null) {
+    throw FuncionError('auth', 'sesion_invalida', 'No hay sesión.');
+  }
   await FirebaseAuth.instance.setLanguageCode(Idioma.actual.value.languageCode);
   await _traduciendo(() => u.sendEmailVerification());
 }
@@ -66,7 +68,13 @@ Future<bool> correoVerificado() async {
   final u = FirebaseAuth.instance.currentUser;
   if (u == null) return false;
   await _traduciendo(() => u.reload());
-  return FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+  final verificado = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+  // reload() refresca el registro de usuario, NO el ID token: el que está en
+  // memoria seguiría diciendo email_verified:false y el servidor rechazaría la
+  // llamada siguiente con `correo_sin_verificar`, justo después de que esta
+  // persona acabe de verificar. Por eso se fuerza el refresco aquí.
+  if (verificado) await FirebaseAuth.instance.currentUser?.getIdToken(true);
+  return verificado;
 }
 
 /// El perfil y los grupos. Devuelve null si la cuenta de Auth existe pero
