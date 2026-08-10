@@ -23,9 +23,9 @@ import 'tematica.dart';
 ///
 /// Normalmente solo muestra un indicador mientras lee disco y valida la
 /// sesión. Se queda visible únicamente si el arranque falla por algo que
-/// no invalida las credenciales (sin red, servidor caído): entonces
-/// enseña el error y un botón de reintentar, porque borrar la sesión en
-/// ese caso sería irreversible.
+/// no invalida la sesión (sin red, servidor caído): entonces enseña el
+/// error y un botón de reintentar, porque borrar la sesión en ese caso
+/// sería irreversible.
 class PantallaRaiz extends StatefulWidget {
   const PantallaRaiz({super.key});
 
@@ -139,11 +139,7 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => PantallaCompletarPerfil(alCompletar: (c) async {
-            final r = await cargarMisGrupos();
-            if (!c.mounted || r == null) return;
-            await irADondeToque(c, r);
-          }),
+          builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar),
         ),
       );
       return;

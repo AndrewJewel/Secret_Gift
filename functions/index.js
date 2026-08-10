@@ -478,7 +478,7 @@ exports.agregarParticipante = onCall(async (request) => {
     );
   }
 
-  // Se verifica antes de subir el avatar: si las credenciales no valen,
+  // Se verifica antes de subir el avatar: si el uid no está autorizado,
   // no queda un avatar huérfano en Storage ni un participante inscrito.
   const sesion = await autorizar(codigo, uidDe(request));
 
@@ -655,9 +655,8 @@ exports.editarParticipante = onCall(async (request) => {
   return {ok: true};
 });
 
-// Antes se llamaba `iniciarSesion`, que se confundía con
-// `iniciarSesionCuenta` y ya no describe lo que hace: no inicia ninguna
-// sesión, revela una asignación.
+// Antes se llamaba `iniciarSesion`, que no describía lo que hace: no
+// inicia ninguna sesión, revela una asignación.
 exports.verAmigoSecreto = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const pin = (request.data?.pin || "").trim();

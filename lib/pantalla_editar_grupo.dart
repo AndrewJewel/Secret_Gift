@@ -10,9 +10,9 @@ import 'tematica.dart';
 /// reglas del grupo, o eliminarlo entero.
 ///
 /// Solo se llega aquí con el modo organizador ya desbloqueado por cuenta,
-/// así que las credenciales de sesión ya están verificadas y no se vuelven
-/// a pedir para cada cambio. La única excepción es eliminar el grupo, que
-/// sí pide confirmación aparte por ser irreversible.
+/// así que la sesión de Auth ya está verificada y no se vuelve a pedir
+/// para cada cambio. La única excepción es eliminar el grupo, que sí pide
+/// confirmación aparte por ser irreversible.
 class PantallaEditarGrupo extends StatefulWidget {
   final String codigo;
   final Ocasion ocasion;

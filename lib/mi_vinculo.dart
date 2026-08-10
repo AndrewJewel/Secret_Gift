@@ -2,7 +2,7 @@
 ///
 /// Sustituye a la identidad que antes se guardaba en disco por grupo,
 /// asociada al par código-de-grupo + PIN: el servidor ya sabe qué
-/// participante eres en cada grupo, y lo manda en `iniciarSesionCuenta`.
+/// participante eres en cada grupo, y lo manda en `misGrupos`.
 /// Preguntárselo al usuario era pedirle un dato que ya teníamos.
 class MiVinculo {
   /// `organizador` o `participante`.
@@ -23,7 +23,7 @@ class MiVinculo {
 
   bool get estoyDentro => participanteId != null && participanteId!.isNotEmpty;
 
-  /// Lee una entrada de las que devuelve `iniciarSesionCuenta`.
+  /// Lee una entrada de las que devuelve `misGrupos`.
   factory MiVinculo.desdeMapa(Map<String, dynamic> g) => MiVinculo(
         rol: g['rol'] as String? ?? 'participante',
         participanteId: g['participanteId'] as String?,

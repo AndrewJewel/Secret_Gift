@@ -344,9 +344,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       MaterialPageRoute(
         builder: (_) => PantallaEditarGrupo(
           codigo: widget.codigo,
-          // El backend autoriza por cuenta (Tasks 2-4) y PantallaEditarGrupo
-          // ya no declara `pinMaestro` (Task 10): las credenciales de sesión
-          // se leen dentro de la propia pantalla.
+          // El backend autoriza por cuenta y PantallaEditarGrupo ya no
+          // declara `pinMaestro`: la sesión de Auth se lee dentro de la
+          // propia pantalla.
           ocasion: _info.ocasion,
           nombreGrupo: _info.nombreGrupo,
           valorMinimo: _info.valorMinimo,
