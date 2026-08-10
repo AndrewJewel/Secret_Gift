@@ -20,6 +20,20 @@
 // de Firebase.
 
 const BASE = "https://us-central1-santa-secreto-860c3.cloudfunctions.net";
+// Para leer documentos directamente y comprobar lo que el servidor escribió,
+// no solo lo que responde. `grupos/{codigo}` y sus participantes son de
+// lectura pública por diseño (ver firestore.rules); la colección NO se puede
+// listar, pero un documento concreto sí se puede pedir.
+const BUCKET = "santa-secreto-860c3.firebasestorage.app";
+const FIRESTORE =
+  "https://firestore.googleapis.com/v1/projects/santa-secreto-860c3/databases/(default)/documents";
+
+// Un JPEG de 1×1 píxel. Existe solo para que algo real pase por Cloud
+// Storage: sin él, guardarAvatar y borrarAvatarPorUrl no los prueba nadie.
+const JPEG_1PX =
+  "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRof" +
+  "Hh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAAB" +
+  "AAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==";
 
 const sufijo = Date.now().toString(36);
 // Organizadora: crea el grupo, se apunta como "Yo mismo" y es a quien se le
@@ -128,14 +142,50 @@ async function main() {
   // Antes del sorteo sí se puede sacar a alguien. La organizadora YA tiene
   // su plaza (arriba), así que quien entra aquí tiene que ser la segunda
   // cuenta: reusar credOrganizador chocaría con "ya_estas_en_el_grupo".
+  // Entra CON avatar, y es lo único de toda la batería que toca Cloud
+  // Storage. Sin esto, `guardarAvatar` y `borrarAvatarPorUrl` no los
+  // ejercita nadie: son las dos únicas funciones del fichero que salen de
+  // Firestore, así que un fallo suyo pasaba entero por debajo de esta
+  // prueba. Se destapó al migrar a firebase-admin v14, donde
+  // `admin.storage()` cambió a `getStorage()`.
   const sobrante = await llamar("agregarParticipante", {
     ...credParticipante, codigo, nombre: "Sobrante", deseos: "",
+    avatarBase64: JPEG_1PX,
   });
+  ok("agregarParticipante devuelve id con avatar", typeof sobrante.id === "string");
+
+  // La URL tiene que existir de verdad, no solo estar guardada: que el
+  // documento traiga una cadena no prueba que la imagen llegara al bucket
+  // ni que sea pública.
+  const conAvatar = await fetch(
+      `${FIRESTORE}/grupos/${codigo}/participantes/${sobrante.id}`);
+  const urlAvatar = (await conAvatar.json())?.fields?.avatarUrl?.stringValue || "";
+  ok("el avatar se guardó en el bucket", urlAvatar.startsWith("https://storage.googleapis.com/"),
+      `llegó "${urlAvatar}"`);
+  const imagen = await fetch(urlAvatar);
+  ok("la imagen es públicamente accesible", imagen.ok, `HTTP ${imagen.status}`);
+
   // Sacar a otra persona (no a uno mismo) exige ser organizador —
   // borrarParticipante lo comprueba— así que quien llama es credOrganizador.
   const borrado = await llamar("borrarParticipante",
       {...credOrganizador, codigo, participanteId: sobrante.id});
   ok("antes del sorteo se puede sacar a alguien", borrado.ok === true);
+
+  // Borrar al participante tiene que llevarse su imagen del bucket.
+  //
+  // Con un parámetro que la caché no ha visto. Pedir la URL tal cual no
+  // sirve: se guarda con `cacheControl: max-age=31536000` y esta prueba
+  // acaba de descargarla, así que un borrado correcto seguiría devolviendo
+  // 200 desde la caché de borde. (Los metadatos tampoco valen: el endpoint
+  // JSON de GCS pide credenciales y responde 401, que no dice nada.)
+  // Se comprueba que YA NO SE PUEDE DESCARGAR, no que dé un código
+  // concreto. Este bucket responde 403 —no 404— a quien pide sin
+  // credenciales un objeto que no existe, para no revelar qué hay dentro.
+  // Comprobado con rutas inventadas: también dan 403. Exigir 404 haría
+  // fallar esta prueba con el borrado funcionando perfectamente.
+  const tras = await fetch(`${urlAvatar}?nocache=${Date.now()}`);
+  ok("al borrar al participante se borra su avatar", tras.status !== 200,
+      `sigue descargándose: HTTP ${tras.status}`);
 
   // Se necesitan dos para sortear. Al sacar a "Sobrante" el grupo se quedó
   // con una sola plaza (la organizadora); borrarParticipante limpió también

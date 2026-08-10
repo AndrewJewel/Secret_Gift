@@ -1,5 +1,10 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
+// firebase-admin v13 retiró la API con espacio de nombres (`admin.firestore()`,
+// `admin.storage()`, `admin.firestore.FieldValue`). Ahora cada cosa se pide a
+// su módulo.
+const {initializeApp} = require("firebase-admin/app");
+const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore");
+const {getStorage} = require("firebase-admin/storage");
 const bcrypt = require("bcryptjs");
 // `Math.random` no sirve para nada de esto. V8 lo implementa con
 // xorshift128+, que no es un generador criptográfico: a partir de unas
@@ -10,8 +15,8 @@ const bcrypt = require("bcryptjs");
 // la máscara que sostiene el anonimato del chat.
 const {randomInt} = require("node:crypto");
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
+const db = getFirestore();
 
 // Sin caracteres ambiguos (0/O, 1/I/L) para que sea fácil de dictar/escribir.
 const ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -59,7 +64,7 @@ async function guardarAvatar(codigo, participanteId, avatarBase64) {
   // Nombre con marca de tiempo: al cambiar de avatar cambia la URL, así
   // ningún caché del navegador se queda mostrando la imagen vieja.
   const ruta = `avatares/${codigo}/${participanteId}-${Date.now()}.jpg`;
-  const archivo = admin.storage().bucket(BUCKET).file(ruta);
+  const archivo = getStorage().bucket(BUCKET).file(ruta);
   await archivo.save(buffer, {
     contentType: "image/jpeg",
     metadata: {cacheControl: "public, max-age=31536000"},
@@ -76,7 +81,7 @@ async function borrarAvatarPorUrl(url) {
   const prefijo = `https://storage.googleapis.com/${BUCKET}/`;
   if (!url.startsWith(prefijo)) return;
   try {
-    await admin.storage().bucket(BUCKET).file(url.slice(prefijo.length)).delete();
+    await getStorage().bucket(BUCKET).file(url.slice(prefijo.length)).delete();
   } catch (e) {
     console.warn("No se pudo borrar el avatar viejo:", e.message);
   }
@@ -178,7 +183,7 @@ exports.registrarCuenta = onCall(async (request) => {
       // rediseño existe justamente para sacar secretos en claro de
       // Firestore, no para meter uno nuevo.
       pinHash: bcrypt.hashSync(pin, 10),
-      fecha: admin.firestore.FieldValue.serverTimestamp(),
+      fecha: FieldValue.serverTimestamp(),
       grupos: {},
     });
   } catch (e) {
@@ -261,8 +266,8 @@ exports.iniciarSesionCuenta = onCall(async (request) => {
     for (const codigo of codigos) {
       if (vivos.has(codigo)) continue;
       await usuarioRef(clave).update(
-          new admin.firestore.FieldPath("grupos", codigo),
-          admin.firestore.FieldValue.delete(),
+          new FieldPath("grupos", codigo),
+          FieldValue.delete(),
       );
     }
   }
@@ -388,7 +393,7 @@ exports.crearGrupo = onCall(async (request) => {
           nombreGrupo,
           tematica,
           reglas,
-          fecha: admin.firestore.FieldValue.serverTimestamp(),
+          fecha: FieldValue.serverTimestamp(),
         });
       });
       await vincularComoOrganizador(clave, codigo);
@@ -472,7 +477,7 @@ exports.agregarParticipante = onCall(async (request) => {
   batch.set(ref, {
     nombre,
     avatarUrl: avatarUrl || "",
-    fecha: admin.firestore.FieldValue.serverTimestamp(),
+    fecha: FieldValue.serverTimestamp(),
     tieneAmigo: false,
   });
   batch.set(participantePrivadoRef(codigo, ref.id), {
@@ -559,10 +564,10 @@ exports.borrarParticipante = onCall(async (request) => {
     if (snapCuenta.exists) {
       const vinculo = (snapCuenta.data().grupos || {})[codigo];
       await refCuenta.update(
-          new admin.firestore.FieldPath("grupos", codigo),
+          new FieldPath("grupos", codigo),
           vinculo?.rol === "organizador" ?
             {rol: "organizador", participanteId: null} :
-            admin.firestore.FieldValue.delete(),
+            FieldValue.delete(),
       );
     }
   }
@@ -835,7 +840,7 @@ exports.enviarMensaje = onCall(async (request) => {
     mascara,
     repeticion,
     texto,
-    fecha: admin.firestore.FieldValue.serverTimestamp(),
+    fecha: FieldValue.serverTimestamp(),
   });
   await participantePrivadoRef(codigo, participanteId).set({ultimoMensajeMs: ahora}, {merge: true});
 
@@ -927,7 +932,7 @@ exports.eliminarGrupo = onCall(async (request) => {
   // recursiveDelete ya se llevó la subcolección chat/ con lo demás.
   // Y los avatares del grupo, que viven en Storage y no en Firestore.
   try {
-    await admin.storage().bucket(BUCKET).deleteFiles({prefix: `avatares/${codigo}/`});
+    await getStorage().bucket(BUCKET).deleteFiles({prefix: `avatares/${codigo}/`});
   } catch (e) {
     console.warn("No se pudieron borrar los avatares del grupo:", e.message);
   }
