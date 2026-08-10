@@ -202,6 +202,46 @@ que se diagnosticó todo esto:
   Firebase**. Sin eso, «algo salió mal» no se puede diagnosticar a distancia
   — que es exactamente lo que pasó durante media hora.
 
+## Decidido y sin hacer: desplegar desde GitHub
+
+Se diseñó y aprobó, y queda para mañana. **Argumento de peso para esta app
+en concreto: el fallo de anoche no habría ocurrido.** Una compilación en CI
+arranca de un clon limpio, así que no puede arrastrar un registro de plugins
+caducado — que fue exactamente la causa.
+
+**Decisiones tomadas:**
+
+- **Se despliega la app y las reglas** (Firestore y Storage). Las Cloud
+  Functions **no**: no tienen tests unitarios, su única prueba es
+  `probar.mjs` contra lo ya desplegado, y un fallo ahí tumba el backend
+  entero. Siguen siendo manuales.
+- **Las reglas SÍ entran, y a propósito.** Es la corrección directa de lo
+  que pasó el 2026-08-09: un arreglo de seguridad estuvo commiteado y sin
+  desplegar, que es lo mismo que no tenerlo.
+- **Se dispara en cada push a `main`.**
+
+**Cómo quedaría el flujo:** clon limpio → Flutter fijado a **3.38.10** →
+`pub get` → **`flutter analyze` y `flutter test`, que paran el despliegue si
+fallan** → `flutter build web --release` →
+`firebase deploy --only hosting,firestore:rules,storage:rules`.
+
+**Pendiente de decidir:** si el flujo se salta el despliegue cuando el push
+solo toca `bitacora/` o `docs/`. Escribir una bitácora no debería recompilar
+y redesplegar la app.
+
+**Lo que exige acción humana:** `firebase init hosting:github` monta la
+cuenta de servicio, la guarda como secreto en el repositorio y escribe un
+flujo base — pero **solo concede permisos de Hosting**. Para que pueda
+desplegar también las reglas hay que añadirle un rol a esa cuenta de
+servicio en Google Cloud.
+
+**El cambio real, dicho para que no sorprenda:** a partir de esto, **empujar
+a `main` es publicar**. Hoy hay un paso intermedio —decidir cuándo
+desplegar— que ha hecho de red varias veces. Se gana que nunca más se quede
+un arreglo sin desplegar; se pierde el momento de «está en main pero aún no
+lo publico». Se acepta porque el flujo de trabajo ya es de ramas que solo se
+fusionan cuando están probadas.
+
 ## Estado y pendientes
 
 **Verificado en dispositivo y fusionado a `main`.**
