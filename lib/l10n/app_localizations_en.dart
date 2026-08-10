@@ -288,6 +288,15 @@ class TextosEn extends Textos {
   String get cuentaNickname => 'Nickname';
 
   @override
+  String get cuentaCorreo => 'Email';
+
+  @override
+  String get cuentaNombre => 'First name';
+
+  @override
+  String get cuentaApellido => 'Last name';
+
+  @override
   String get cuentaPassword => 'Password';
 
   @override
@@ -298,7 +307,7 @@ class TextosEn extends Textos {
   String get cuentaConfirmar => 'Confirm password';
 
   @override
-  String get cuentaFaltanDatos => 'The nickname or the password is missing';
+  String get cuentaFaltanDatos => 'Some required information is missing';
 
   @override
   String get cuentaNoCoinciden => 'The passwords do not match';
@@ -336,6 +345,39 @@ class TextosEn extends Textos {
 
   @override
   String get cuentaPinNoCoinciden => 'The PINs do not match';
+
+  @override
+  String get verificarTitulo => 'Check your inbox';
+
+  @override
+  String get verificarTexto =>
+      'We sent you a link. Tap it to confirm your email, then come back here.';
+
+  @override
+  String get verificarComprobar => 'I\'ve confirmed it';
+
+  @override
+  String get verificarComprobando => 'Checking…';
+
+  @override
+  String get verificarReenviar => 'Send it again';
+
+  @override
+  String get verificarReenviando => 'Sending…';
+
+  @override
+  String get verificarReenviado => 'Link sent';
+
+  @override
+  String get verificarTodaviaNo =>
+      'Not confirmed yet. Check your inbox — it may be in spam.';
+
+  @override
+  String get completarPerfilTitulo => 'One last step';
+
+  @override
+  String get completarPerfilTexto =>
+      'Your account was created but your profile wasn\'t saved. Fill it in to continue.';
 
   @override
   String misGruposSaludo(String nickname) {

@@ -56,12 +56,9 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
   /// recarga al volver de esas pantallas: si no, un grupo recién creado
   /// no aparecería hasta cerrar sesión y volver a entrar.
   Future<void> _recargar() async {
-    final sesion = await leerSesion();
-    if (sesion == null) return;
     try {
-      final r = await entrarConCuenta(
-          nickname: sesion.nickname, password: sesion.password, registrando: false);
-      if (!mounted) return;
+      final r = await cargarMisGrupos();
+      if (!mounted || r == null) return;
       setState(() => _grupos = r.grupos);
     } catch (_) {
       // Sin conexión se queda la lista que ya había, que es mejor que

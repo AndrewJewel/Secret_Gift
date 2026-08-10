@@ -607,6 +607,24 @@ abstract class Textos {
   /// **'Nickname'**
   String get cuentaNickname;
 
+  /// Label of the email field on the account screens
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get cuentaCorreo;
+
+  /// Label of the first name field on the account screens
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get cuentaNombre;
+
+  /// Label of the last name field on the account screens
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get cuentaApellido;
+
   /// No description provided for @cuentaPassword.
   ///
   /// In en, this message translates to:
@@ -628,7 +646,7 @@ abstract class Textos {
   /// No description provided for @cuentaFaltanDatos.
   ///
   /// In en, this message translates to:
-  /// **'The nickname or the password is missing'**
+  /// **'Some required information is missing'**
   String get cuentaFaltanDatos;
 
   /// No description provided for @cuentaNoCoinciden.
@@ -696,6 +714,66 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The PINs do not match'**
   String get cuentaPinNoCoinciden;
+
+  /// Title of the blocking email-verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'Check your inbox'**
+  String get verificarTitulo;
+
+  /// Body text of the blocking email-verification screen
+  ///
+  /// In en, this message translates to:
+  /// **'We sent you a link. Tap it to confirm your email, then come back here.'**
+  String get verificarTexto;
+
+  /// Button that checks whether the email is now verified
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve confirmed it'**
+  String get verificarComprobar;
+
+  /// Loading label for the button that checks verification
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get verificarComprobando;
+
+  /// Button that resends the verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Send it again'**
+  String get verificarReenviar;
+
+  /// Loading label for the button that resends the verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get verificarReenviando;
+
+  /// Confirmation shown after resending the verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Link sent'**
+  String get verificarReenviado;
+
+  /// Shown when the person taps 'I've confirmed it' but the email is still unverified
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed yet. Check your inbox — it may be in spam.'**
+  String get verificarTodaviaNo;
+
+  /// Title of the screen that completes a profile left unfinished after signing up
+  ///
+  /// In en, this message translates to:
+  /// **'One last step'**
+  String get completarPerfilTitulo;
+
+  /// Body text of the screen that completes a profile left unfinished after signing up
+  ///
+  /// In en, this message translates to:
+  /// **'Your account was created but your profile wasn\'t saved. Fill it in to continue.'**
+  String get completarPerfilTexto;
 
   /// No description provided for @misGruposSaludo.
   ///

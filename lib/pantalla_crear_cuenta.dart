@@ -5,7 +5,9 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
+import 'pantalla_completar_perfil.dart';
 import 'pantalla_iniciar_sesion.dart';
+import 'pantalla_verificar_correo.dart';
 import 'selector_idioma.dart';
 import 'tematica.dart';
 
@@ -39,7 +41,9 @@ class PantallaCrearCuenta extends StatefulWidget {
 }
 
 class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
-  final _nickname = TextEditingController();
+  final _correo = TextEditingController();
+  final _nombre = TextEditingController();
+  final _apellido = TextEditingController();
   final _password = TextEditingController();
   final _confirmar = TextEditingController();
   final _pin = TextEditingController();
@@ -49,7 +53,9 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
   @override
   void dispose() {
-    _nickname.dispose();
+    _correo.dispose();
+    _nombre.dispose();
+    _apellido.dispose();
     _password.dispose();
     _confirmar.dispose();
     _pin.dispose();
@@ -64,10 +70,12 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
   Future<void> _enviar() async {
     final t = Textos.of(context);
-    final nickname = _nickname.text.trim();
+    final correo = _correo.text.trim();
+    final nombre = _nombre.text.trim();
+    final apellido = _apellido.text.trim();
     final password = _password.text;
 
-    if (nickname.isEmpty || password.isEmpty) {
+    if (correo.isEmpty || nombre.isEmpty || apellido.isEmpty || password.isEmpty) {
       _avisar('⚠️ ${t.cuentaFaltanDatos}');
       return;
     }
@@ -90,13 +98,20 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
     setState(() => _cargando = true);
     try {
-      final r = await entrarConCuenta(
-          nickname: nickname,
-          password: password,
-          registrando: true,
-          pin: _pin.text.trim());
+      await crearCuenta(
+        correo: _correo.text,
+        password: _password.text,
+        nombre: _nombre.text,
+        apellido: _apellido.text,
+        pin: _pin.text,
+      );
       if (!mounted) return;
-      await widget.alEntrar(context, r);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar),
+        ),
+      );
     } on FuncionError catch (e) {
       _avisar('⚠️ ${e.texto(t)}');
     } catch (e) {
@@ -104,6 +119,23 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
+  }
+
+  /// Tras verificar, se cargan los grupos y se sigue el camino normal —
+  /// el mismo que sigue quien entra con una cuenta ya verificada.
+  Future<void> _trasVerificar(BuildContext context) async {
+    final r = await cargarMisGrupos();
+    if (!context.mounted) return;
+    if (r == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar),
+        ),
+      );
+      return;
+    }
+    await widget.alEntrar(context, r);
   }
 
   @override
@@ -138,9 +170,21 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                 const CampoIdioma(),
                 const SizedBox(height: 16),
                 GlassTextField(
-                    controller: _nickname,
-                    labelText: t.cuentaNickname,
-                    icon: Icons.person_outline),
+                  controller: _correo,
+                  labelText: t.cuentaCorreo,
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                GlassTextField(
+                    controller: _nombre,
+                    labelText: t.cuentaNombre,
+                    icon: Icons.badge_outlined),
+                const SizedBox(height: 16),
+                GlassTextField(
+                    controller: _apellido,
+                    labelText: t.cuentaApellido,
+                    icon: Icons.badge_outlined),
                 const SizedBox(height: 16),
                 GlassTextField(
                   controller: _password,

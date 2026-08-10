@@ -289,6 +289,15 @@ class TextosEs extends Textos {
   String get cuentaNickname => 'Nickname';
 
   @override
+  String get cuentaCorreo => 'Correo';
+
+  @override
+  String get cuentaNombre => 'Nombre';
+
+  @override
+  String get cuentaApellido => 'Apellido';
+
+  @override
   String get cuentaPassword => 'Contraseña';
 
   @override
@@ -299,7 +308,7 @@ class TextosEs extends Textos {
   String get cuentaConfirmar => 'Confirmar contraseña';
 
   @override
-  String get cuentaFaltanDatos => 'Falta el nickname o la contraseña';
+  String get cuentaFaltanDatos => 'Falta información obligatoria';
 
   @override
   String get cuentaNoCoinciden => 'Las contraseñas no coinciden';
@@ -337,6 +346,39 @@ class TextosEs extends Textos {
 
   @override
   String get cuentaPinNoCoinciden => 'Los PIN no coinciden';
+
+  @override
+  String get verificarTitulo => 'Mira tu bandeja de entrada';
+
+  @override
+  String get verificarTexto =>
+      'Te hemos mandado un enlace. Pínchalo para confirmar tu correo y vuelve aquí.';
+
+  @override
+  String get verificarComprobar => 'Ya lo confirmé';
+
+  @override
+  String get verificarComprobando => 'Comprobando…';
+
+  @override
+  String get verificarReenviar => 'Mandarlo otra vez';
+
+  @override
+  String get verificarReenviando => 'Mandando…';
+
+  @override
+  String get verificarReenviado => 'Enlace mandado';
+
+  @override
+  String get verificarTodaviaNo =>
+      'Todavía no está confirmado. Mira tu bandeja, puede estar en el correo no deseado.';
+
+  @override
+  String get completarPerfilTitulo => 'Un último paso';
+
+  @override
+  String get completarPerfilTexto =>
+      'Tu cuenta se creó pero tu perfil no se guardó. Rellénalo para continuar.';
 
   @override
   String misGruposSaludo(String nickname) {
