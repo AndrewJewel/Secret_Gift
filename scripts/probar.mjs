@@ -153,21 +153,39 @@ async function crear() {
   console.log(`Cuenta organizadora: ${EMAIL_ORGANIZADOR}`);
   console.log(`Cuenta participante: ${EMAIL_PARTICIPANTE}`);
 
-  await registrar(EMAIL_ORGANIZADOR, PASSWORD);
-  await registrar(EMAIL_PARTICIPANTE, PASSWORD);
-  ok("las dos cuentas se registran en Firebase Auth", true);
+  const regOrg = await registrar(EMAIL_ORGANIZADOR, PASSWORD);
+  const regPart = await registrar(EMAIL_PARTICIPANTE, PASSWORD);
+  // Que la llamada no lance no prueba que Identity Toolkit haya creado de
+  // verdad la cuenta: `idToken` y `localId` son los dos campos que solo
+  // vienen si el registro cuajó.
+  ok("las dos cuentas se registran en Firebase Auth",
+      typeof regOrg.idToken === "string" && regOrg.idToken.length > 0 &&
+      typeof regOrg.localId === "string" && regOrg.localId.length > 0 &&
+      typeof regPart.idToken === "string" && regPart.idToken.length > 0 &&
+      typeof regPart.localId === "string" && regPart.localId.length > 0,
+      `organizadora: idToken=${typeof regOrg.idToken} localId=${typeof regOrg.localId}; ` +
+      `participante: idToken=${typeof regPart.idToken} localId=${typeof regPart.localId}`);
 
   // Con contraseña equivocada, Firebase Auth ni siquiera llega a darnos un
   // token: la comprobación pasa por su lado, no por el nuestro. Es la otra
   // mitad de "una contraseña equivocada no autoriza nada" — la mitad de
   // nuestro backend está en la sección --seguir, con el token roto.
-  let rechazoPasswordMala = false;
+  //
+  // No basta con "lanzó algo": un fallo de red o una URL de la API rota
+  // también lanzarían, y la prueba diría OK sin haber comprobado nada. Se
+  // exige el mensaje concreto de credencial inválida de Identity Toolkit.
+  // Cuál de los dos devuelve depende de si el proyecto tiene activada la
+  // protección de enumeración de correos, así que se aceptan ambos — pero
+  // solo esos dos, no cualquier mensaje.
+  let mensajePasswordMala = "";
   try {
     await entrar(EMAIL_ORGANIZADOR, "OtraCosa456!");
   } catch (e) {
-    rechazoPasswordMala = true;
+    mensajePasswordMala = e.message;
   }
-  ok("una contraseña equivocada no autentica", rechazoPasswordMala);
+  ok("una contraseña equivocada no autentica",
+      /INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD/.test(mensajePasswordMala),
+      `llegó "${mensajePasswordMala}"`);
 
   // Token de una cuenta recién creada: el correo TODAVÍA no está verificado.
   // Este es el único momento en que se puede probar `correo_sin_verificar`
@@ -214,15 +232,17 @@ async function seguir(emailOrganizador, emailParticipante) {
   await debeFallar("guardarPerfil rechaza un PIN de 3 dígitos", "pin_formato",
       () => llamar("guardarPerfil", {nombre: "Organiza", apellido: "Dora", pin: "123"}, tokenOrg));
 
-  await llamar("guardarPerfil", {nombre: "Organiza", apellido: "Dora", pin: PIN}, tokenOrg);
-  ok("guardarPerfil con PIN de 4 dígitos", true);
+  const perfilOrg = await llamar("guardarPerfil", {nombre: "Organiza", apellido: "Dora", pin: PIN}, tokenOrg);
+  ok("guardarPerfil con PIN de 4 dígitos", perfilOrg.ok === true, `llegó ${JSON.stringify(perfilOrg)}`);
 
   // guardarPerfil usa create(), no set(): una segunda llamada con datos
   // DISTINTOS tiene que ser un no-op silencioso, no reescribir el PIN. Se
-  // comprueba aquí que no revienta y más abajo (verAmigoSecreto con PIN, no
-  // con "0000") que de verdad no se reescribió.
-  await llamar("guardarPerfil", {nombre: "Otro", apellido: "Nombre", pin: "0000"}, tokenOrg);
-  ok("guardarPerfil es idempotente (no revienta la segunda vez)", true);
+  // comprueba aquí que responde `ok: true` igual que la primera vez (no
+  // revienta) y más abajo (verAmigoSecreto con PIN, no con "0000") que de
+  // verdad no se reescribió.
+  const perfilOrgOtraVez = await llamar("guardarPerfil", {nombre: "Otro", apellido: "Nombre", pin: "0000"}, tokenOrg);
+  ok("guardarPerfil es idempotente (no revienta la segunda vez)",
+      perfilOrgOtraVez.ok === true, `llegó ${JSON.stringify(perfilOrgOtraVez)}`);
 
   // La cuenta participante, en cambio, TODAVÍA no ha llamado a
   // guardarPerfil. Es el estado exacto de alguien que se registró y
@@ -249,8 +269,8 @@ async function seguir(emailOrganizador, emailParticipante) {
       () => llamar("agregarParticipante",
           {codigo, nombre: "Sin perfil todavía", deseos: ""}, tokenPart));
 
-  await llamar("guardarPerfil", {nombre: "Partici", apellido: "Pante", pin: PIN_PARTICIPANTE}, tokenPart);
-  ok("guardarPerfil de la cuenta participante", true);
+  const perfilPart = await llamar("guardarPerfil", {nombre: "Partici", apellido: "Pante", pin: PIN_PARTICIPANTE}, tokenPart);
+  ok("guardarPerfil de la cuenta participante", perfilPart.ok === true, `llegó ${JSON.stringify(perfilPart)}`);
 
   // EL BUG QUE ORIGINÓ TODO ESTO: crear un grupo y apuntarse a él lo sacaba
   // DOS veces en Mis grupos, porque arrayUnion guardaba dos entradas.
