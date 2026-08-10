@@ -171,8 +171,11 @@ a quien corresponda.
 
 **Quien se va sabe a quién regala quien entra.** Vio su asignación antes de
 irse, y esa asignación se hereda entera. Evitarlo obligaría a rehacer parte
-de la cadena y arrastraría a terceros que no tienen nada que ver. Se acepta:
-en el caso real —alguien que no puede seguir— esa persona no es un atacante.
+de la cadena y arrastraría a terceros que no tienen nada que ver.
+
+**Se planteó explícitamente y se aceptó explícitamente** (2026-08-09): en el
+caso real —alguien que no puede seguir jugando— esa persona no es un
+atacante. No es un descuido: no reabrir sin un motivo nuevo.
 
 **El nombre de quien se fue queda en el chat.** Bajo su máscara, que ya no
 es de nadie. Se eligió sobre borrar sus mensajes porque borrarlos dejaría
