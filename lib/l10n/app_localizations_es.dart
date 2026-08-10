@@ -172,6 +172,40 @@ class TextosEs extends Textos {
       'Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.';
 
   @override
+  String get errorCorreoSinVerificar => 'Verifica tu correo para continuar.';
+
+  @override
+  String get errorRequiereReautenticacion =>
+      'Por seguridad, confirma otra vez tu contraseña.';
+
+  @override
+  String get errorPerfilIncompleto =>
+      'Tu cuenta todavía no tiene perfil. Vuelve a entrar para terminarlo.';
+
+  @override
+  String get errorCorreoInvalido =>
+      'Esa dirección de correo no parece correcta.';
+
+  @override
+  String get errorCorreoEnUso =>
+      'Ese correo ya tiene cuenta. Entra en vez de crear una.';
+
+  @override
+  String get errorDemasiadosIntentos =>
+      'Demasiados intentos. Espera unos minutos y vuelve a probar.';
+
+  @override
+  String get errorCuentaDeshabilitada => 'Esta cuenta ha sido deshabilitada.';
+
+  @override
+  String get errorAuthDesconocido =>
+      'Algo salió mal al entrar. Vuelve a intentarlo.';
+
+  @override
+  String get errorNombreLargo =>
+      'El nombre y el apellido no pueden pasar de 40 caracteres cada uno.';
+
+  @override
   String get inicioSubtitulo => 'Gestión de grupos';
 
   @override

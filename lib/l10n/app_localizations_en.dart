@@ -174,6 +174,39 @@ class TextosEn extends Textos {
       'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.';
 
   @override
+  String get errorCorreoSinVerificar => 'Verify your email to continue.';
+
+  @override
+  String get errorRequiereReautenticacion =>
+      'For security, confirm your password again.';
+
+  @override
+  String get errorPerfilIncompleto =>
+      'Your account has no profile yet. Sign in again to finish it.';
+
+  @override
+  String get errorCorreoInvalido => 'That email address doesn\'t look right.';
+
+  @override
+  String get errorCorreoEnUso =>
+      'That email already has an account. Sign in instead.';
+
+  @override
+  String get errorDemasiadosIntentos =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get errorCuentaDeshabilitada => 'This account has been disabled.';
+
+  @override
+  String get errorAuthDesconocido =>
+      'Something went wrong signing you in. Try again.';
+
+  @override
+  String get errorNombreLargo =>
+      'Your name and surname can\'t be longer than 40 characters each.';
+
+  @override
   String get inicioSubtitulo => 'Group Manager';
 
   @override

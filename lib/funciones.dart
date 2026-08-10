@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'auth.dart';
 import 'l10n/app_localizations.dart';
 
 // No usamos el paquete cloud_functions: su implementación web tiene un bug
@@ -40,9 +41,15 @@ extension MensajeLocalizado on FuncionError {
         'faltan_datos' => t.errorFaltanDatos,
         'faltan_datos_grupo' => t.errorFaltanDatosGrupo,
         'faltan_datos_participante' => t.errorFaltanDatosParticipante,
-        'nickname_largo' => t.errorNicknameLargo,
-        'nickname_en_uso' => t.errorNicknameEnUso,
-        'nickname_no_existe' => t.errorNicknameNoExiste,
+        'correo_sin_verificar' => t.errorCorreoSinVerificar,
+        'requiere_reautenticacion' => t.errorRequiereReautenticacion,
+        'perfil_incompleto' => t.errorPerfilIncompleto,
+        'correo_invalido' => t.errorCorreoInvalido,
+        'correo_en_uso' => t.errorCorreoEnUso,
+        'demasiados_intentos' => t.errorDemasiadosIntentos,
+        'cuenta_deshabilitada' => t.errorCuentaDeshabilitada,
+        'auth_desconocido' => t.errorAuthDesconocido,
+        'nombre_largo' => t.errorNombreLargo,
         'password_incorrecta' => t.errorPasswordIncorrecta,
         'password_debil' => t.errorPasswordDebil,
         'minimo_dos_personas' => t.errorMinimoDosPersonas,
@@ -69,11 +76,19 @@ extension MensajeLocalizado on FuncionError {
 }
 
 Future<Map<String, dynamic>> llamarFuncion(String nombre, Map<String, dynamic> datos) async {
+  // El protocolo callable saca la identidad de esta cabecera. Como no
+  // usamos el paquete `cloud_functions` (ver la nota de arriba), nadie la
+  // pone por nosotros: hay que adjuntarla a mano. Si falta, las quince
+  // funciones ven `request.auth` vacío y la app entera deja de autorizar.
+  final headers = <String, String>{'Content-Type': 'application/json'};
+  final token = await tokenActual();
+  if (token != null) headers['Authorization'] = 'Bearer $token';
+
   final http.Response resp;
   try {
     resp = await http.post(
       Uri.parse('$_baseUrl/$nombre'),
-      headers: const {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({'data': datos}),
     );
   } catch (e) {

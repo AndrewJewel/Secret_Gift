@@ -397,6 +397,60 @@ abstract class Textos {
   /// **'Too many wrong PINs. Wait a few minutes, or change your PIN from Settings.'**
   String get errorPinBloqueado;
 
+  /// Server rejected the call because the account's email is not verified yet
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email to continue.'**
+  String get errorCorreoSinVerificar;
+
+  /// The action needs a recent sign-in and the session is too old
+  ///
+  /// In en, this message translates to:
+  /// **'For security, confirm your password again.'**
+  String get errorRequiereReautenticacion;
+
+  /// There is an Auth account but no profile document
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has no profile yet. Sign in again to finish it.'**
+  String get errorPerfilIncompleto;
+
+  /// Malformed email address
+  ///
+  /// In en, this message translates to:
+  /// **'That email address doesn\'t look right.'**
+  String get errorCorreoInvalido;
+
+  /// Email already registered
+  ///
+  /// In en, this message translates to:
+  /// **'That email already has an account. Sign in instead.'**
+  String get errorCorreoEnUso;
+
+  /// Firebase Auth rate limit hit
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a few minutes and try again.'**
+  String get errorDemasiadosIntentos;
+
+  /// Account disabled from the Firebase console
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been disabled.'**
+  String get errorCuentaDeshabilitada;
+
+  /// Fallback for an Auth error code this version doesn't know
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong signing you in. Try again.'**
+  String get errorAuthDesconocido;
+
+  /// Name or surname over the server limit
+  ///
+  /// In en, this message translates to:
+  /// **'Your name and surname can\'t be longer than 40 characters each.'**
+  String get errorNombreLargo;
+
   /// No description provided for @inicioSubtitulo.
   ///
   /// In en, this message translates to:
