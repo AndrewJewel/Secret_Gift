@@ -145,12 +145,6 @@ abstract class Textos {
   /// **'Back'**
   String get salir;
 
-  /// No description provided for @unMomento.
-  ///
-  /// In en, this message translates to:
-  /// **'One moment...'**
-  String get unMomento;
-
   /// No description provided for @reintentar.
   ///
   /// In en, this message translates to:
@@ -180,12 +174,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Settings'**
   String get configuracion;
-
-  /// No description provided for @configuracionIdioma.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get configuracionIdioma;
 
   /// No description provided for @configuracionCambiarPin.
   ///
@@ -276,24 +264,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The group or the name is missing.'**
   String get errorFaltanDatosParticipante;
-
-  /// No description provided for @errorNicknameLargo.
-  ///
-  /// In en, this message translates to:
-  /// **'The nickname must be between 3 and 24 characters.'**
-  String get errorNicknameLargo;
-
-  /// No description provided for @errorNicknameEnUso.
-  ///
-  /// In en, this message translates to:
-  /// **'That nickname is taken. Pick another one.'**
-  String get errorNicknameEnUso;
-
-  /// No description provided for @errorNicknameNoExiste.
-  ///
-  /// In en, this message translates to:
-  /// **'That nickname does not exist.'**
-  String get errorNicknameNoExiste;
 
   /// No description provided for @errorPasswordIncorrecta.
   ///
@@ -451,42 +421,6 @@ abstract class Textos {
   /// **'Your name and surname can\'t be longer than 40 characters each.'**
   String get errorNombreLargo;
 
-  /// No description provided for @inicioSubtitulo.
-  ///
-  /// In en, this message translates to:
-  /// **'Group Manager'**
-  String get inicioSubtitulo;
-
-  /// No description provided for @inicioContinuarEn.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue in \"{grupo}\"'**
-  String inicioContinuarEn(String grupo);
-
-  /// No description provided for @inicioUltimoGrupoNota.
-  ///
-  /// In en, this message translates to:
-  /// **'(your last group\'s code, saved on this device)'**
-  String get inicioUltimoGrupoNota;
-
-  /// No description provided for @inicioCrearGrupo.
-  ///
-  /// In en, this message translates to:
-  /// **'Create a new group'**
-  String get inicioCrearGrupo;
-
-  /// No description provided for @inicioUnirse.
-  ///
-  /// In en, this message translates to:
-  /// **'Join with a code'**
-  String get inicioUnirse;
-
-  /// No description provided for @inicioMiCuenta.
-  ///
-  /// In en, this message translates to:
-  /// **'My account (find my groups from any device)'**
-  String get inicioMiCuenta;
-
   /// No description provided for @crearTitulo.
   ///
   /// In en, this message translates to:
@@ -601,12 +535,6 @@ abstract class Textos {
   /// **'Sign in'**
   String get cuentaEntrarTitulo;
 
-  /// No description provided for @cuentaNickname.
-  ///
-  /// In en, this message translates to:
-  /// **'Nickname'**
-  String get cuentaNickname;
-
   /// Label of the email field on the account screens
   ///
   /// In en, this message translates to:
@@ -654,18 +582,6 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The passwords do not match'**
   String get cuentaNoCoinciden;
-
-  /// No description provided for @cuentaCambiarAEntrar.
-  ///
-  /// In en, this message translates to:
-  /// **'Already have an account? Sign in'**
-  String get cuentaCambiarAEntrar;
-
-  /// No description provided for @cuentaCambiarACrear.
-  ///
-  /// In en, this message translates to:
-  /// **'No account yet? Create one'**
-  String get cuentaCambiarACrear;
 
   /// No description provided for @cuentaFraseGancho.
   ///

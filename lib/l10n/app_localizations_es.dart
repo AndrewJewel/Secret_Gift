@@ -33,9 +33,6 @@ class TextosEs extends Textos {
   String get salir => 'Volver';
 
   @override
-  String get unMomento => 'Un momento...';
-
-  @override
   String get reintentar => 'Reintentar';
 
   @override
@@ -49,9 +46,6 @@ class TextosEs extends Textos {
 
   @override
   String get configuracion => 'Configuración';
-
-  @override
-  String get configuracionIdioma => 'Idioma';
 
   @override
   String get configuracionCambiarPin => 'Cambiar mi PIN';
@@ -100,16 +94,6 @@ class TextosEs extends Textos {
 
   @override
   String get errorFaltanDatosParticipante => 'Falta el grupo o el nombre.';
-
-  @override
-  String get errorNicknameLargo =>
-      'El nickname debe tener entre 3 y 24 caracteres.';
-
-  @override
-  String get errorNicknameEnUso => 'Ese nickname ya está en uso. Elige otro.';
-
-  @override
-  String get errorNicknameNoExiste => 'Ese nickname no existe.';
 
   @override
   String get errorPasswordIncorrecta => 'Contraseña incorrecta.';
@@ -206,28 +190,6 @@ class TextosEs extends Textos {
       'El nombre y el apellido no pueden pasar de 40 caracteres cada uno.';
 
   @override
-  String get inicioSubtitulo => 'Gestión de grupos';
-
-  @override
-  String inicioContinuarEn(String grupo) {
-    return 'Continuar en «$grupo»';
-  }
-
-  @override
-  String get inicioUltimoGrupoNota =>
-      '(el código de tu último grupo, guardado en este dispositivo)';
-
-  @override
-  String get inicioCrearGrupo => 'Crear un grupo nuevo';
-
-  @override
-  String get inicioUnirse => 'Unirme con un código';
-
-  @override
-  String get inicioMiCuenta =>
-      'Mi cuenta (ver mis grupos desde cualquier dispositivo)';
-
-  @override
   String get crearTitulo => 'Crear grupo';
 
   @override
@@ -286,9 +248,6 @@ class TextosEs extends Textos {
   String get cuentaEntrarTitulo => 'Iniciar sesión';
 
   @override
-  String get cuentaNickname => 'Nickname';
-
-  @override
   String get cuentaCorreo => 'Correo';
 
   @override
@@ -312,12 +271,6 @@ class TextosEs extends Textos {
 
   @override
   String get cuentaNoCoinciden => 'Las contraseñas no coinciden';
-
-  @override
-  String get cuentaCambiarAEntrar => '¿Ya tienes cuenta? Inicia sesión';
-
-  @override
-  String get cuentaCambiarACrear => '¿No tienes cuenta? Créala';
 
   @override
   String get cuentaFraseGancho =>

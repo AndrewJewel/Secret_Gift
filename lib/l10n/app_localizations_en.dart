@@ -33,9 +33,6 @@ class TextosEn extends Textos {
   String get salir => 'Back';
 
   @override
-  String get unMomento => 'One moment...';
-
-  @override
   String get reintentar => 'Try again';
 
   @override
@@ -49,9 +46,6 @@ class TextosEn extends Textos {
 
   @override
   String get configuracion => 'Settings';
-
-  @override
-  String get configuracionIdioma => 'Language';
 
   @override
   String get configuracionCambiarPin => 'Change my PIN';
@@ -103,16 +97,6 @@ class TextosEn extends Textos {
   @override
   String get errorFaltanDatosParticipante =>
       'The group or the name is missing.';
-
-  @override
-  String get errorNicknameLargo =>
-      'The nickname must be between 3 and 24 characters.';
-
-  @override
-  String get errorNicknameEnUso => 'That nickname is taken. Pick another one.';
-
-  @override
-  String get errorNicknameNoExiste => 'That nickname does not exist.';
 
   @override
   String get errorPasswordIncorrecta => 'Wrong password.';
@@ -207,27 +191,6 @@ class TextosEn extends Textos {
       'Your name and surname can\'t be longer than 40 characters each.';
 
   @override
-  String get inicioSubtitulo => 'Group Manager';
-
-  @override
-  String inicioContinuarEn(String grupo) {
-    return 'Continue in \"$grupo\"';
-  }
-
-  @override
-  String get inicioUltimoGrupoNota =>
-      '(your last group\'s code, saved on this device)';
-
-  @override
-  String get inicioCrearGrupo => 'Create a new group';
-
-  @override
-  String get inicioUnirse => 'Join with a code';
-
-  @override
-  String get inicioMiCuenta => 'My account (find my groups from any device)';
-
-  @override
   String get crearTitulo => 'Create group';
 
   @override
@@ -285,9 +248,6 @@ class TextosEn extends Textos {
   String get cuentaEntrarTitulo => 'Sign in';
 
   @override
-  String get cuentaNickname => 'Nickname';
-
-  @override
   String get cuentaCorreo => 'Email';
 
   @override
@@ -311,12 +271,6 @@ class TextosEn extends Textos {
 
   @override
   String get cuentaNoCoinciden => 'The passwords do not match';
-
-  @override
-  String get cuentaCambiarAEntrar => 'Already have an account? Sign in';
-
-  @override
-  String get cuentaCambiarACrear => 'No account yet? Create one';
 
   @override
   String get cuentaFraseGancho =>

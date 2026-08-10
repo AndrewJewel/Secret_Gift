@@ -9,7 +9,6 @@
   "continuar": "Continue",
   "entrar": "Enter",
   "salir": "Back",
-  "unMomento": "One moment...",
   "reintentar": "Try again",
 
   "idioma": "Language",
@@ -17,7 +16,6 @@
   "idiomaEspanol": "Español",
 
   "configuracion": "Settings",
-  "configuracionIdioma": "Language",
   "configuracionCambiarPin": "Change my PIN",
   "cambiarPinTitulo": "Change my PIN",
   "cambiarPinTexto": "Your account password is asked because it is the only way back if you forget the PIN.",
@@ -35,9 +33,6 @@
   "errorFaltanDatos": "Some required information is missing.",
   "errorFaltanDatosGrupo": "The occasion or the group name is missing.",
   "errorFaltanDatosParticipante": "The group or the name is missing.",
-  "errorNicknameLargo": "The nickname must be between 3 and 24 characters.",
-  "errorNicknameEnUso": "That nickname is taken. Pick another one.",
-  "errorNicknameNoExiste": "That nickname does not exist.",
   "errorPasswordIncorrecta": "Wrong password.",
   "errorPasswordDebil": "The password needs at least 8 characters, one uppercase, one lowercase, one number and one special character.",
   "errorMinimoDosPersonas": "You need at least 2 people to draw names.",
@@ -76,14 +71,6 @@
   "errorNombreLargo": "Your name and surname can't be longer than 40 characters each.",
   "@errorNombreLargo": {"description": "Name or surname over the server limit"},
 
-  "inicioSubtitulo": "Group Manager",
-  "inicioContinuarEn": "Continue in \"{grupo}\"",
-  "@inicioContinuarEn": { "placeholders": { "grupo": { "type": "String" } } },
-  "inicioUltimoGrupoNota": "(your last group's code, saved on this device)",
-  "inicioCrearGrupo": "Create a new group",
-  "inicioUnirse": "Join with a code",
-  "inicioMiCuenta": "My account (find my groups from any device)",
-
   "crearTitulo": "Create group",
   "crearOcasion": "Occasion",
   "crearNombreGrupo": "Group name",
@@ -105,7 +92,6 @@
 
   "cuentaCrearTitulo": "Create account",
   "cuentaEntrarTitulo": "Sign in",
-  "cuentaNickname": "Nickname",
   "cuentaCorreo": "Email",
   "@cuentaCorreo": {"description": "Label of the email field on the account screens"},
   "cuentaNombre": "First name",
@@ -117,8 +103,6 @@
   "cuentaConfirmar": "Confirm password",
   "cuentaFaltanDatos": "Some required information is missing",
   "cuentaNoCoinciden": "The passwords do not match",
-  "cuentaCambiarAEntrar": "Already have an account? Sign in",
-  "cuentaCambiarACrear": "No account yet? Create one",
   "cuentaFraseGancho": "Create your account to discover who sends you the secret gifts",
   "cuentaInvitadoA": "You've been invited to “{grupo}”",
   "@cuentaInvitadoA": {

@@ -9,7 +9,6 @@
   "continuar": "Continuar",
   "entrar": "Entrar",
   "salir": "Volver",
-  "unMomento": "Un momento...",
   "reintentar": "Reintentar",
 
   "idioma": "Idioma",
@@ -17,7 +16,6 @@
   "idiomaEspanol": "Español",
 
   "configuracion": "Configuración",
-  "configuracionIdioma": "Idioma",
   "configuracionCambiarPin": "Cambiar mi PIN",
   "cambiarPinTitulo": "Cambiar mi PIN",
   "cambiarPinTexto": "Se te pide la contraseña de la cuenta porque es la única salida si olvidas el PIN.",
@@ -34,9 +32,6 @@
   "errorFaltanDatos": "Falta información obligatoria.",
   "errorFaltanDatosGrupo": "Falta la ocasión o el nombre del grupo.",
   "errorFaltanDatosParticipante": "Falta el grupo o el nombre.",
-  "errorNicknameLargo": "El nickname debe tener entre 3 y 24 caracteres.",
-  "errorNicknameEnUso": "Ese nickname ya está en uso. Elige otro.",
-  "errorNicknameNoExiste": "Ese nickname no existe.",
   "errorPasswordIncorrecta": "Contraseña incorrecta.",
   "errorPasswordDebil": "La contraseña necesita mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.",
   "errorMinimoDosPersonas": "Se necesitan mínimo 2 personas para sortear.",
@@ -64,13 +59,6 @@
   "errorAuthDesconocido": "Algo salió mal al entrar. Vuelve a intentarlo.",
   "errorNombreLargo": "El nombre y el apellido no pueden pasar de 40 caracteres cada uno.",
 
-  "inicioSubtitulo": "Gestión de grupos",
-  "inicioContinuarEn": "Continuar en «{grupo}»",
-  "inicioUltimoGrupoNota": "(el código de tu último grupo, guardado en este dispositivo)",
-  "inicioCrearGrupo": "Crear un grupo nuevo",
-  "inicioUnirse": "Unirme con un código",
-  "inicioMiCuenta": "Mi cuenta (ver mis grupos desde cualquier dispositivo)",
-
   "crearTitulo": "Crear grupo",
   "crearOcasion": "Ocasión",
   "crearNombreGrupo": "Nombre del grupo",
@@ -92,7 +80,6 @@
 
   "cuentaCrearTitulo": "Crear cuenta",
   "cuentaEntrarTitulo": "Iniciar sesión",
-  "cuentaNickname": "Nickname",
   "cuentaCorreo": "Correo",
   "cuentaNombre": "Nombre",
   "cuentaApellido": "Apellido",
@@ -101,8 +88,6 @@
   "cuentaConfirmar": "Confirmar contraseña",
   "cuentaFaltanDatos": "Falta información obligatoria",
   "cuentaNoCoinciden": "Las contraseñas no coinciden",
-  "cuentaCambiarAEntrar": "¿Ya tienes cuenta? Inicia sesión",
-  "cuentaCambiarACrear": "¿No tienes cuenta? Créala",
   "cuentaFraseGancho": "Crea tu cuenta para descubrir quién te envía los regalos secretos",
   "cuentaInvitadoA": "Te han invitado a «{grupo}»",
   "cuentaYaTengoCuenta": "¿Ya tienes cuenta? Entra",
