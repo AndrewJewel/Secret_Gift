@@ -183,8 +183,13 @@ class TextosEn extends Textos {
   String get errorCuentaDeshabilitada => 'This account has been disabled.';
 
   @override
-  String get errorAuthDesconocido =>
-      'Something went wrong signing you in. Try again.';
+  String errorAuthDesconocido(String codigo) {
+    return 'Something went wrong signing you in. Try again. (Code: $codigo)';
+  }
+
+  @override
+  String get errorDominioNoAutorizado =>
+      'This app isn\'t set up correctly for this website. Let whoever manages it know.';
 
   @override
   String get errorNombreLargo =>

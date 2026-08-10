@@ -412,8 +412,14 @@ abstract class Textos {
   /// Fallback for an Auth error code this version doesn't know
   ///
   /// In en, this message translates to:
-  /// **'Something went wrong signing you in. Try again.'**
-  String get errorAuthDesconocido;
+  /// **'Something went wrong signing you in. Try again. (Code: {codigo})'**
+  String errorAuthDesconocido(String codigo);
+
+  /// Firebase Auth rejected the request because the site's domain is not in the project's authorized domains list — a project configuration problem, not something this person did
+  ///
+  /// In en, this message translates to:
+  /// **'This app isn\'t set up correctly for this website. Let whoever manages it know.'**
+  String get errorDominioNoAutorizado;
 
   /// Name or surname over the server limit
   ///

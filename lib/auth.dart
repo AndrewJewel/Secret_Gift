@@ -25,14 +25,25 @@ String claveDeAuth(String code) => switch (code) {
       'too-many-requests' => 'demasiados_intentos',
       'network-request-failed' => 'sin_conexion',
       'requires-recent-login' => 'requiere_reautenticacion',
+      // 'unauthorized-domain' salta cuando el dominio desde el que se abre
+      // la app no está en la lista de dominios autorizados de la consola de
+      // Firebase Auth. Es un error de CONFIGURACIÓN del proyecto, no algo
+      // que esta persona haya hecho mal: reintentar no cambia nada, así que
+      // merece su propio mensaje en vez de caer al comodín de "vuelve a
+      // intentarlo".
+      'unauthorized-domain' => 'dominio_no_autorizado',
       _ => 'auth_desconocido',
     };
 
 /// Envuelve la excepción de Auth en el tipo que la interfaz ya sabe
 /// traducir. Es el borde: a partir de aquí, en la app solo hay
 /// [FuncionError].
+///
+/// `e.code` viaja en el campo `codigo` de [FuncionError] (no solo para
+/// traducir la clave): es lo que necesita `errorAuthDesconocido` para
+/// mostrar QUÉ código llegó cuando `claveDeAuth` todavía no lo conoce.
 FuncionError comoFuncionError(FirebaseAuthException e) =>
-    FuncionError('auth', claveDeAuth(e.code), e.message ?? e.code);
+    FuncionError(e.code, claveDeAuth(e.code), e.message ?? e.code);
 
 FirebaseAuth get _auth => FirebaseAuth.instance;
 

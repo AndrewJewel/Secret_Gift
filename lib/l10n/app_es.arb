@@ -56,7 +56,8 @@
   "errorCorreoEnUso": "Ese correo ya tiene cuenta. Entra en vez de crear una.",
   "errorDemasiadosIntentos": "Demasiados intentos. Espera unos minutos y vuelve a probar.",
   "errorCuentaDeshabilitada": "Esta cuenta ha sido deshabilitada.",
-  "errorAuthDesconocido": "Algo salió mal al entrar. Vuelve a intentarlo.",
+  "errorAuthDesconocido": "Algo salió mal al entrar. Vuelve a intentarlo. (Código: {codigo})",
+  "errorDominioNoAutorizado": "Esta app no está bien configurada para este sitio. Avisa a quien la administra.",
   "errorNombreLargo": "El nombre y el apellido no pueden pasar de 40 caracteres cada uno.",
 
   "crearTitulo": "Crear grupo",

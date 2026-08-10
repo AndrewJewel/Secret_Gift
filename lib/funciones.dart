@@ -49,7 +49,13 @@ extension MensajeLocalizado on FuncionError {
         'correo_en_uso' => t.errorCorreoEnUso,
         'demasiados_intentos' => t.errorDemasiadosIntentos,
         'cuenta_deshabilitada' => t.errorCuentaDeshabilitada,
-        'auth_desconocido' => t.errorAuthDesconocido,
+        'dominio_no_autorizado' => t.errorDominioNoAutorizado,
+        // Comodín de los códigos de Auth que esta versión de la app
+        // todavía no traduce. `codigo` es el campo con el `e.code` real de
+        // Firebase (ver `comoFuncionError` en auth.dart) — sin él, un
+        // código nuevo que Firebase invente mañana daría un mensaje que
+        // nadie puede diagnosticar.
+        'auth_desconocido' => t.errorAuthDesconocido(codigo),
         'nombre_largo' => t.errorNombreLargo,
         'password_incorrecta' => t.errorPasswordIncorrecta,
         'password_debil' => t.errorPasswordDebil,

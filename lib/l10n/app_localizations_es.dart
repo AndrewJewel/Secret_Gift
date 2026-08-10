@@ -182,8 +182,13 @@ class TextosEs extends Textos {
   String get errorCuentaDeshabilitada => 'Esta cuenta ha sido deshabilitada.';
 
   @override
-  String get errorAuthDesconocido =>
-      'Algo salió mal al entrar. Vuelve a intentarlo.';
+  String errorAuthDesconocido(String codigo) {
+    return 'Algo salió mal al entrar. Vuelve a intentarlo. (Código: $codigo)';
+  }
+
+  @override
+  String get errorDominioNoAutorizado =>
+      'Esta app no está bien configurada para este sitio. Avisa a quien la administra.';
 
   @override
   String get errorNombreLargo =>

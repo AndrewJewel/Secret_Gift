@@ -14,6 +14,7 @@ void main() {
       expect(claveDeAuth('too-many-requests'), 'demasiados_intentos');
       expect(claveDeAuth('network-request-failed'), 'sin_conexion');
       expect(claveDeAuth('requires-recent-login'), 'requiere_reautenticacion');
+      expect(claveDeAuth('unauthorized-domain'), 'dominio_no_autorizado');
     });
 
     test('user-not-found y wrong-password dan la MISMA clave', () {
