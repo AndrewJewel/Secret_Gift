@@ -112,3 +112,19 @@ Future<void> mandarRecuperacion(String correo) async {
 }
 
 Future<void> salir() => FirebaseAuth.instance.signOut();
+
+/// Vuelve a demostrar la contraseña. Actualiza el claim `auth_time` del
+/// token, que es lo ÚNICO que el servidor mira para saber si la sesión es
+/// reciente — ver `exigirReciente` en functions/index.js.
+Future<void> reautenticar(String password) async {
+  final u = FirebaseAuth.instance.currentUser;
+  if (u == null || u.email == null) {
+    throw FuncionError('auth', 'sesion_invalida', 'No hay sesión.');
+  }
+  await _traduciendo(() => u.reauthenticateWithCredential(
+      EmailAuthProvider.credential(email: u.email!, password: password)));
+  // El token en memoria todavía lleva el auth_time viejo. Sin forzar el
+  // refresco, la llamada siguiente iría con el token de antes y el
+  // servidor la rechazaría — con la contraseña ya tecleada correctamente.
+  await u.getIdToken(true);
+}
