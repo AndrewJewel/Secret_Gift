@@ -270,10 +270,29 @@ Dicho para que no haya sorpresas:
 - **Los cuatro arreglos baratos de la auditoría** (entrar a un grupo ya
   sorteado, repetir el sorteo, el contador del PIN sin transacción,
   `Math.random()`). Van antes, no después — ver abajo.
-- **La enumeración de correos.** Firebase Auth distingue por defecto entre
-  "ese correo no existe" y "contraseña incorrecta". Se puede cerrar
-  activando la protección contra enumeración en la consola; conviene, y es
-  configuración, no código.
+- **La enumeración de correos al REGISTRARSE.** Este párrafo decía antes que
+  la protección de la consola lo cerraba todo. **Se midió contra el proyecto
+  real el 2026-08-09 y no es así**, así que queda corregido:
+
+  | Sonda sin credenciales contra Identity Toolkit | Respuesta |
+  |---|---|
+  | `sendOobCode` (recuperar) con correo inexistente | 200, fingiendo éxito |
+  | `signInWithPassword` con correo inexistente | `INVALID_LOGIN_CREDENTIALS` |
+  | **`signUp` con un correo que ya existe** | **`EMAIL_EXISTS`** |
+
+  Entrar y recuperar sí quedan cerrados por la protección contra
+  enumeración —que en este proyecto **ya estaba activada**, es el valor por
+  defecto—. Registrarse no.
+
+  **Y no se puede cerrar desde nuestro lado.** La clave web va incrustada en
+  el cliente, así que cualquiera llama a `signUp` directamente y pregunta
+  por el correo que quiera; nuestra interfaz no está en ese camino. Poner un
+  mensaje genérico en la app escondería el dato a un curioso y a nadie más:
+  se pagaría usabilidad —quien ya tiene cuenta merece que se le diga— sin
+  comprar nada de seguridad.
+
+  Se asume. Lo que se gana con Auth en este frente son dos de los tres
+  caminos, no los tres.
 
 ## Orden
 
