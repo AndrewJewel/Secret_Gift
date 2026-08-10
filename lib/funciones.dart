@@ -54,8 +54,15 @@ extension MensajeLocalizado on FuncionError {
         // todavía no traduce. `codigo` es el campo con el `e.code` real de
         // Firebase (ver `comoFuncionError` en auth.dart) — sin él, un
         // código nuevo que Firebase invente mañana daría un mensaje que
-        // nadie puede diagnosticar.
-        'auth_desconocido' => t.errorAuthDesconocido(codigo),
+        // nadie puede diagnosticar. Es el único caso de este switch que
+        // enseña detalle técnico: todos los demás tienen una clave propia
+        // y un texto ya pensado para esa clave, pero este es justo el que
+        // dispara cuando NINGUNA clave conocida encaja. Sin el código y el
+        // `e.message` que mandó Firebase, un fallo que le pasa a alguien
+        // que no eres tú (otro dispositivo, otra cuenta, otro momento) es
+        // indiagnosticable: no hay logs que consultar en caliente, solo lo
+        // que esa persona puede leer y transcribir en pantalla.
+        'auth_desconocido' => t.errorAuthDesconocido(codigo, mensaje),
         'nombre_largo' => t.errorNombreLargo,
         'password_incorrecta' => t.errorPasswordIncorrecta,
         'password_debil' => t.errorPasswordDebil,

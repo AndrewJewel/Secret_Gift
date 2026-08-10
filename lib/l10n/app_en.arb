@@ -66,10 +66,13 @@
   "@errorDemasiadosIntentos": {"description": "Firebase Auth rate limit hit"},
   "errorCuentaDeshabilitada": "This account has been disabled.",
   "@errorCuentaDeshabilitada": {"description": "Account disabled from the Firebase console"},
-  "errorAuthDesconocido": "Something went wrong signing you in. Try again. (Code: {codigo})",
+  "errorAuthDesconocido": "Something went wrong signing you in. Try again. (code: {codigo} — {mensaje})",
   "@errorAuthDesconocido": {
     "description": "Fallback for an Auth error code this version doesn't know",
-    "placeholders": { "codigo": { "type": "String" } }
+    "placeholders": {
+      "codigo": { "type": "String" },
+      "mensaje": { "type": "String" }
+    }
   },
   "errorDominioNoAutorizado": "This app isn't set up correctly for this website. Let whoever manages it know.",
   "@errorDominioNoAutorizado": {"description": "Firebase Auth rejected the request because the site's domain is not in the project's authorized domains list — a project configuration problem, not something this person did"},
