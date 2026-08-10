@@ -6,7 +6,7 @@
 
 **Architecture:** El servidor deja de recibir credenciales: las quince Cloud Functions leen `request.auth.uid`, que el protocolo *callable* rellena a partir de la cabecera `Authorization: Bearer <idToken>`. El helper `autorizar()` construido en P2 se conserva entero — solo cambia de dónde saca la clave de la cuenta. En el cliente, `lib/sesion.dart` desaparece y el SDK de Auth pasa a ser la única fuente de sesión.
 
-**Tech Stack:** Flutter 3.38.10 / Dart 3.10.9, `firebase_auth`, Cloud Functions v2 (Node 20), Firestore, proyecto `santa-secreto-860c3`.
+**Tech Stack:** Flutter 3.38.10 / Dart 3.10.9, `firebase_auth`, Cloud Functions v2 (**Node 22**, `firebase-functions` 7, `firebase-admin` 14), Firestore, proyecto `santa-secreto-860c3`.
 
 **Spec:** `docs/superpowers/specs/2026-08-09-firebase-auth-design.md`
 
@@ -22,6 +22,7 @@
 - **El servidor no tiene tests unitarios.** Su verificación es `scripts/probar.mjs` contra las funciones desplegadas (Tarea 11) y el despliegue (Tarea 12). Las tareas 2, 3 y 4 se cierran con revisión de código, no con ejecución.
 - **`lib/funciones.dart` NO usa el paquete `cloud_functions`** — llama por HTTP crudo por el bug dart2js [flutterfire#17924](https://github.com/firebase/flutterfire/issues/17924). Cualquier cambio de transporte se hace ahí.
 - **Toda cadena visible pasa por `Textos.of(context)`.** Cero texto literal en la interfaz.
+- **`firebase-admin` v14 usa la API modular.** `admin.firestore()`, `admin.storage()`, `admin.firestore.FieldValue` y `admin.firestore.FieldPath` **ya no existen**: se importan de `firebase-admin/firestore` y `firebase-admin/storage`, como ya hace `functions/index.js`. Copiar la forma que hay en el fichero, no la de ningún ejemplo de internet anterior a 2025.
 - **Mensajes de commit en español**, describiendo el porqué, no el qué.
 - **No se despliega nada hasta la Tarea 12.**
 
@@ -344,7 +345,7 @@ exports.guardarPerfil = onCall(async (request) => {
       apellido,
       correo: request.auth.token.email || "",
       pinHash: bcrypt.hashSync(pin, 10),
-      fecha: admin.firestore.FieldValue.serverTimestamp(),
+      fecha: FieldValue.serverTimestamp(),
       grupos: {},
     });
   } catch (e) {
@@ -442,8 +443,8 @@ exports.misGrupos = onCall(async (request) => {
     for (const codigo of codigos) {
       if (vivos.has(codigo)) continue;
       await usuarioRef(uid).update(
-          new admin.firestore.FieldPath("grupos", codigo),
-          admin.firestore.FieldValue.delete(),
+          new FieldPath("grupos", codigo),
+          FieldValue.delete(),
       );
     }
   }
@@ -1620,7 +1621,7 @@ git add lib/l10n/ && git commit -m "Se van los textos del apodo, que ya no nombr
 **Files:**
 - Modify: `scripts/probar.mjs`
 
-**Contexto:** es la **única** prueba real que tiene el backend — no hay tests unitarios de servidor. Hoy autentica con apodo y contraseña. Con Auth tiene que pedir tokens a la API REST de Firebase Auth y mandarlos como *bearer*. Se puede sin dependencias nuevas (`fetch` está en Node 20), pero es trabajo real.
+**Contexto:** es la **única** prueba real que tiene el backend — no hay tests unitarios de servidor. Hoy autentica con apodo y contraseña. Con Auth tiene que pedir tokens a la API REST de Firebase Auth y mandarlos como *bearer*. Se puede sin dependencias nuevas (`fetch` está en Node 22), pero es trabajo real.
 
 La estructura de dos cuentas **se conserva**: `functions/index.js` prohíbe que una misma cuenta tenga dos plazas vivas en el mismo grupo, así que hace falta un segundo cuerpo para ejercitar "sacar a alguien antes del sorteo".
 

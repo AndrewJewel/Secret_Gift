@@ -158,6 +158,64 @@ pantallas; `debeFallar` ya existía en `probar.mjs`; y `cambiarPinTexto`
 sigue siendo literalmente cierto con Auth, así que la reautenticación no
 necesita ni una clave ARB nueva.
 
+## Node 22 y las SDK: el aviso escondía cuatro saltos
+
+El despliegue avisaba de Node 20. Detrás había más: `firebase-functions`
+iba por la 5 con la 7 publicada, y `firebase-admin` por la 12 con la 14.
+
+**No era subir un número.** `firebase-admin` v13 retiró la API con espacio
+de nombres, así que `admin.firestore()`, `admin.storage()`,
+`admin.firestore.FieldValue` y `admin.firestore.FieldPath` pasan a pedirse
+a su módulo — trece sitios. El módulo dejó de cargar entero con
+`admin.firestore is not a function`, así que era imposible que pasara
+desapercibido.
+
+**Lo que sí podía pasar desapercibido:** `getStorage()` era la única de las
+trece llamadas que ninguna prueba tocaba. La batería no mandaba un solo
+avatar, así que `guardarAvatar` y `borrarAvatarPorUrl` —las dos únicas
+funciones del fichero que salen de Firestore— se desplegaban a ciegas.
+Ahora entra un JPEG de 1×1 y se comprueba que llega al bucket, que es
+públicamente accesible, y que al borrar al participante deja de
+descargarse.
+
+**Ese último caso costó tres intentos y ninguno era un bug del código.** Un
+recordatorio de que una prueba que falla puede estar midiendo mal:
+
+| Sonda | Resultado | Qué significaba |
+|---|---|---|
+| Pedir la URL pública | 200 | Caché de borde: se guarda con `max-age` de un año y la prueba acababa de descargarla |
+| Metadatos (`storage/v1`) | 401 | El endpoint JSON pide credenciales. «No puedes preguntar», no «no existe» |
+| URL con parámetro anticaché | 403 | **No 404.** Comprobado con rutas inventadas: este bucket responde 403 a todo objeto ausente, para no revelar qué contiene |
+
+Así que la prueba comprueba que **ya no se descarga**, no que dé un código
+concreto. El borrado siempre funcionó.
+
+**29/29 en verde** contra las funciones desplegadas con Node 22.
+
+El plan de Auth llevaba fragmentos con la API vieja de `admin`; corregidos,
+más una restricción global nueva para que nadie los reintroduzca copiando
+un ejemplo de internet anterior a 2025.
+
+## Diseños nuevos: reemplazar participante y notificaciones
+
+Se partieron en **dos specs** porque son dos cosas. Reemplazar es cirugía
+sobre la cadena; las notificaciones push son un subsistema entero.
+
+Lo que salió de mirar el código y cambió el diseño: `nombre_asignado` y
+`deseos_asignado` son **copias denormalizadas**, así que reemplazar obliga
+a tocar la plaza de un tercero —quien le regalaba—. **Ese es el problema
+real**, no el cambio de nombre. Para encontrarlo, `ejecutarSorteo`
+escribirá el puntero inverso `recibe_de`.
+
+Y lo que descartó la implementación obvia del aviso: marcar «tu amigo
+cambió» en el documento público de quien regala **revela el par**. La plaza
+cambia de nombre, la marca se enciende, y cualquiera con el código cruza
+las dos cosas. Por eso el aviso necesita un canal privado — y por eso es un
+spec aparte.
+
+Riesgo asumido y escrito: con solo push, quien deniegue el permiso no
+recibe nada y nadie lo sabe.
+
 ## Qué queda
 
 1. **Empujar `main` a GitHub.** Va 71 commits por delante de `origin/main` y
@@ -166,10 +224,10 @@ necesita ni una clave ARB nueva.
    cumplidos. Antes de la Tarea 12 hay que habilitar Email/Password en la
    consola y activar la protección de enumeración de correos.
 3. **Borrar las colecciones** `usuarios` y `grupos` — parte de la Tarea 12.
-4. **P4**: reemplazar participante. Sigue siendo el hueco que bloquea a un
-   grupo sorteado si alguien se cae, y hoy se cerró la única salida que
-   quedaba (entrar tarde). Es ahora más urgente que ayer.
-5. **P3** (chat sin máscaras), **P1** (invitaciones QR), **idioma en la
+4. **P4**: reemplazar participante. **Spec escrito**; va después de Auth,
+   porque su notificación necesita guardar tokens en `usuarios/{uid}`.
+5. **Notificaciones push (FCM).** Spec escrito; va después de P4.
+6. **P3** (chat sin máscaras), **P1** (invitaciones QR), **idioma en la
    cuenta** (spec escrito).
-6. **A4**: App Check y limitación de peticiones. Sigue abierto.
-7. **Node 20 se retira el 2026-10-30.** Aviso en cada despliegue.
+7. **A4**: App Check y limitación de peticiones. Sigue abierto.
+7. ~~Node 20 se retira el 2026-10-30.~~ **Hecho**: Node 22, `firebase-functions` 7, `firebase-admin` 14.
