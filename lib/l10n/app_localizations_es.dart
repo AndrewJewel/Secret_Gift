@@ -348,6 +348,23 @@ class TextosEs extends Textos {
   String get cuentaPinNoCoinciden => 'Los PIN no coinciden';
 
   @override
+  String get recuperarEnlace => 'He olvidado mi contraseña';
+
+  @override
+  String get recuperarTitulo => 'Recupera tu contraseña';
+
+  @override
+  String get recuperarTexto =>
+      'Escribe el correo con el que te registraste y te mandamos un enlace para poner una contraseña nueva.';
+
+  @override
+  String get recuperarBoton => 'Mándame el enlace';
+
+  @override
+  String get recuperarEnviado =>
+      'Si esa dirección tiene cuenta, le hemos mandado un enlace.';
+
+  @override
   String get verificarTitulo => 'Mira tu bandeja de entrada';
 
   @override

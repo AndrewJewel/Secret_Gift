@@ -112,6 +112,12 @@
   "cuentaPinConfirmar": "Confirma el PIN",
   "cuentaPinNoCoinciden": "Los PIN no coinciden",
 
+  "recuperarEnlace": "He olvidado mi contraseña",
+  "recuperarTitulo": "Recupera tu contraseña",
+  "recuperarTexto": "Escribe el correo con el que te registraste y te mandamos un enlace para poner una contraseña nueva.",
+  "recuperarBoton": "Mándame el enlace",
+  "recuperarEnviado": "Si esa dirección tiene cuenta, le hemos mandado un enlace.",
+
   "verificarTitulo": "Mira tu bandeja de entrada",
   "verificarTexto": "Te hemos mandado un enlace. Pínchalo para confirmar tu correo y vuelve aquí.",
   "verificarComprobar": "Ya lo confirmé",

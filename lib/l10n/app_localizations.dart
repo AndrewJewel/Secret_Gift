@@ -715,6 +715,36 @@ abstract class Textos {
   /// **'The PINs do not match'**
   String get cuentaPinNoCoinciden;
 
+  /// Link on the sign-in screen that opens the password recovery screen
+  ///
+  /// In en, this message translates to:
+  /// **'I forgot my password'**
+  String get recuperarEnlace;
+
+  /// Title of the password recovery screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recover your password'**
+  String get recuperarTitulo;
+
+  /// Body text of the password recovery screen
+  ///
+  /// In en, this message translates to:
+  /// **'Type the email you signed up with and we\'ll send you a link to set a new password.'**
+  String get recuperarTexto;
+
+  /// Button that sends the password recovery email
+  ///
+  /// In en, this message translates to:
+  /// **'Send me the link'**
+  String get recuperarBoton;
+
+  /// Confirmation shown after requesting recovery, identical whether or not the account exists, to avoid revealing which emails are registered
+  ///
+  /// In en, this message translates to:
+  /// **'If that address has an account, we\'ve sent it a link.'**
+  String get recuperarEnviado;
+
   /// Title of the blocking email-verification screen
   ///
   /// In en, this message translates to:

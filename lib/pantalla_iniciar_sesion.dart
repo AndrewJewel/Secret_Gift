@@ -8,6 +8,7 @@ import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
 import 'pantalla_completar_perfil.dart';
 import 'pantalla_crear_cuenta.dart' show AlEntrar;
+import 'pantalla_recuperar_password.dart';
 import 'pantalla_verificar_correo.dart';
 import 'tematica.dart';
 
@@ -125,8 +126,14 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
                     onPressed: () => setState(() => _verPassword = !_verPassword),
                   ),
                 ),
-                // El enlace de recuperación llega en la Tarea 7.
-                const SizedBox.shrink(),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PantallaRecuperarPassword()),
+                  ),
+                  child: Text(t.recuperarEnlace),
+                ),
                 const SizedBox(height: 24),
                 GlassButton(
                   color: colorNeutro.shade600,

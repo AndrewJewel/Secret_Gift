@@ -131,6 +131,17 @@
   "cuentaPinConfirmar": "Confirm PIN",
   "cuentaPinNoCoinciden": "The PINs do not match",
 
+  "recuperarEnlace": "I forgot my password",
+  "@recuperarEnlace": {"description": "Link on the sign-in screen that opens the password recovery screen"},
+  "recuperarTitulo": "Recover your password",
+  "@recuperarTitulo": {"description": "Title of the password recovery screen"},
+  "recuperarTexto": "Type the email you signed up with and we'll send you a link to set a new password.",
+  "@recuperarTexto": {"description": "Body text of the password recovery screen"},
+  "recuperarBoton": "Send me the link",
+  "@recuperarBoton": {"description": "Button that sends the password recovery email"},
+  "recuperarEnviado": "If that address has an account, we've sent it a link.",
+  "@recuperarEnviado": {"description": "Confirmation shown after requesting recovery, identical whether or not the account exists, to avoid revealing which emails are registered"},
+
   "verificarTitulo": "Check your inbox",
   "@verificarTitulo": {"description": "Title of the blocking email-verification screen"},
   "verificarTexto": "We sent you a link. Tap it to confirm your email, then come back here.",

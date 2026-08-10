@@ -95,4 +95,20 @@ Future<void> completarPerfil({
       'pin': pin.trim(),
     });
 
+/// Manda el enlace para poner una contraseña nueva.
+///
+/// **Nunca dice si ese correo tiene cuenta.** `user-not-found` se traga a
+/// propósito: distinguirlo sería un oráculo de existencia — cualquiera
+/// podría averiguar quién está registrado probando direcciones. Quien
+/// llama debe enseñar SIEMPRE el mismo mensaje.
+Future<void> mandarRecuperacion(String correo) async {
+  await FirebaseAuth.instance.setLanguageCode(Idioma.actual.value.languageCode);
+  try {
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: correo.trim());
+  } on FirebaseAuthException catch (e) {
+    if (e.code == 'user-not-found') return;
+    throw comoFuncionError(e);
+  }
+}
+
 Future<void> salir() => FirebaseAuth.instance.signOut();

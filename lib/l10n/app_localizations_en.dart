@@ -347,6 +347,23 @@ class TextosEn extends Textos {
   String get cuentaPinNoCoinciden => 'The PINs do not match';
 
   @override
+  String get recuperarEnlace => 'I forgot my password';
+
+  @override
+  String get recuperarTitulo => 'Recover your password';
+
+  @override
+  String get recuperarTexto =>
+      'Type the email you signed up with and we\'ll send you a link to set a new password.';
+
+  @override
+  String get recuperarBoton => 'Send me the link';
+
+  @override
+  String get recuperarEnviado =>
+      'If that address has an account, we\'ve sent it a link.';
+
+  @override
   String get verificarTitulo => 'Check your inbox';
 
   @override
