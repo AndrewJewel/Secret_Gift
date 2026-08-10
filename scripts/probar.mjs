@@ -147,6 +147,7 @@ async function llamar(nombre, datos, idToken) {
   if (j.error) {
     const e = new Error(j.error.message);
     e.clave = j.error.details?.clave || "";
+    e.status = j.error.status;
     throw e;
   }
   return j.result || {};
@@ -259,10 +260,19 @@ async function seguir(emailOrganizador, emailParticipante) {
   // entrado nunca.
   await debeFallar("sin token no se autoriza", "sesion_invalida",
       () => llamar("misGrupos", {}, null));
-  // Un token que no es un JWT válido tiene que fallar igual que no mandar
-  // ninguno — no vale con comprobar que la cabecera existe.
-  await debeFallar("un token basura tampoco autoriza", "sesion_invalida",
-      () => llamar("misGrupos", {}, "esto-no-es-un-token"));
+  // Un token que no es un JWT válido rechaza la plataforma ANTES de llegar
+  // a nuestro código. Sin cabecera responde NUESTRO código con "sesion_invalida";
+  // con un token malformado responde la PLATAFORMA con "UNAUTHENTICATED" genérico.
+  // Ambas rechacen, pero por vías distintas: defensa en dos capas.
+  try {
+    await llamar("misGrupos", {}, "esto-no-es-un-token");
+    fallos++;
+    console.error(`FALLO un token basura tampoco autoriza — no lanzó`);
+  } catch (e) {
+    ok("un token basura tampoco autoriza",
+        e.status === "UNAUTHENTICATED",
+        `esperaba UNAUTHENTICATED, llegó ${e.status}`);
+  }
 
   const {idToken: tokenOrg} = await entrar(emailOrganizador, PASSWORD);
   const {idToken: tokenPart} = await entrar(emailParticipante, PASSWORD);
