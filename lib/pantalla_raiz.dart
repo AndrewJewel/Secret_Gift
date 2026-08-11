@@ -53,11 +53,14 @@ class _PantallaRaizState extends State<PantallaRaiz> {
     if (!kIsWeb) return;
     final codigo = Uri.base.queryParameters['codigo']?.trim().toUpperCase();
     if (codigo == null || codigo.isEmpty) return;
+    final reemplazo = Uri.base.queryParameters['reemplazo']?.trim();
     // La URL de la pestaña nunca cambia: es el enlace compartido. Sin
     // esta comprobación, cada recarga volvería a capturar el mismo código
     // y a meter a la persona en ese grupo para siempre. Va ANTES de
-    // Firestore para no gastar tampoco la lectura.
-    if (await invitacionYaConsumida(codigo)) return;
+    // Firestore para no gastar tampoco la lectura. Con token de reemplazo
+    // se deja pasar igualmente: es un enlace distinto y con otro
+    // propósito, así que "ya consumido" no aplica.
+    if (reemplazo == null && await invitacionYaConsumida(codigo)) return;
     try {
       final doc = await FirebaseFirestore.instance
           .collection('grupos')
@@ -65,7 +68,8 @@ class _PantallaRaizState extends State<PantallaRaiz> {
           .get()
           .timeout(const Duration(seconds: 6));
       if (!doc.exists) return;
-      await guardarInvitacion(codigo, doc.data()!['nombreGrupo'] as String? ?? '');
+      await guardarInvitacion(
+          codigo, doc.data()!['nombreGrupo'] as String? ?? '', reemplazo);
     } catch (_) {
       // Sin conexión o código inválido: se sigue el flujo normal. La
       // próxima apertura con el mismo enlace volverá a intentarlo.
