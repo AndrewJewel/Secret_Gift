@@ -797,6 +797,15 @@ exports.ejecutarSorteo = onCall(async (request) => {
       nombre_asignado: docRecibe.data().nombre,
       deseos_asignado: deseosRecibe,
     }, {merge: true});
+    // El puntero INVERSO: quién le regala a quien recibe. La cadena ya se
+    // conoce en las dos direcciones aquí dentro, así que escribirlo cuesta
+    // una línea. Sin él, reemplazar a alguien obligaría a leer los privados
+    // de todo el grupo buscando cuál apunta a esa plaza — y hay que
+    // actualizar `nombre_asignado` de quien le regala o esa persona
+    // compraría para quien ya no está.
+    batch.set(participantePrivadoRef(codigo, docRecibe.id), {
+      recibe_de: docs[iRegala].id,
+    }, {merge: true});
     batch.update(docs[iRegala].ref, {tieneAmigo: true});
   }
   // Marca en el documento del grupo, que el cliente ya escucha en vivo.
