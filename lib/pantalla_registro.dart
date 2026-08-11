@@ -8,7 +8,6 @@ import 'package:share_plus/share_plus.dart';
 import 'avatar.dart';
 import 'funciones.dart';
 import 'glass.dart';
-import 'invitacion_pendiente.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
@@ -59,6 +58,15 @@ class PantallaRegistro extends StatefulWidget {
   /// lista, y el portero en `resultado.grupos`.
   final MiVinculo? vinculo;
 
+  /// Token del enlace de reemplazo, si se llegó por uno. Null en el alta
+  /// normal.
+  ///
+  /// Se recibe por constructor y no se lee del disco por el mismo motivo
+  /// que `vinculo`: quien navega aquí ya lo tiene. Y además hace falta —
+  /// el portero borra la invitación ANTES de montar esta pantalla, así que
+  /// para cuando `initState` corriera ya no habría nada que leer.
+  final String? reemplazo;
+
   const PantallaRegistro({
     super.key,
     required this.codigo,
@@ -66,6 +74,7 @@ class PantallaRegistro extends StatefulWidget {
     required this.valorMinimo,
     this.nombreGrupo = '',
     this.vinculo,
+    this.reemplazo,
   });
 
   @override
@@ -240,24 +249,24 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   // --- Registro de participantes --------------------------------------
 
-  /// Si la invitación que trajo hasta aquí lleva un token de reemplazo
-  /// pendiente para ESTE grupo, se consulta al servidor qué plaza es y se
-  /// precarga su nombre en el formulario.
+  /// Si se llegó por un enlace de reemplazo (el token viaja por
+  /// constructor, ver `widget.reemplazo`), se consulta al servidor qué
+  /// plaza es y se precarga su nombre en el formulario.
   ///
   /// Un token gastado o anulado no debe dejar la pantalla inservible: se
   /// avisa y se sigue con el alta normal, que para un grupo ya sorteado el
   /// servidor rechazará con su propio mensaje.
   Future<void> _mirarSiHayReemplazo() async {
-    final inv = await leerInvitacion();
-    if (inv == null || inv.codigo != widget.codigo || inv.reemplazo == null) return;
+    final token = widget.reemplazo;
+    if (token == null) return;
     try {
       final r = await llamarFuncion('verReemplazo', {
         'codigo': widget.codigo,
-        'token': inv.reemplazo,
+        'token': token,
       });
       if (!mounted) return;
       setState(() {
-        _tokenReemplazo = inv.reemplazo;
+        _tokenReemplazo = token;
         _nombrePlaza = r['nombre'] as String? ?? '';
         // El nombre de la plaza, precargado. En un grupo temático quedarse
         // con el personaje es no tocar nada; en uno normal se escribe

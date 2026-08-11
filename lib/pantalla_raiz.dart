@@ -304,6 +304,11 @@ Future<PantallaRegistro?> _entrarAlGrupo(
     valorMinimo: data['valorMinimo'] as String? ?? '',
     nombreGrupo: data['nombreGrupo'] as String? ?? '',
     vinculo: entrada == null ? null : MiVinculo.desdeMapa(entrada),
+    // Se lee de `i` (la invitación), no del disco: `borrarInvitacion()` ya
+    // se llamó arriba, así que para cuando esta pantalla monte no habría
+    // nada que leer. `i.reemplazo` sigue vivo aquí porque es una variable
+    // en memoria, ya capturada antes del borrado.
+    reemplazo: i.reemplazo,
   );
 }
 
