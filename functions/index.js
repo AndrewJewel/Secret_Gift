@@ -730,8 +730,27 @@ exports.canjearReemplazo = onCall(async (request) => {
   // legítimo. La autorización la lleva el TOKEN.
   const uid = uidDe(request);
 
-  const priv = await grupoPrivadoRef(codigo).get();
-  const participanteId = (priv.data()?.reemplazos || {})[token];
+  // El token se RESERVA antes de tocar nada más: leerlo y borrarlo por
+  // separado deja un hueco en el que dos personas canjean el mismo enlace
+  // a la vez y acaban las dos vinculadas a la misma plaza, pudiendo ver su
+  // asignación. Es el mismo fallo que tuvo el contador del PIN.
+  //
+  // La transacción DEVUELVE el veredicto en vez de lanzarlo: lanzar desde
+  // dentro haría depender el resultado de cómo clasifique el SDK ese error
+  // para decidir si reintenta la transacción, que no es una promesa que
+  // nos haya hecho nadie. Mismo patrón que `verAmigoSecreto`.
+  //
+  // Si algo falla MÁS ADELANTE en esta función, el token ya quedó gastado
+  // y la plaza sin cambiar: el organizador tendría que generar otro. Es
+  // peor que tener que reintentar, y mucho mejor que dos personas acabando
+  // ocupando la misma plaza.
+  const participanteId = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(grupoPrivadoRef(codigo));
+    const id = (snap.data()?.reemplazos || {})[token];
+    if (!id) return null;
+    tx.set(grupoPrivadoRef(codigo), {reemplazos: {[token]: FieldValue.delete()}}, {merge: true});
+    return id;
+  });
   if (!participanteId) {
     throw new HttpsError("not-found", "Este enlace ya no vale.", {clave: "reemplazo_invalido"});
   }
@@ -742,10 +761,23 @@ exports.canjearReemplazo = onCall(async (request) => {
     throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
   }
 
+  // Esta función no pasa por `autorizar`, así que hay que poner a mano la
+  // guarda que él hace de regalo: sin documento de perfil —por ejemplo
+  // porque `guardarPerfil` falló por red al registrarse— la persona
+  // quedaría atrapada más abajo. `vincularComoParticipante` le crearía el
+  // documento con solo el mapa `grupos`, sin `pinHash`: `misGrupos` la
+  // vería con `perfilCompleto: true`, `verAmigoSecreto` le daría
+  // `pin_incorrecto` para siempre, y `guardarPerfil` ya no podría escribir
+  // porque usa `create()`, que no toca un documento que ya existe.
+  const snapUsuario = await usuarioRef(uid).get();
+  if (!snapUsuario.exists) {
+    throw new HttpsError("unauthenticated", "Tu cuenta no tiene perfil. Vuelve a entrar.", {clave: "perfil_incompleto"});
+  }
+
   // Una cuenta, una plaza por grupo. Misma regla que `agregarParticipante`
   // y por el mismo motivo: dos plazas de la misma persona dejarían una
   // huérfana dentro de la cadena.
-  const miVinculo = (await usuarioRef(uid).get()).data()?.grupos?.[codigo];
+  const miVinculo = snapUsuario.data()?.grupos?.[codigo];
   if (miVinculo?.participanteId) {
     const mia = await participanteRef(codigo, miVinculo.participanteId).get();
     if (mia.exists) {
@@ -798,11 +830,6 @@ exports.canjearReemplazo = onCall(async (request) => {
       deseos_asignado: deseosNuevos,
     }, {merge: true});
   }
-
-  // El token se gasta.
-  batch.set(grupoPrivadoRef(codigo), {
-    reemplazos: {[token]: FieldValue.delete()},
-  }, {merge: true});
 
   await batch.commit();
 
