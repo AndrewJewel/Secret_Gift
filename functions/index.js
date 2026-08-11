@@ -682,6 +682,154 @@ exports.generarReemplazo = onCall(async (request) => {
   return {token};
 });
 
+/**
+ * Lo justo para pintar el formulario de quien canjea: el nombre actual de
+ * la plaza y la temática del grupo.
+ *
+ * No revela nada nuevo — con el código ya se pueden leer todos los nombres
+ * del grupo. Lo único que añade es CUÁL de ellos es el de esta invitación,
+ * que es justo lo que quien tiene el token necesita saber.
+ */
+exports.verReemplazo = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const token = (request.data?.token || "").trim();
+  if (!codigo || !token) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o el enlace.", {clave: "faltan_datos"});
+  }
+  uidDe(request);
+
+  const priv = await grupoPrivadoRef(codigo).get();
+  const participanteId = (priv.data()?.reemplazos || {})[token];
+  if (!participanteId) {
+    throw new HttpsError("not-found", "Este enlace ya no vale.", {clave: "reemplazo_invalido"});
+  }
+
+  const plaza = await participanteRef(codigo, participanteId).get();
+  if (!plaza.exists) {
+    throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
+  }
+  const grupo = await grupoRef(codigo).get();
+
+  return {
+    nombre: plaza.data().nombre || "",
+    tematica: grupo.data()?.tematica || "",
+  };
+});
+
+exports.canjearReemplazo = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const token = (request.data?.token || "").trim();
+  const nombre = (request.data?.nombre || "").trim();
+  const deseos = (request.data?.deseos || "").trim();
+  if (!codigo || !token || !nombre) {
+    throw new HttpsError("invalid-argument", "Falta el grupo, el enlace o el nombre.", {clave: "faltan_datos_participante"});
+  }
+
+  // NO se usa `autorizar`: quien canjea todavía no tiene vínculo con el
+  // grupo, así que devolvería rol y participanteId nulos para alguien
+  // legítimo. La autorización la lleva el TOKEN.
+  const uid = uidDe(request);
+
+  const priv = await grupoPrivadoRef(codigo).get();
+  const participanteId = (priv.data()?.reemplazos || {})[token];
+  if (!participanteId) {
+    throw new HttpsError("not-found", "Este enlace ya no vale.", {clave: "reemplazo_invalido"});
+  }
+
+  const plazaRef = participanteRef(codigo, participanteId);
+  const plazaSnap = await plazaRef.get();
+  if (!plazaSnap.exists) {
+    throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
+  }
+
+  // Una cuenta, una plaza por grupo. Misma regla que `agregarParticipante`
+  // y por el mismo motivo: dos plazas de la misma persona dejarían una
+  // huérfana dentro de la cadena.
+  const miVinculo = (await usuarioRef(uid).get()).data()?.grupos?.[codigo];
+  if (miVinculo?.participanteId) {
+    const mia = await participanteRef(codigo, miVinculo.participanteId).get();
+    if (mia.exists) {
+      throw new HttpsError("already-exists", "Ya tienes una plaza en este grupo.", {clave: "ya_estas_en_el_grupo"});
+    }
+  }
+
+  const privadoPlaza = await participantePrivadoRef(codigo, participanteId).get();
+  const datosPlaza = privadoPlaza.data() || {};
+  const cuentaAnterior = datosPlaza.cuenta;
+  const avatarAnterior = plazaSnap.data().avatarUrl;
+
+  // La imagen se sube ANTES de escribir en Firestore, como en el alta
+  // normal: si falla, no queda una plaza a medias apuntando a un avatar
+  // que no existe.
+  const avatarUrl = await guardarAvatar(codigo, participanteId, request.data?.avatarBase64);
+  const deseosNuevos = deseos || "¡Sorpréndeme!";
+
+  const batch = db.batch();
+
+  // La plaza conserva su id, su `asignado_a`, su `nombre_asignado` y su
+  // `deseos_asignado`: quien entra regala a la misma persona. Eso es lo que
+  // mantiene la cadena entera.
+  batch.update(plazaRef, {nombre, avatarUrl: avatarUrl || ""});
+  batch.set(participantePrivadoRef(codigo, participanteId), {
+    cuenta: uid,
+    deseos: deseosNuevos,
+    // Máscara nueva: quien entra no hereda las palabras de quien se fue.
+    mascara: FieldValue.delete(),
+    mascaraRepeticion: FieldValue.delete(),
+    ultimoMensajeMs: FieldValue.delete(),
+  }, {merge: true});
+
+  // EL ARREGLO DE VERDAD: quien le regala a esta plaza tiene guardados el
+  // nombre y los deseos de quien ya no está, y compraría para esa persona.
+  // `recibe_de` lo dice directamente; si no estuviera —grupo sorteado antes
+  // de que ese campo existiera— se barren los privados buscando quién
+  // apunta aquí.
+  let quienRegala = datosPlaza.recibe_de;
+  if (!quienRegala) {
+    const todos = await grupoRef(codigo).collection("participantes").get();
+    const privados = await Promise.all(
+        todos.docs.map((d) => participantePrivadoRef(codigo, d.id).get()));
+    const i = privados.findIndex((p) => p.data()?.asignado_a === participanteId);
+    if (i >= 0) quienRegala = todos.docs[i].id;
+  }
+  if (quienRegala) {
+    batch.set(participantePrivadoRef(codigo, quienRegala), {
+      nombre_asignado: nombre,
+      deseos_asignado: deseosNuevos,
+    }, {merge: true});
+  }
+
+  // El token se gasta.
+  batch.set(grupoPrivadoRef(codigo), {
+    reemplazos: {[token]: FieldValue.delete()},
+  }, {merge: true});
+
+  await batch.commit();
+
+  // Se despega la cuenta anterior. Mismo trato que en `borrarParticipante`:
+  // al organizador se le conserva la entrada con `participanteId: null`
+  // —quitarle la clave entera le quitaría el rol y dejaría el grupo
+  // ingobernable—, y al resto se le borra.
+  if (cuentaAnterior && cuentaAnterior !== uid) {
+    const refAnterior = usuarioRef(cuentaAnterior);
+    const snapAnterior = await refAnterior.get();
+    if (snapAnterior.exists) {
+      const vinculo = (snapAnterior.data().grupos || {})[codigo];
+      await refAnterior.update(
+          new FieldPath("grupos", codigo),
+          vinculo?.rol === "organizador" ?
+            {rol: "organizador", participanteId: null} :
+            FieldValue.delete(),
+      );
+    }
+  }
+
+  await vincularComoParticipante(uid, codigo, participanteId);
+  await borrarAvatarPorUrl(avatarAnterior);
+
+  return {id: participanteId};
+});
+
 // Cambiar la propia imagen, o quitarle una inapropiada a alguien si eres
 // el organizador: `autorizar` ya sabe si eres una cosa o la otra.
 // Mandar avatarBase64 vacío o nulo equivale a quitar la imagen.
