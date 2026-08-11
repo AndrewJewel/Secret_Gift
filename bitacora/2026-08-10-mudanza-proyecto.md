@@ -139,22 +139,11 @@ La prueba en el navegador sigue pendiente, pero ya solo confirma; no bloquea.
 
 ## Pendientes
 
-### 1. Probar en el navegador — ya no bloquea, pero sigue sin hacerse
+### 1. ~~Probar en el navegador~~ — HECHO
 
-En **https://secretgift.app**:
-
-1. Crear una cuenta nueva
-2. Ir al buzón y pinchar el enlace de verificación
-3. **Volver a la pestaña sin recargarla** y pulsar «Ya lo confirmé»
-4. Crear un grupo, apuntarse, y compartir la invitación — **comprobar que el
-   enlace dice `secretgift.app`**
-
-El paso 3 es donde vivía el peor fallo de la migración a Auth y **ninguna
-prueba automática lo cubre**: la batería obtiene sus tokens iniciando sesión
-de nuevo, que es justo lo que enmascara el problema.
-
-El paso 4 no se pudo probar antes porque hasta el final el dominio servía el
-proyecto viejo.
+Comprobado por el humano el 2026-08-11: la app funciona en
+`https://secretgift.app` sobre el proyecto nuevo. Con esto la mudanza queda
+cerrada.
 
 ### 2. ~~Fusionar y empujar~~ — HECHO
 
