@@ -120,27 +120,26 @@ grupo, y era un fallo que ya existía. Ahora apunta a `secretgift.app`.
 
 ## Estado del repositorio al cerrar
 
-**Ojo con esto, que es lo más importante de la sección:**
+Fusionado a `main` y empujado a GitHub el mismo día (`26c6d01`).
 
 | | |
 |---|---|
-| Rama `mudanza-secretgift-app` | 2 commits: el código apuntando al proyecto nuevo, y esta bitácora |
-| `main` | **NO tiene ese código.** Va 3 commits por delante de GitHub (el spec y el plan) |
-| Producción | Es el proyecto NUEVO, desplegado desde la rama |
+| `main` | Tiene el código apuntando a `secretgift-app`, sincronizado con GitHub |
+| Producción | El proyecto nuevo, desplegado y sirviendo `secretgift.app` |
+| Rama `mudanza-secretgift-app` | Contenida en `main`, se puede borrar |
 
-**Producción y `main` están desalineados.** Lo desplegado en `secretgift.app`
-sale de la rama, no de `main`. Si alguien compilara y desplegara desde `main`
-tal como está, la app apuntaría otra vez al proyecto VIEJO — que sigue vivo
-y respondería, así que **el fallo no daría error: simplemente escribiría en
-la base de datos equivocada**.
+**Se fusionó sin haber hecho la prueba en el navegador, y a propósito.** El
+razonamiento: producción YA corría ese código —se había desplegado horas
+antes—, así que fusionar no añadía riesgo. Lo que sí quitaba era una trampa
+real: mientras `main` tuviera el código viejo, desplegar desde ahí habría
+apuntado al proyecto anterior **sin dar ningún error**, porque sigue vivo y
+responde. Habría escrito en la base de datos equivocada en silencio.
 
-No se fusionó porque **falta la prueba en el navegador**, y el 2026-08-10 la
-app estuvo completamente rota con `flutter analyze` limpio y 36 tests en
-verde. Esa prueba es el único filtro que habría cazado aquello.
+La prueba en el navegador sigue pendiente, pero ya solo confirma; no bloquea.
 
 ## Pendientes
 
-### 1. Probar en el navegador — BLOQUEA LA FUSIÓN
+### 1. Probar en el navegador — ya no bloquea, pero sigue sin hacerse
 
 En **https://secretgift.app**:
 
@@ -157,12 +156,10 @@ de nuevo, que es justo lo que enmascara el problema.
 El paso 4 no se pudo probar antes porque hasta el final el dominio servía el
 proyecto viejo.
 
-### 2. Fusionar y empujar
+### 2. ~~Fusionar y empujar~~ — HECHO
 
-Cuando el paso 1 esté confirmado:
-
-- Fusionar `mudanza-secretgift-app` a `main`
-- **Empujar a GitHub**: `main` va 3 commits por delante, con el spec y el plan
+Fusionado y empujado el 2026-08-10 (`26c6d01`). La rama
+`mudanza-secretgift-app` está contenida en `main` y se puede borrar.
 
 ### 3. Android — la versión móvil NO funcionaría
 
