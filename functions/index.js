@@ -664,12 +664,19 @@ exports.generarReemplazo = onCall(async (request) => {
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(grupoPrivadoRef(codigo));
     const reemplazos = snap.data()?.reemplazos || {};
-    const nuevos = {};
+    // OJO: con `merge: true`, una clave que falta en el objeto no se borra
+    // en Firestore, se deja tal cual — el SDK arma la máscara de campos a
+    // partir de las claves QUE ESTÁN, así que omitir una clave nunca la
+    // toca. Para borrar un token viejo hay que decirlo explícitamente con
+    // `FieldValue.delete()`. Y el objeto solo lleva lo que cambia: los
+    // tokens de otras plazas ni se mencionan, así que una llamada
+    // simultánea sobre otra plaza no se pisa con esta.
+    const cambios = {};
     for (const [t, id] of Object.entries(reemplazos)) {
-      if (id !== participanteId) nuevos[t] = id;
+      if (id === participanteId) cambios[t] = FieldValue.delete();
     }
-    nuevos[token] = participanteId;
-    tx.set(grupoPrivadoRef(codigo), {reemplazos: nuevos}, {merge: true});
+    cambios[token] = participanteId;
+    tx.set(grupoPrivadoRef(codigo), {reemplazos: cambios}, {merge: true});
   });
 
   return {token};
