@@ -954,6 +954,36 @@ abstract class Textos {
   /// **'Remove'**
   String get organizadorSacarBoton;
 
+  /// Tooltip on the button that lets the organiser generate a replacement link, shown only after the draw
+  ///
+  /// In en, this message translates to:
+  /// **'Replace this person'**
+  String get reemplazarTooltip;
+
+  /// Title of the dialog that warns what replacing a participant will and won't change
+  ///
+  /// In en, this message translates to:
+  /// **'Replace {nombre}'**
+  String reemplazarTitulo(String nombre);
+
+  /// Body of the replace-participant dialog: what changes and what does not
+  ///
+  /// In en, this message translates to:
+  /// **'{nombre}\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to {nombre} won\'t change, but will see a different name and wishes.\n· {nombre} will lose access to the group.\n· What {nombre} wrote in the chat stays, under their mask.'**
+  String reemplazarAviso(String nombre);
+
+  /// Button that confirms generating the one-time replacement link
+  ///
+  /// In en, this message translates to:
+  /// **'Create link'**
+  String get reemplazarGenerar;
+
+  /// Text shared (e.g. via WhatsApp) with the replacement link
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re taking {nombre}\'s place in our Secret Santa. Open this link: {enlace}'**
+  String reemplazarCompartir(String nombre, String enlace);
+
   /// No description provided for @sorteoBoton.
   ///
   /// In en, this message translates to:

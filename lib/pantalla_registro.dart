@@ -494,6 +494,44 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }
   }
 
+  /// Genera un enlace de un solo uso para que otra persona ocupe esa plaza.
+  ///
+  /// El diálogo dice lo que va a pasar en concreto, no un "¿estás seguro?":
+  /// lo que se pierde y lo que NO cambia son cosas distintas y quien decide
+  /// necesita las dos.
+  Future<void> _reemplazar(String id, String nombre) async {
+    final t = Textos.of(context);
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(t.reemplazarTitulo(nombre)),
+        content: Text(t.reemplazarAviso(nombre)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(t.reemplazarGenerar),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+
+    try {
+      final r = await llamarFuncion('generarReemplazo', {
+        'codigo': widget.codigo,
+        'participanteId': id,
+      });
+      final enlace =
+          'https://secretgift.app/?codigo=${widget.codigo}&reemplazo=${r['token']}';
+      if (!mounted) return;
+      await SharePlus.instance
+          .share(ShareParams(text: t.reemplazarCompartir(nombre, enlace)));
+    } catch (e) {
+      _avisarError(e);
+    }
+  }
+
   Future<void> _editarNombre(String participanteId, String nombreActual) async {
     final t = Textos.of(context);
     final usaPersonajes = _info.tematica.usaPersonajes;
@@ -896,6 +934,17 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                           tooltip: t.organizadorCorregirNombre,
                           onPressed: () => _editarNombre(id, nombre),
                         ),
+                        // Solo tras el sorteo: antes, la salida correcta es
+                        // sacar a esa persona y que se apunte otra, que ya
+                        // funciona. Reemplazar existe para conservar un
+                        // sitio en la cadena, y antes del sorteo no hay
+                        // cadena que conservar.
+                        if (_vinculo?.sorteado ?? false)
+                          IconButton(
+                            icon: Icon(Icons.swap_horiz, color: _color.shade700),
+                            tooltip: t.reemplazarTooltip,
+                            onPressed: () => _reemplazar(id, nombre),
+                          ),
                         IconButton(
                           icon: Icon(Icons.person_remove_outlined,
                               color: Colors.red.shade700),

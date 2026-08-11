@@ -488,6 +488,27 @@ class TextosEs extends Textos {
   String get organizadorSacarBoton => 'Sacar';
 
   @override
+  String get reemplazarTooltip => 'Reemplazar a esta persona';
+
+  @override
+  String reemplazarTitulo(String nombre) {
+    return 'Reemplazar a $nombre';
+  }
+
+  @override
+  String reemplazarAviso(String nombre) {
+    return 'La plaza de $nombre pasará a otra persona, que seguirá regalando a quien le tocaba.\n\n· Quien le regala a $nombre NO cambia, pero verá otro nombre y otros deseos.\n· $nombre perderá el acceso al grupo.\n· Lo que $nombre escribió en el chat se queda, con su máscara.';
+  }
+
+  @override
+  String get reemplazarGenerar => 'Generar enlace';
+
+  @override
+  String reemplazarCompartir(String nombre, String enlace) {
+    return 'Vas a ocupar el lugar de $nombre en nuestro amigo secreto. Abre este enlace: $enlace';
+  }
+
+  @override
   String get sorteoBoton => 'HACER EL SORTEO';
 
   @override

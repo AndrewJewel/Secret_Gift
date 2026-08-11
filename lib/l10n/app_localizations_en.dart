@@ -488,6 +488,27 @@ class TextosEn extends Textos {
   String get organizadorSacarBoton => 'Remove';
 
   @override
+  String get reemplazarTooltip => 'Replace this person';
+
+  @override
+  String reemplazarTitulo(String nombre) {
+    return 'Replace $nombre';
+  }
+
+  @override
+  String reemplazarAviso(String nombre) {
+    return '$nombre\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to $nombre won\'t change, but will see a different name and wishes.\n· $nombre will lose access to the group.\n· What $nombre wrote in the chat stays, under their mask.';
+  }
+
+  @override
+  String get reemplazarGenerar => 'Create link';
+
+  @override
+  String reemplazarCompartir(String nombre, String enlace) {
+    return 'You\'re taking $nombre\'s place in our Secret Santa. Open this link: $enlace';
+  }
+
+  @override
   String get sorteoBoton => 'DRAW NAMES';
 
   @override
