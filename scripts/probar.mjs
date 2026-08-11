@@ -52,12 +52,12 @@
 //
 // El grupo de prueba SÍ se borra al terminar (eliminarGrupo), como antes.
 
-const BASE = "https://us-central1-santa-secreto-860c3.cloudfunctions.net";
+const BASE = "https://us-central1-secretgift-app.cloudfunctions.net";
 
 // La clave web del proyecto. No es un secreto: va incrustada en el cliente
 // web (ver lib/main.dart) y sirve para identificar el proyecto, no para
 // autorizar nada.
-const API_KEY = "AIzaSyC3rWS4cYcXpdrO2NCturmoiaoqmkzpjE8";
+const API_KEY = "AIzaSyD9F2V6ByG7p9yMoDOpa_p-v97_Ik5jZcI";
 const IDENTITY = "https://identitytoolkit.googleapis.com/v1";
 
 async function authRest(metodo, cuerpo) {
@@ -78,9 +78,9 @@ const entrar = (email, password) => authRest("signInWithPassword", {email, passw
 // no solo lo que responde. `grupos/{codigo}` y sus participantes son de
 // lectura pública por diseño (ver firestore.rules); la colección NO se puede
 // listar, pero un documento concreto sí se puede pedir.
-const BUCKET = "santa-secreto-860c3.firebasestorage.app";
+const BUCKET = "secretgift-app.firebasestorage.app";
 const FIRESTORE =
-  "https://firestore.googleapis.com/v1/projects/santa-secreto-860c3/databases/(default)/documents";
+  "https://firestore.googleapis.com/v1/projects/secretgift-app/databases/(default)/documents";
 
 // Un JPEG de 1×1 píxel. Existe solo para que algo real pase por Cloud
 // Storage: sin él, guardarAvatar y borrarAvatarPorUrl no los prueba nadie.

@@ -40,7 +40,7 @@ function generarCodigo() {
 // `grupos` del usuario, que las reglas de Storage no pueden leer. Subirlas
 // por la función mantiene la misma autorización que el resto de la app.
 
-const BUCKET = "santa-secreto-860c3.firebasestorage.app";
+const BUCKET = "secretgift-app.firebasestorage.app";
 // El cliente ya redimensiona a 256px (unos 20KB). El tope generoso es
 // solo para frenar un abuso, no para uso normal.
 const MAX_AVATAR_BYTES = 400 * 1024;

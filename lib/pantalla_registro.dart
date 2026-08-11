@@ -392,7 +392,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   // --- Compartir -------------------------------------------------------
 
-  String get _urlUnirse => 'https://santa-secreto-860c3.web.app/?codigo=${widget.codigo}';
+  // El dominio de la marca, no el que Firebase da por defecto: este enlace es
+  // lo que recibe quien es invitado a un grupo, y suele ser lo primero que ve
+  // de la app. Apuntaba al dominio del proyecto desde siempre.
+  String get _urlUnirse => 'https://secretgift.app/?codigo=${widget.codigo}';
 
   void _compartir() {
     final t = Textos.of(context);
