@@ -118,19 +118,132 @@ grupo, y era un fallo que ya existía. Ahora apunta a `secretgift.app`.
 | Dominio de correo | Verificado, sin interrupción |
 | Proyecto viejo | **Sigue entero y no se borra** |
 
+## Estado del repositorio al cerrar
+
+**Ojo con esto, que es lo más importante de la sección:**
+
+| | |
+|---|---|
+| Rama `mudanza-secretgift-app` | 2 commits: el código apuntando al proyecto nuevo, y esta bitácora |
+| `main` | **NO tiene ese código.** Va 3 commits por delante de GitHub (el spec y el plan) |
+| Producción | Es el proyecto NUEVO, desplegado desde la rama |
+
+**Producción y `main` están desalineados.** Lo desplegado en `secretgift.app`
+sale de la rama, no de `main`. Si alguien compilara y desplegara desde `main`
+tal como está, la app apuntaría otra vez al proyecto VIEJO — que sigue vivo
+y respondería, así que **el fallo no daría error: simplemente escribiría en
+la base de datos equivocada**.
+
+No se fusionó porque **falta la prueba en el navegador**, y el 2026-08-10 la
+app estuvo completamente rota con `flutter analyze` limpio y 36 tests en
+verde. Esa prueba es el único filtro que habría cazado aquello.
+
 ## Pendientes
 
-1. **`android/app/google-services.json` sigue siendo del proyecto viejo**, y
-   el paquete sigue en `com.example.santa_secreto`. No bloquea nada porque
-   la app se usa por web, pero **la versión Android no funcionaría** hasta
-   hacerlo. `com.example` es el valor de ejemplo de Flutter y Google Play no
-   lo acepta, así que habrá que cambiarlo igualmente antes de publicar.
-2. **Tres registros DNS huérfanos de Resend**: `send.secretgift.app` MX y
-   TXT, y `resend._domainkey`. No molestan.
-3. **El TXT `firebase=santa-secreto-860c3`** ya no hace falta.
-4. **Decidir qué hacer con el proyecto viejo.** Sigue con sus funciones
-   desplegadas y facturando lo que facture.
-5. **El despliegue automático desde GitHub**, con diseño aprobado y sin
-   hacer.
-6. **P4 — reemplazar participante.** Sigue siendo el único pendiente que
-   arregla algo que le puede pasar a alguien usando la app.
+### 1. Probar en el navegador — BLOQUEA LA FUSIÓN
+
+En **https://secretgift.app**:
+
+1. Crear una cuenta nueva
+2. Ir al buzón y pinchar el enlace de verificación
+3. **Volver a la pestaña sin recargarla** y pulsar «Ya lo confirmé»
+4. Crear un grupo, apuntarse, y compartir la invitación — **comprobar que el
+   enlace dice `secretgift.app`**
+
+El paso 3 es donde vivía el peor fallo de la migración a Auth y **ninguna
+prueba automática lo cubre**: la batería obtiene sus tokens iniciando sesión
+de nuevo, que es justo lo que enmascara el problema.
+
+El paso 4 no se pudo probar antes porque hasta el final el dominio servía el
+proyecto viejo.
+
+### 2. Fusionar y empujar
+
+Cuando el paso 1 esté confirmado:
+
+- Fusionar `mudanza-secretgift-app` a `main`
+- **Empujar a GitHub**: `main` va 3 commits por delante, con el spec y el plan
+
+### 3. Android — la versión móvil NO funcionaría
+
+- `android/app/google-services.json` **sigue siendo del proyecto viejo**
+- El paquete sigue siendo `com.example.santa_secreto`
+
+No bloquea nada hoy porque la app se usa por web, pero si se compilara el
+APK ahora, apuntaría al proyecto viejo.
+
+Lo que habría que hacer: registrar la app Android en `secretgift-app` con el
+paquete **`app.secretgift`**, descargar el `google-services.json` nuevo, y
+cambiar `namespace` y `applicationId` en `android/app/build.gradle.kts`, el
+`package` de `MainActivity.kt`, y mover ese fichero a
+`android/app/src/main/kotlin/app/secretgift/`.
+
+`com.example` es el valor de ejemplo de Flutter y **Google Play no lo
+acepta**, así que hay que cambiarlo igualmente antes de publicar. Está
+detallado en la Tarea 4 del plan.
+
+### 4. Limpieza de DNS en Cloudflare
+
+Cuatro registros que ya no sirven. **Ninguno molesta**, así que sin prisa:
+
+| Registro | Por qué sobra |
+|---|---|
+| `send.secretgift.app` MX → `feedback-smtp.us-east-1.amazonses.com` | De Resend, que se descartó |
+| `send.secretgift.app` TXT → `v=spf1 include:amazonses.com ~all` | De Resend |
+| `resend._domainkey` TXT | De Resend |
+| `secretgift.app` TXT → `firebase=santa-secreto-860c3` | Del proyecto viejo |
+
+**No tocar** los otros: el `A`, los dos CNAME `firebase*._domainkey`, el
+`v=spf1 include:_spf.firebasemail.com`, el `firebase=secretgift-app`, el
+`hosting-site=secretgift-app` y el `_dmarc`.
+
+Y la regla que costó dos vueltas: **todos en «Solo DNS», nube gris.** Con el
+proxy de Cloudflare activado, Firebase no puede verificar el dominio ni
+emitir el certificado.
+
+### 5. Qué hacer con el proyecto viejo
+
+`santa-secreto-860c3` sigue entero: quince funciones desplegadas, Firestore,
+Storage y hosting. **Facturando lo que facture.**
+
+Se dejó a propósito como vuelta atrás. Conviene decidir cuándo apagarlo —
+pero no antes de que el paso 1 esté confirmado y hayan pasado unos días.
+
+### 6. Detalles del correo
+
+- **Las plantillas están en inglés**, decidido a sabiendas: la app arranca en
+  inglés. Consecuencia: quien la use en español también recibirá el correo
+  en inglés.
+- Comprobar en el próximo correo que la firma ya dice **«Your Secret Gift
+  team»** y no «secretgift-app» — se cambió el nombre del proyecto para eso
+  pero no se ha visto un correo desde entonces.
+
+### 7. Comprobación de seguridad que sigue sin hacerse
+
+**Que cambiar el PIN rechaza una sesión de más de cinco minutos.** Es lo
+único de la revisión de la migración a Auth que nunca se confirmó con los
+ojos, y probarlo automáticamente exigiría un `sleep` de cinco minutos dentro
+de una batería que tarda segundos.
+
+Cómo: entrar en la app, esperar más de cinco minutos sin cerrar sesión, e
+intentar cambiar el PIN desde Configuración. **Debe pedir la contraseña.**
+
+### 8. Trabajo pendiente de antes de la mudanza
+
+Por orden de valor:
+
+1. **P4 — reemplazar participante.** Spec aprobado el 2026-08-09, sin plan
+   todavía. **Es el único pendiente que arregla algo que le puede pasar a
+   alguien usando la app**: hoy, si alguien se cae de un grupo ya sorteado,
+   no hay ninguna salida. Y esta sesión lo empeoró indirectamente, porque se
+   cerró la entrada tras el sorteo — que era el apaño improvisado.
+2. **Notificaciones push (FCM).** Spec escrito. Va después de P4, que es su
+   primer y único cliente.
+3. **Despliegue automático desde GitHub.** Diseño aprobado y escrito el
+   2026-08-10. Decidido: se despliegan la app y las reglas, no las
+   funciones; se dispara en cada push a `main`; y hace falta añadirle un rol
+   a la cuenta de servicio en Google Cloud.
+4. **P3** (chat sin máscaras), **P1** (invitaciones QR), **idioma en la
+   cuenta** (spec escrito).
+5. **A4: App Check y limitación de peticiones.** Abierto desde la auditoría
+   del 2026-08-09.
