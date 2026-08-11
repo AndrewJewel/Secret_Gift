@@ -13,7 +13,7 @@ const bcrypt = require("bcryptjs");
 // secretos: el código del grupo —que desde que se cerró el `list` de
 // Firestore es la ÚNICA llave para llegar a él—, la cadena del sorteo, y
 // la máscara que sostiene el anonimato del chat.
-const {randomInt} = require("node:crypto");
+const {randomInt, randomBytes} = require("node:crypto");
 
 initializeApp();
 const db = getFirestore();
@@ -610,6 +610,69 @@ exports.borrarParticipante = onCall(async (request) => {
 
   await borrarAvatarPorUrl(publico.data()?.avatarUrl);
   return {ok: true};
+});
+
+// --- Reemplazar a alguien tras el sorteo -------------------------------
+// Tras el sorteo la lista no cambia: `borrarParticipante` y
+// `agregarParticipante` están cerrados. Eso deja un grupo sin salida si
+// alguien no puede seguir jugando, y esta es esa salida: la plaza no se
+// borra, cambia de dueño conservando su id, así que la cadena no se entera.
+
+/**
+ * El token es una LLAVE: quien lo tenga toma esa plaza. Por eso sale de
+ * `crypto` y no de `Math.random`, igual que el código del grupo.
+ */
+function generarToken() {
+  return randomBytes(24).toString("base64url");
+}
+
+exports.generarReemplazo = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const participanteId = request.data?.participanteId;
+  if (!codigo || !participanteId) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
+  }
+
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+
+  const grupoSnap = await grupoRef(codigo).get();
+  if (!grupoSnap.exists) {
+    throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
+  }
+  // Antes del sorteo la salida correcta es borrar y volver a apuntarse, que
+  // ya funciona. Reemplazar solo tiene sentido cuando la plaza tiene un
+  // sitio en la cadena que hay que conservar.
+  if (grupoSnap.data().sorteado !== true) {
+    throw new HttpsError(
+        "failed-precondition",
+        "Este grupo todavía no ha sorteado: saca a esta persona y que se apunte otra.",
+        {clave: "grupo_sin_sortear"},
+    );
+  }
+
+  const plaza = await participanteRef(codigo, participanteId).get();
+  if (!plaza.exists) {
+    throw new HttpsError("not-found", "Ese participante ya no existe.", {clave: "participante_no_existe"});
+  }
+
+  const token = generarToken();
+
+  // Una plaza, un token vivo. Generar otro para la misma plaza borra el
+  // anterior: eso es lo que cumple "el organizador puede anularlo" sin
+  // añadir un botón de anular. Se hace en transacción porque hay que leer
+  // el mapa para saber cuáles borrar antes de escribir.
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(grupoPrivadoRef(codigo));
+    const reemplazos = snap.data()?.reemplazos || {};
+    const nuevos = {};
+    for (const [t, id] of Object.entries(reemplazos)) {
+      if (id !== participanteId) nuevos[t] = id;
+    }
+    nuevos[token] = participanteId;
+    tx.set(grupoPrivadoRef(codigo), {reemplazos: nuevos}, {merge: true});
+  });
+
+  return {token};
 });
 
 // Cambiar la propia imagen, o quitarle una inapropiada a alguien si eres
