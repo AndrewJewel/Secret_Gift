@@ -984,6 +984,12 @@ abstract class Textos {
   /// **'You\'re taking {nombre}\'s place in our Secret Santa. Open this link: {enlace}'**
   String reemplazarCompartir(String nombre, String enlace);
 
+  /// Shown above the name field on the sign-up form when the link is a replacement one: tells whoever arrives they're taking someone's spot, not joining fresh
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re taking {nombre}\'s place. Keep the name or change it to yours.'**
+  String reemplazarOcupasPlaza(String nombre);
+
   /// No description provided for @sorteoBoton.
   ///
   /// In en, this message translates to:

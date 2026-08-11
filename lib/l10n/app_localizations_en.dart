@@ -509,6 +509,11 @@ class TextosEn extends Textos {
   }
 
   @override
+  String reemplazarOcupasPlaza(String nombre) {
+    return 'You\'re taking $nombre\'s place. Keep the name or change it to yours.';
+  }
+
+  @override
   String get sorteoBoton => 'DRAW NAMES';
 
   @override

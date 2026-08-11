@@ -229,6 +229,13 @@
       "enlace": { "type": "String" }
     }
   },
+  "reemplazarOcupasPlaza": "You're taking {nombre}'s place. Keep the name or change it to yours.",
+  "@reemplazarOcupasPlaza": {
+    "description": "Shown above the name field on the sign-up form when the link is a replacement one: tells whoever arrives they're taking someone's spot, not joining fresh",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
 
   "sorteoBoton": "DRAW NAMES",
   "sorteoTitulo": "Draw names",

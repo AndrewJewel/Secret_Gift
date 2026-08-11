@@ -509,6 +509,11 @@ class TextosEs extends Textos {
   }
 
   @override
+  String reemplazarOcupasPlaza(String nombre) {
+    return 'Vas a ocupar el lugar de $nombre. Deja el nombre o cámbialo por el tuyo.';
+  }
+
+  @override
   String get sorteoBoton => 'HACER EL SORTEO';
 
   @override

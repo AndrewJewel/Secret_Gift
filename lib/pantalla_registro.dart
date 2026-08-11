@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'avatar.dart';
 import 'funciones.dart';
 import 'glass.dart';
+import 'invitacion_pendiente.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
@@ -137,9 +138,21 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   /// el resto del formulario en una sola llamada.
   String? _avatarBase64;
 
+  /// Token del enlace de reemplazo que trajo a esta pantalla, o null en un
+  /// alta normal. Si no es null, el botón del formulario canjea la plaza en
+  /// vez de crear una nueva.
+  String? _tokenReemplazo;
+
+  /// Nombre de la plaza que se va a ocupar, precargado en el campo del
+  /// nombre. Es lo que hace que un grupo temático funcione sin un modo
+  /// aparte: quedarse con el personaje es no tocar nada, y en un grupo
+  /// normal se escribe encima.
+  String _nombrePlaza = '';
+
   @override
   void initState() {
     super.initState();
+    _mirarSiHayReemplazo();
     _suscripcionGrupo = _grupoRef.snapshots().listen((snap) {
       if (!mounted) return;
       // El grupo dejó de existir: su organizador lo eliminó mientras
@@ -227,6 +240,36 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   // --- Registro de participantes --------------------------------------
 
+  /// Si la invitación que trajo hasta aquí lleva un token de reemplazo
+  /// pendiente para ESTE grupo, se consulta al servidor qué plaza es y se
+  /// precarga su nombre en el formulario.
+  ///
+  /// Un token gastado o anulado no debe dejar la pantalla inservible: se
+  /// avisa y se sigue con el alta normal, que para un grupo ya sorteado el
+  /// servidor rechazará con su propio mensaje.
+  Future<void> _mirarSiHayReemplazo() async {
+    final inv = await leerInvitacion();
+    if (inv == null || inv.codigo != widget.codigo || inv.reemplazo == null) return;
+    try {
+      final r = await llamarFuncion('verReemplazo', {
+        'codigo': widget.codigo,
+        'token': inv.reemplazo,
+      });
+      if (!mounted) return;
+      setState(() {
+        _tokenReemplazo = inv.reemplazo;
+        _nombrePlaza = r['nombre'] as String? ?? '';
+        // El nombre de la plaza, precargado. En un grupo temático quedarse
+        // con el personaje es no tocar nada; en uno normal se escribe
+        // encima. Sin modos ni banderas.
+        _nombreController.text = _nombrePlaza;
+      });
+    } on FuncionError catch (e) {
+      if (!mounted) return;
+      _avisar('⚠️ ${e.texto(Textos.of(context))}');
+    }
+  }
+
   Future<void> _agregar() async {
     final t = Textos.of(context);
     final nombreLimpio = _nombreController.text.trim();
@@ -238,12 +281,20 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }
 
     try {
-      final creado = await llamarFuncion('agregarParticipante', {
-        'codigo': widget.codigo,
-        'nombre': nombreLimpio,
-        'deseos': deseosLimpios,
-        if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
-      });
+      final creado = _tokenReemplazo != null
+          ? await llamarFuncion('canjearReemplazo', {
+              'codigo': widget.codigo,
+              'token': _tokenReemplazo,
+              'nombre': nombreLimpio,
+              'deseos': deseosLimpios,
+              if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
+            })
+          : await llamarFuncion('agregarParticipante', {
+              'codigo': widget.codigo,
+              'nombre': nombreLimpio,
+              'deseos': deseosLimpios,
+              if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
+            });
       _nombreController.clear();
       _deseosController.clear();
       if (!mounted) return;
@@ -833,6 +884,18 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
             onQuitar: () => setState(() => _avatarBase64 = null),
           ),
           const SizedBox(height: 12),
+          if (_tokenReemplazo != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                t.reemplazarOcupasPlaza(_nombrePlaza),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: _color.shade900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13),
+              ),
+            ),
           GlassTextField(
             color: _color,
             controller: _nombreController,
