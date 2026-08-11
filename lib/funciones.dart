@@ -11,7 +11,7 @@ import 'l10n/app_localizations.dart';
 // CUALQUIER llamada a una Cloud Function truene con
 // "Int64 accessor not supported by dart2js". Llamamos las funciones
 // directo por HTTP, el mismo protocolo que usa el SDK por dentro.
-const _baseUrl = 'https://us-central1-santa-secreto-860c3.cloudfunctions.net';
+const _baseUrl = 'https://us-central1-secretgift-app.cloudfunctions.net';
 
 class FuncionError implements Exception {
   final String codigo; // ej. 'permission-denied', imita FirebaseFunctionsException.code

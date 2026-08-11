@@ -16,12 +16,12 @@ void main() async {
     // 🌐 CONFIGURACIÓN WEB (Sincronizada con tu App)
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "AIzaSyC3rWS4cYcXpdrO2NCturmoiaoqmkzpjE8",
-        authDomain: "santa-secreto-860c3.firebaseapp.com",
-        projectId: "santa-secreto-860c3",
-        storageBucket: "santa-secreto-860c3.firebasestorage.app",
-        messagingSenderId: "176155117392",
-        appId: "1:176155117392:web:c11dc9932050358cd08e55", // <--- ¡Listo!
+        apiKey: "AIzaSyD9F2V6ByG7p9yMoDOpa_p-v97_Ik5jZcI",
+        authDomain: "secretgift-app.firebaseapp.com",
+        projectId: "secretgift-app",
+        storageBucket: "secretgift-app.firebasestorage.app",
+        messagingSenderId: "997384680563",
+        appId: "1:997384680563:web:de772ec4c11202e0f0a606",
       ),
     );
   } else {
