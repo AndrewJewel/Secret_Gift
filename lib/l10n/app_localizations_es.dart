@@ -195,6 +195,14 @@ class TextosEs extends Textos {
       'El nombre y el apellido no pueden pasar de 40 caracteres cada uno.';
 
   @override
+  String get errorReemplazoInvalido =>
+      'Este enlace ya no vale. Pídele otro al organizador.';
+
+  @override
+  String get errorGrupoSinSortear =>
+      'Este grupo todavía no ha sorteado. Saca a esta persona y que se apunte otra.';
+
+  @override
   String get crearTitulo => 'Crear grupo';
 
   @override

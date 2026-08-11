@@ -427,6 +427,18 @@ abstract class Textos {
   /// **'Your name and surname can\'t be longer than 40 characters each.'**
   String get errorNombreLargo;
 
+  /// The replacement token was already used, or the organiser generated a new one
+  ///
+  /// In en, this message translates to:
+  /// **'This link is no longer valid. Ask the organiser for a new one.'**
+  String get errorReemplazoInvalido;
+
+  /// Tried to generate a replacement link before the draw, where removing works
+  ///
+  /// In en, this message translates to:
+  /// **'This group hasn\'t drawn yet. Remove this person and let someone else sign up.'**
+  String get errorGrupoSinSortear;
+
   /// No description provided for @crearTitulo.
   ///
   /// In en, this message translates to:

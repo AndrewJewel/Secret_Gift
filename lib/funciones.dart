@@ -85,6 +85,8 @@ extension MensajeLocalizado on FuncionError {
         'grupo_cerrado' => t.errorGrupoCerrado,
         'sorteo_ya_hecho' => t.errorSorteoYaHecho,
         'pin_bloqueado' => t.errorPinBloqueado,
+        'reemplazo_invalido' => t.errorReemplazoInvalido,
+        'grupo_sin_sortear' => t.errorGrupoSinSortear,
         _ => mensaje,
       };
 }

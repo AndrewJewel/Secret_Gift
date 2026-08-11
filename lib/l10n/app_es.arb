@@ -59,6 +59,8 @@
   "errorAuthDesconocido": "Algo salió mal al entrar. Vuelve a intentarlo. (código: {codigo} — {mensaje})",
   "errorDominioNoAutorizado": "Esta app no está bien configurada para este sitio. Avisa a quien la administra.",
   "errorNombreLargo": "El nombre y el apellido no pueden pasar de 40 caracteres cada uno.",
+  "errorReemplazoInvalido": "Este enlace ya no vale. Pídele otro al organizador.",
+  "errorGrupoSinSortear": "Este grupo todavía no ha sorteado. Saca a esta persona y que se apunte otra.",
 
   "crearTitulo": "Crear grupo",
   "crearOcasion": "Ocasión",

@@ -78,6 +78,10 @@
   "@errorDominioNoAutorizado": {"description": "Firebase Auth rejected the request because the site's domain is not in the project's authorized domains list — a project configuration problem, not something this person did"},
   "errorNombreLargo": "Your name and surname can't be longer than 40 characters each.",
   "@errorNombreLargo": {"description": "Name or surname over the server limit"},
+  "errorReemplazoInvalido": "This link is no longer valid. Ask the organiser for a new one.",
+  "@errorReemplazoInvalido": {"description": "The replacement token was already used, or the organiser generated a new one"},
+  "errorGrupoSinSortear": "This group hasn't drawn yet. Remove this person and let someone else sign up.",
+  "@errorGrupoSinSortear": {"description": "Tried to generate a replacement link before the draw, where removing works"},
 
   "crearTitulo": "Create group",
   "crearOcasion": "Occasion",

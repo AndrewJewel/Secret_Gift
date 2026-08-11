@@ -196,6 +196,14 @@ class TextosEn extends Textos {
       'Your name and surname can\'t be longer than 40 characters each.';
 
   @override
+  String get errorReemplazoInvalido =>
+      'This link is no longer valid. Ask the organiser for a new one.';
+
+  @override
+  String get errorGrupoSinSortear =>
+      'This group hasn\'t drawn yet. Remove this person and let someone else sign up.';
+
+  @override
   String get crearTitulo => 'Create group';
 
   @override
