@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-08-10
 **Estado:** aprobado, pendiente de plan de implementación
-**Proyecto destino:** `secretgift-2b82a` (creado el 2026-08-10)
+**Proyecto destino:** `secretgift-app` — número 997384680563, creado el 2026-08-10
 **Proyecto origen:** `santa-secreto-860c3`
 
 ## Qué se cambia y por qué
@@ -44,7 +44,7 @@ hacer, y por bastante margen.
 ## El principio que ordena todo: el dominio se mueve al final
 
 Se construye el proyecto nuevo entero y se prueba en su URL provisional
-(`secretgift-2b82a.web.app`). **Solo cuando funciona** se le quita
+(`secretgift-app.web.app`). **Solo cuando funciona** se le quita
 `secretgift.app` al proyecto viejo.
 
 Así la app sigue viva mientras se trabaja, y si algo sale mal el proyecto
@@ -67,7 +67,7 @@ montarlo en el nuevo, y ahí empieza el reloj.
 horas corran mientras se hace el código, el despliegue y las pruebas.
 
 **La consecuencia, asumida:** durante hasta un día los correos saldrán de
-`noreply@secretgift-2b82a.firebaseapp.com` en vez de `noreply@secretgift.app`.
+`noreply@secretgift-app.firebaseapp.com` en vez de `noreply@secretgift.app`.
 Hoy eso no le cuesta nada a nadie porque no hay usuarios. Dentro de un mes
 sería un problema de verdad — es el mismo argumento que hace barata la
 migración entera.
@@ -132,7 +132,7 @@ empiece a verificarse.
 **2 — Apuntar el código al proyecto nuevo.** Los siete sitios de arriba.
 
 **3 — Desplegar y probar en la URL provisional.** Reglas, funciones y app en
-`secretgift-2b82a.web.app`. Los 37 casos de `probar.mjs` y la prueba a mano
+`secretgift-app.web.app`. Los 37 casos de `probar.mjs` y la prueba a mano
 en el navegador. **Aquí se decide si se sigue**: si algo falla, el proyecto
 viejo está intacto.
 
