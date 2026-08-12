@@ -20,7 +20,11 @@ rules_version = '2';
 // quita nada. El código del grupo vuelve a ser lo que debía ser: la única
 // llave para llegar a él.
 //
-// grupos/{codigo}/privado/data: las máscaras ya repartidas en el chat.
+// grupos/{codigo}/privado/data: las máscaras ya repartidas en el chat, y el
+// mapa `reemplazos` (token de un solo uso → id de la plaza que canjea). Es
+// justo por eso que este documento tiene que seguir a cero para el
+// cliente: un token de reemplazo es una llave, y dejarlo leer desde aquí
+// sería repartir llaves sin pasar por `canjearReemplazo`.
 // Cero acceso de cliente en cualquier dirección. El PIN maestro que vivía
 // aquí desapareció: ser organizador lo dice tu cuenta.
 //
@@ -29,9 +33,9 @@ rules_version = '2';
 // Cloud Functions.
 //
 // grupos/{codigo}/participantes/{id}/privado/data: de qué cuenta es esta
-// plaza, la lista de deseos, a quién le regala y su máscara del chat.
-// Cero acceso de cliente. El PIN del participante que vivía aquí
-// desapareció.
+// plaza, la lista de deseos, a quién le regala (`asignado_a`), quién le
+// regala a ella (`recibe_de`) y su máscara del chat. Cero acceso de
+// cliente. El PIN del participante que vivía aquí desapareció.
 //
 // usuarios/{uid}: el perfil de una cuenta de Firebase Auth (nombre,
 // apellido, correo, hash bcrypt del PIN de 4 dígitos, y el mapa de grupos
