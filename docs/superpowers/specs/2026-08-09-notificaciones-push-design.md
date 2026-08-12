@@ -181,8 +181,9 @@ notificación abra ese grupo.
   y hace falta una guarda por si esa plaza no tiene cuenta.
 - **`ejecutarSorteo`** avisa a todos los participantes del grupo, después de
   escribir el sorteo.
-- **`mandarMensaje`** avisa al resto del grupo, con la regla de no avisar a
-  quien esté mirando ese chat.
+- **`enviarMensaje`** avisa al resto del grupo, con la regla de no avisar a
+  quien esté mirando ese chat. (Se llama así, comprobado; el diseño la
+  llamaba `mandarMensaje`, que no existe.)
 
 ### Cliente
 
