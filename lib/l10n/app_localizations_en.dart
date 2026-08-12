@@ -796,4 +796,21 @@ class TextosEn extends Textos {
   @override
   String get reglasNavidad =>
       'Christmas in the group! Nobody uses their real name.\n\n• Pick your Christmas character and upload their image.\n• Nobody knows who is who until the gift exchange.\n• Write your wish list: it is the only clue your gift giver will have.';
+
+  @override
+  String get avisosTitulo => 'Shall we let you know?';
+
+  @override
+  String get avisosTexto =>
+      'We\'ll tell you when your group draws names, when someone writes in the chat, and if your secret friend changes.';
+
+  @override
+  String get avisosSi => 'Yes, let me know';
+
+  @override
+  String get avisosAhoraNo => 'Not now';
+
+  @override
+  String get errorTokenInvalido =>
+      'We couldn\'t set up notifications. Nothing else is affected.';
 }

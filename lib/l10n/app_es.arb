@@ -257,5 +257,11 @@
   "reglasNinguna": "Regalo sorpresa para tu amigo secreto.\n\n• No le cuentes a nadie quién te tocó.\n• Escribe tu lista de deseos para que quien te regale tenga una pista.",
   "reglasCaricaturas": "¡Grupo de caricaturas! Nadie usa su nombre real.\n\n• Elige el personaje animado que más te guste y súbele su imagen.\n• Nadie sabe quién está detrás de cada personaje hasta el día del intercambio.\n• Escribe tu lista de deseos: es la única pista que tendrá quien te regale.",
   "reglasAlfombraRoja": "¡Noche de gala! Todos somos estrellas esta vez.\n\n• Elige a la celebridad que quieras ser y súbele su foto.\n• Nadie sabe qué estrella es cada quien hasta el día del intercambio.\n• Escribe tu lista de deseos: es la única pista que tendrá quien te regale.",
-  "reglasNavidad": "¡Navidad en el grupo! Nadie usa su nombre real.\n\n• Elige tu personaje navideño y súbele su imagen.\n• Nadie sabe quién es quién hasta el día del intercambio.\n• Escribe tu lista de deseos: es la única pista que tendrá quien te regale."
+  "reglasNavidad": "¡Navidad en el grupo! Nadie usa su nombre real.\n\n• Elige tu personaje navideño y súbele su imagen.\n• Nadie sabe quién es quién hasta el día del intercambio.\n• Escribe tu lista de deseos: es la única pista que tendrá quien te regale.",
+
+  "avisosTitulo": "¿Te avisamos?",
+  "avisosTexto": "Te diremos cuando tu grupo sortee, cuando escriban en el chat y si tu amigo secreto cambia de persona.",
+  "avisosSi": "Sí, avísame",
+  "avisosAhoraNo": "Ahora no",
+  "errorTokenInvalido": "No pudimos activar los avisos. Lo demás sigue funcionando."
 }

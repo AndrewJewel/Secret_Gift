@@ -795,4 +795,21 @@ class TextosEs extends Textos {
   @override
   String get reglasNavidad =>
       '¡Navidad en el grupo! Nadie usa su nombre real.\n\n• Elige tu personaje navideño y súbele su imagen.\n• Nadie sabe quién es quién hasta el día del intercambio.\n• Escribe tu lista de deseos: es la única pista que tendrá quien te regale.';
+
+  @override
+  String get avisosTitulo => '¿Te avisamos?';
+
+  @override
+  String get avisosTexto =>
+      'Te diremos cuando tu grupo sortee, cuando escriban en el chat y si tu amigo secreto cambia de persona.';
+
+  @override
+  String get avisosSi => 'Sí, avísame';
+
+  @override
+  String get avisosAhoraNo => 'Ahora no';
+
+  @override
+  String get errorTokenInvalido =>
+      'No pudimos activar los avisos. Lo demás sigue funcionando.';
 }

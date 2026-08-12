@@ -1505,6 +1505,36 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Christmas in the group! Nobody uses their real name.\n\n• Pick your Christmas character and upload their image.\n• Nobody knows who is who until the gift exchange.\n• Write your wish list: it is the only clue your gift giver will have.'**
   String get reglasNavidad;
+
+  /// Title of the screen that asks, in our own words, whether the person wants notifications. Shown before the browser's own permission prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Shall we let you know?'**
+  String get avisosTitulo;
+
+  /// Explains what the notifications are for, so the decision is informed.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll tell you when your group draws names, when someone writes in the chat, and if your secret friend changes.'**
+  String get avisosTexto;
+
+  /// Button that accepts. Only this one triggers the browser permission prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, let me know'**
+  String get avisosSi;
+
+  /// Button that declines for the moment. Deliberately not a permanent no: it must not touch the browser permission.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get avisosAhoraNo;
+
+  /// Shown if the server rejects the push token. Reassures that the rest of the app is unaffected.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t set up notifications. Nothing else is affected.'**
+  String get errorTokenInvalido;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {
