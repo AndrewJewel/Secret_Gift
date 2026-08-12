@@ -283,18 +283,38 @@ exports.cambiarPin = onCall(async (request) => {
  */
 exports.guardarTokenPush = onCall(async (request) => {
   const uid = uidDe(request);
-  const token = (request.data?.token || "").trim();
+  const token = request.data?.token;
+
+  // Antes de `.trim()`: un token que no sea texto (número, booleano,
+  // array) no tiene ese método y reventaría con un TypeError genérico en
+  // vez de la clave `token_invalido` que promete el contrato de errores.
+  if (typeof token !== "string") {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+  const tokenLimpio = token.trim();
 
   // Un token de FCM ronda los 150-200 caracteres. El tope alto es para no
   // dejar que nadie llene el documento con basura: la clave de un mapa de
   // Firestore no puede pasar de 1500 bytes, y llegar a ese límite haría
   // fallar la escritura entera de esa persona.
-  if (!token || token.length > 500) {
+  if (!tokenLimpio || tokenLimpio.length > 500) {
     throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
   }
 
+  // `set` con `merge` CREARÍA el documento si no existiera todavía —el
+  // mismo agujero que `vincularComoParticipante` ya tapa más abajo. El
+  // permiso de avisos se pide justo después de verificar el correo, que es
+  // precisamente la franja en la que puede no haberse llamado aún a
+  // `guardarPerfil`: sin esta guarda quedaría un `usuarios/{uid}` a
+  // medias, con solo `tokensPush` y sin `pinHash`, y `guardarPerfil` ya no
+  // podría completarlo después porque usa `create()`.
+  const snap = await usuarioRef(uid).get();
+  if (!snap.exists) {
+    throw new HttpsError("unauthenticated", "Tu cuenta no tiene perfil. Vuelve a entrar.", {clave: "perfil_incompleto"});
+  }
+
   await usuarioRef(uid).set({
-    tokensPush: {[token]: Date.now()},
+    tokensPush: {[tokenLimpio]: Date.now()},
   }, {merge: true});
 
   return {ok: true};
