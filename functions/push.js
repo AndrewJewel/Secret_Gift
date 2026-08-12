@@ -38,7 +38,7 @@ function tokensMuertos(respuesta, tokens) {
  * Así el mapa no crece para siempre y no hace falta ningún trabajo
  * programado.
  */
-async function avisar(uid, {titulo, cuerpo, datos}) {
+async function avisar(uid, {titulo, cuerpo, datos} = {}) {
   if (!uid) return;
   try {
     const db = getFirestore();
