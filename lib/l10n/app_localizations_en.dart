@@ -497,7 +497,7 @@ class TextosEn extends Textos {
 
   @override
   String reemplazarAviso(String nombre) {
-    return '$nombre\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to $nombre won\'t change, but will see a different name and wishes.\n· $nombre will lose access to the group.\n· What $nombre wrote in the chat stays, under their mask.';
+    return '$nombre\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to $nombre won\'t change, but will see a different name and wishes.\n· $nombre will lose their spot in the group.\n· What $nombre wrote in the chat stays, under their mask.';
   }
 
   @override
@@ -521,7 +521,7 @@ class TextosEn extends Textos {
 
   @override
   String get sorteoTexto =>
-      'Each member gets their secret friend. Drawing again replaces the previous assignments.';
+      'Each member gets their secret friend. The draw happens only once and can\'t be repeated.';
 
   @override
   String get sorteoConfirmar => 'Draw';

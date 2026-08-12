@@ -497,7 +497,7 @@ class TextosEs extends Textos {
 
   @override
   String reemplazarAviso(String nombre) {
-    return 'La plaza de $nombre pasará a otra persona, que seguirá regalando a quien le tocaba.\n\n· Quien le regala a $nombre NO cambia, pero verá otro nombre y otros deseos.\n· $nombre perderá el acceso al grupo.\n· Lo que $nombre escribió en el chat se queda, con su máscara.';
+    return 'La plaza de $nombre pasará a otra persona, que seguirá regalando a quien le tocaba.\n\n· Quien le regala a $nombre NO cambia, pero verá otro nombre y otros deseos.\n· $nombre perderá su plaza en el grupo.\n· Lo que $nombre escribió en el chat se queda, con su máscara.';
   }
 
   @override
@@ -521,7 +521,7 @@ class TextosEs extends Textos {
 
   @override
   String get sorteoTexto =>
-      'Se le asigna a cada participante su amigo secreto. Volver a sortear reemplaza las asignaciones anteriores.';
+      'Se le asigna a cada participante su amigo secreto. El sorteo se hace una sola vez: no se puede repetir.';
 
   @override
   String get sorteoConfirmar => 'Sortear';

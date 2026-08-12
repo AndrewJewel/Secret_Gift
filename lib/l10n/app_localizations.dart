@@ -969,7 +969,7 @@ abstract class Textos {
   /// Body of the replace-participant dialog: what changes and what does not
   ///
   /// In en, this message translates to:
-  /// **'{nombre}\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to {nombre} won\'t change, but will see a different name and wishes.\n· {nombre} will lose access to the group.\n· What {nombre} wrote in the chat stays, under their mask.'**
+  /// **'{nombre}\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to {nombre} won\'t change, but will see a different name and wishes.\n· {nombre} will lose their spot in the group.\n· What {nombre} wrote in the chat stays, under their mask.'**
   String reemplazarAviso(String nombre);
 
   /// Button that confirms generating the one-time replacement link
@@ -1005,7 +1005,7 @@ abstract class Textos {
   /// No description provided for @sorteoTexto.
   ///
   /// In en, this message translates to:
-  /// **'Each member gets their secret friend. Drawing again replaces the previous assignments.'**
+  /// **'Each member gets their secret friend. The draw happens only once and can\'t be repeated.'**
   String get sorteoTexto;
 
   /// No description provided for @sorteoConfirmar.
