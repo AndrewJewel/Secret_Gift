@@ -911,6 +911,31 @@ exports.canjearReemplazo = onCall(async (request) => {
 
   await batch.commit();
 
+  // El aviso va DESPUÉS del commit: antes sería avisar de un cambio que
+  // todavía puede no llegar a escribirse.
+  //
+  // `quienRegala` es un id de PLAZA, no un uid. El uid está en el privado
+  // de esa plaza, en `cuenta`. La guarda del `if` no sobra: una plaza de
+  // un grupo viejo puede no tener cuenta, y `avisar(undefined)` sería un
+  // viaje a Firestore para nada.
+  if (quienRegala) {
+    const privRegala = await participantePrivadoRef(codigo, quienRegala).get();
+    const uidRegala = privRegala.data()?.cuenta;
+    if (uidRegala) {
+      // El nombre no estaba a mano en esta función: la única lectura del
+      // grupo hasta aquí es la de `verReemplazo`, que no comparte alcance.
+      // El campo es `nombreGrupo` (no `nombre`), como en el resto del
+      // fichero; si viniera vacío, mejor un código legible que un «».
+      const grupoSnap = await grupoRef(codigo).get();
+      const nombreGrupo = grupoSnap.data()?.nombreGrupo || codigo;
+      await avisar(uidRegala, {
+        titulo: "Tu amigo secreto cambió",
+        cuerpo: `En «${nombreGrupo}». Ábrelo para ver quién es ahora.`,
+        datos: {codigo},
+      });
+    }
+  }
+
   // Se despega la cuenta anterior. Mismo trato que en `borrarParticipante`:
   // al organizador se le conserva la entrada con `participanteId: null`
   // —quitarle la clave entera le quitaría el rol y dejaría el grupo
@@ -1136,6 +1161,19 @@ exports.ejecutarSorteo = onCall(async (request) => {
   // participantes buscando un tieneAmigo:true.
   batch.update(grupoRef(codigo), {sorteado: true});
   await batch.commit();
+
+  // Los uids salen de `privSnaps`, que esta función ya leyó para sortear.
+  // Volver a leer los privados aquí serían N lecturas de más por sorteo.
+  //
+  // El nombre sale de `grupoSnap`, ya leído arriba; el campo es
+  // `nombreGrupo` (no `nombre`).
+  await avisarAVarios(
+      privSnaps.map((p) => p.data()?.cuenta),
+      {
+        titulo: "¡Ya hay amigo secreto!",
+        cuerpo: `En «${grupoSnap.data()?.nombreGrupo || codigo}». Entra a ver a quién te toca.`,
+        datos: {codigo},
+      });
   return {ok: true};
 });
 
@@ -1210,6 +1248,40 @@ exports.enviarMensaje = onCall(async (request) => {
     fecha: FieldValue.serverTimestamp(),
   });
   await participantePrivadoRef(codigo, participanteId).set({ultimoMensajeMs: ahora}, {merge: true});
+
+  // A todo el grupo MENOS a quien acaba de escribir. Avisarle de su propio
+  // mensaje sería absurdo, y en un grupo de veinte serían veinte avisos
+  // por mensaje en vez de diecinueve.
+  //
+  // Que no se avise a quien está MIRANDO este chat no se decide aquí: eso
+  // lo resuelve el cliente en primer plano (ver lib/push.dart). El
+  // servidor no sabe ni tiene por qué saber quién está mirando qué, y
+  // guardar presencia sería una escritura por persona y por segundo.
+  const participantes = await grupoRef(codigo).collection("participantes").get();
+  const privados = await Promise.all(
+      participantes.docs.map((d) => participantePrivadoRef(codigo, d.id).get()));
+  // OJO: el id de CADA doc de `privados` es literalmente "data" —
+  // `participantePrivadoRef` cuelga siempre de ese mismo nombre fijo, no
+  // del id del participante. Filtrar por `p.id !== participanteId` no
+  // quitaría nunca a quien escribió: se filtra por el índice, que sí se
+  // corresponde uno a uno con `participantes.docs`.
+  const otros = privados
+      .filter((p, i) => participantes.docs[i].id !== participanteId)
+      .map((p) => p.data()?.cuenta);
+  // El nombre no está a mano en esta función: no hay ninguna lectura del
+  // grupo hasta aquí. Campo `nombreGrupo` (no `nombre`), con el código
+  // como respaldo si viniera vacío.
+  const grupoSnap = await grupoRef(codigo).get();
+  const nombreGrupo = grupoSnap.data()?.nombreGrupo || codigo;
+  await avisarAVarios(otros, {
+    // Ni quién escribió ni qué dice: esto se lee desde la pantalla de
+    // bloqueo, con el teléfono en la mano de cualquiera. Decir el texto
+    // filtraría la conversación del grupo, y decir la máscara ayudaría a
+    // deducir quién es.
+    titulo: "Nuevo mensaje",
+    cuerpo: `En «${nombreGrupo}».`,
+    datos: {codigo},
+  });
 
   return {ok: true, mascara, repeticion};
 });
