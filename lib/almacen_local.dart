@@ -49,12 +49,29 @@ const _clavePreguntadoAvisos = 'preguntado_avisos';
 /// Se guarda AQUÍ y no en el servidor a propósito: el permiso es del
 /// navegador, no de la cuenta. La misma persona en el móvil y en el
 /// portátil tiene que poder decidir en cada sitio.
+///
+/// Protegida con `try/catch`, al revés que si fuera un detalle sin
+/// importancia: esta función se llama en pleno camino de entrada (justo
+/// antes de `irADondeToque`/`alEntrar`, ver `oferta_avisos.dart`), y este
+/// proyecto YA sufrió un almacén roto esta semana (ver el comentario largo
+/// de `pantalla_verificar_correo.dart`). Ante la duda se responde `true`
+/// —como si ya se hubiera preguntado—: preguntar por los avisos no vale
+/// dejar a nadie sin poder entrar a la app.
 Future<bool> yaSePreguntoPorAvisos() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getBool(_clavePreguntadoAvisos) ?? false;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_clavePreguntadoAvisos) ?? false;
+  } catch (_) {
+    return true;
+  }
 }
 
 Future<void> marcarPreguntadoPorAvisos() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(_clavePreguntadoAvisos, true);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_clavePreguntadoAvisos, true);
+  } catch (_) {
+    // Sin almacenamiento no se puede recordar la marca, pero eso no es
+    // motivo para tumbar el camino de entrada.
+  }
 }

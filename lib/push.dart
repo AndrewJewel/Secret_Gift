@@ -1,5 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
 import 'funciones.dart';
 
@@ -22,6 +22,13 @@ String? _grupoALaVista;
 void mirandoGrupo(String? codigo) {
   _grupoALaVista = codigo;
 }
+
+/// SOLO para pruebas: expone `_grupoALaVista` para poder comprobar, sin
+/// necesitar FCM de verdad, que las pantallas que declaran "te estoy
+/// mirando" (ver el mixin `ConGrupoALaVista` en `grupo_a_la_vista.dart`) lo
+/// hacen y lo deshacen en el momento correcto.
+@visibleForTesting
+String? get grupoALaVistaParaPruebas => _grupoALaVista;
 
 /// Pide el permiso al navegador y registra el token.
 ///
@@ -89,9 +96,30 @@ void alTocarAviso(void Function(String codigo) abrir) {
     // pantallas ya se actualizan solas.
   });
 
-  // Tocar el aviso con la app en segundo plano.
+  // El mismo toque puede, según la plataforma, contarlo tanto
+  // `getInitialMessage` como `onMessageOpenedApp` de abajo. Se recuerda el
+  // último código ya abierto para no disparar `abrir` dos veces con el
+  // mismo aviso.
+  String? ultimoAbierto;
+  void abrirUnaVez(Object? codigo) {
+    if (codigo is! String || codigo == ultimoAbierto) return;
+    ultimoAbierto = codigo;
+    abrir(codigo);
+  }
+
+  // Tocar el aviso con la app en segundo plano (el proceso sigue vivo).
   FirebaseMessaging.onMessageOpenedApp.listen((mensaje) {
-    final codigo = mensaje.data['codigo'];
-    if (codigo != null) abrir(codigo);
+    abrirUnaVez(mensaje.data['codigo']);
+  });
+
+  // Tocar el aviso con la app completamente cerrada, sin proceso vivo: el
+  // arranque es en frío y `onMessageOpenedApp` no dispara para ese primer
+  // mensaje —ese stream solo ve toques mientras la app ya estaba
+  // corriendo—; FCM entrega el mensaje que despertó el proceso por aquí.
+  // Es, además, el caso más frecuente: un aviso suele llegar minutos u
+  // horas después, con la app cerrada, así que sin esto el enganche de
+  // tocar un aviso no serviría para nada en la práctica.
+  FirebaseMessaging.instance.getInitialMessage().then((mensaje) {
+    if (mensaje != null) abrirUnaVez(mensaje.data['codigo']);
   });
 }
