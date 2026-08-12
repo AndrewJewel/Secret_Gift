@@ -66,6 +66,14 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Ya llegaba de forma transitiva vía `shared_preferences`, pero se
+  # declara directa porque `test/almacen_local_test.dart` la importa por
+  # su cuenta: sustituye `SharedPreferencesStorePlatform.instance` por un
+  # fake que revienta al leer, para poder probar de verdad el `try/catch`
+  # contra un almacén roto (con `setMockInitialValues` no se puede: ese
+  # nunca lanza).
+  shared_preferences_platform_interface: ^2.4.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

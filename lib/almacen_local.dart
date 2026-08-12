@@ -54,15 +54,23 @@ const _clavePreguntadoAvisos = 'preguntado_avisos';
 /// importancia: esta función se llama en pleno camino de entrada (justo
 /// antes de `irADondeToque`/`alEntrar`, ver `oferta_avisos.dart`), y este
 /// proyecto YA sufrió un almacén roto esta semana (ver el comentario largo
-/// de `pantalla_verificar_correo.dart`). Ante la duda se responde `true`
-/// —como si ya se hubiera preguntado—: preguntar por los avisos no vale
-/// dejar a nadie sin poder entrar a la app.
+/// de `pantalla_verificar_correo.dart`).
+///
+/// Ante la duda se responde `false` —"todavía no se preguntó"— y NO
+/// `true`. Son dos garantías distintas y no hay que mezclarlas: no
+/// bloquear la entrada ya lo da el propio `try/catch`, con cualquiera de
+/// los dos valores. Responder `true` apagaría los avisos EN SILENCIO para
+/// siempre en ese dispositivo —la pantalla de permiso no volvería a
+/// enseñarse jamás—, mientras que `false` como mucho pregunta de más, y
+/// deja abierta una oportunidad real de que funcione: pedir el permiso y
+/// guardar el token (`pedirPermisoYRegistrar`, en `push.dart`) no
+/// dependen de `SharedPreferences`.
 Future<bool> yaSePreguntoPorAvisos() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_clavePreguntadoAvisos) ?? false;
   } catch (_) {
-    return true;
+    return false;
   }
 }
 

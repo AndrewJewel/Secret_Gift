@@ -78,6 +78,27 @@ Future<bool> pedirPermisoYRegistrar() async {
   }
 }
 
+/// Decide si hay que abrir un aviso, a partir de su identificador de
+/// mensaje y del último que ya se abrió. Función pura, sin nada de FCM, a
+/// propósito: así se puede probar el deduplicado con un test normal, sin
+/// tener que simular nada de Firebase.
+///
+/// El identificador es el `messageId` que pone FCM a CADA envío —no el
+/// código del grupo—. Los tres avisos de esta app (reemplazo, sorteo,
+/// mensajes de chat) comparten `codigo`: deduplicar por código
+/// descartaría en silencio un aviso distinto y legítimo del mismo grupo
+/// que llegara después. `messageId` sí identifica un envío concreto, así
+/// que solo descarta el caso que de verdad hay que descartar: que
+/// `getInitialMessage()` y `onMessageOpenedApp` informen los dos del
+/// MISMO mensaje al arrancar en frío.
+///
+/// Sin identificador —FCM no lo garantiza siempre— se abre igual: es
+/// preferible abrir de más que dejar un aviso legítimo sin abrir nunca.
+bool debeAbrirseElAviso(String? idDelMensaje, String? ultimoIdAbierto) {
+  if (idDelMensaje == null) return true;
+  return idDelMensaje != ultimoIdAbierto;
+}
+
 /// Qué hacer cuando alguien toca un aviso, y qué hacer con los que llegan
 /// con la app abierta.
 void alTocarAviso(void Function(String codigo) abrir) {
@@ -98,19 +119,20 @@ void alTocarAviso(void Function(String codigo) abrir) {
 
   // El mismo toque puede, según la plataforma, contarlo tanto
   // `getInitialMessage` como `onMessageOpenedApp` de abajo. Se recuerda el
-  // último código ya abierto para no disparar `abrir` dos veces con el
-  // mismo aviso.
-  String? ultimoAbierto;
-  void abrirUnaVez(Object? codigo) {
-    if (codigo is! String || codigo == ultimoAbierto) return;
-    ultimoAbierto = codigo;
+  // `messageId` del último aviso ya abierto —ver `debeAbrirseElAviso`— y
+  // no el código del grupo: dos avisos DISTINTOS del mismo grupo tienen
+  // que abrirse los dos.
+  String? ultimoIdAbierto;
+  void abrirSiCorresponde(RemoteMessage mensaje) {
+    final codigo = mensaje.data['codigo'];
+    if (codigo is! String) return;
+    if (!debeAbrirseElAviso(mensaje.messageId, ultimoIdAbierto)) return;
+    ultimoIdAbierto = mensaje.messageId;
     abrir(codigo);
   }
 
   // Tocar el aviso con la app en segundo plano (el proceso sigue vivo).
-  FirebaseMessaging.onMessageOpenedApp.listen((mensaje) {
-    abrirUnaVez(mensaje.data['codigo']);
-  });
+  FirebaseMessaging.onMessageOpenedApp.listen(abrirSiCorresponde);
 
   // Tocar el aviso con la app completamente cerrada, sin proceso vivo: el
   // arranque es en frío y `onMessageOpenedApp` no dispara para ese primer
@@ -120,6 +142,6 @@ void alTocarAviso(void Function(String codigo) abrir) {
   // horas después, con la app cerrada, así que sin esto el enganche de
   // tocar un aviso no serviría para nada en la práctica.
   FirebaseMessaging.instance.getInitialMessage().then((mensaje) {
-    if (mensaje != null) abrirUnaVez(mensaje.data['codigo']);
+    if (mensaje != null) abrirSiCorresponde(mensaje);
   });
 }
