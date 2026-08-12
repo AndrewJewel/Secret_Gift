@@ -41,3 +41,20 @@ Future<GrupoGuardado?> leerUltimoGrupo() async {
     nombreGrupo: prefs.getString(_claveNombreGrupo) ?? '',
   );
 }
+
+const _clavePreguntadoAvisos = 'preguntado_avisos';
+
+/// Si ya se le ofrecieron los avisos a quien usa este dispositivo.
+///
+/// Se guarda AQUÍ y no en el servidor a propósito: el permiso es del
+/// navegador, no de la cuenta. La misma persona en el móvil y en el
+/// portátil tiene que poder decidir en cada sitio.
+Future<bool> yaSePreguntoPorAvisos() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(_clavePreguntadoAvisos) ?? false;
+}
+
+Future<void> marcarPreguntadoPorAvisos() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_clavePreguntadoAvisos, true);
+}
