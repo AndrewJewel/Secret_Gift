@@ -687,9 +687,10 @@ async function seguir(emailOrganizador, emailParticipante, emailTercero) {
   // persona" antes del sorteo, y canjearReemplazo tiene que haberlo borrado
   // del bucket al ponerle uno nuevo a la plaza.
   //
-  // Con `?nocache=`, igual que con borrarParticipante más arriba: la URL ya
-  // se descargó una vez en esta prueba, así que sin el parámetro la caché
-  // de borde seguiría sirviendo un 200 aunque el borrado hubiera ido bien.
+  // Con `?nocache=`: esta URL nunca se descargó en la prueba —solo se leyó
+  // del documento de Firestore—, así que aquí no hay caché de borde que
+  // esquivar. Se deja el parámetro igual, por si algo cambia de orden más
+  // adelante y sí llega a descargarse antes de esta comprobación.
   // Se comprueba que YA NO SE DESCARGA, no un código concreto — este bucket
   // responde 403, no 404, a lo que no existe, para no revelar contenido.
   const avatarViejoTrasCanje = await fetch(`${urlAvatarOtraPersona}?nocache=${Date.now()}`);
