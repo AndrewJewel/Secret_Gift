@@ -513,7 +513,10 @@ exports.guardarTokenPush = onCall(async (request) => {
 cd functions && node -e "const f=require('./index.js'); console.log(typeof f.guardarTokenPush)"
 ```
 
-Esperado: `object` (es un objeto de CloudFunction, no una función suelta).
+Esperado: `function`. Comprobado el 2026-08-12 contra las funciones que
+ya existen (`cambiarPin`, `guardarPerfil`, `misGrupos`): todas dan
+`function`. Una versión anterior de este plan decía `object`, escrito de
+memoria y sin comprobarlo.
 
 Este paso no es ceremonia: durante la migración a `firebase-admin` v13 el
 módulo entero dejó de cargar por un import mal puesto, y ninguna otra
