@@ -256,9 +256,19 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   /// Un token gastado o anulado no debe dejar la pantalla inservible: se
   /// avisa y se sigue con el alta normal, que para un grupo ya sorteado el
   /// servidor rechazará con su propio mensaje.
+  ///
+  /// Sale sin hacer nada si ya tienes plaza en el grupo. La URL de la
+  /// pestaña nunca cambia —no hay navegación de por medio, solo
+  /// `setState`—, así que `?codigo=&reemplazo=` se sigue capturando en
+  /// CADA recarga de la página, también para quien ya canjeó y está
+  /// dentro. Sin esta salida, quien acaba de ocupar la plaza recargaría y
+  /// vería «Este enlace ya no vale» sobre el mismo token que él mismo
+  /// gastó con éxito: una falsa alarma repetida, justo a la persona a la
+  /// que la función sirvió.
   Future<void> _mirarSiHayReemplazo() async {
     final token = widget.reemplazo;
     if (token == null) return;
+    if (_vinculo?.estoyDentro == true) return;
     try {
       final r = await llamarFuncion('verReemplazo', {
         'codigo': widget.codigo,
@@ -444,6 +454,16 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
     try {
       await llamarFuncion('ejecutarSorteo', {'codigo': widget.codigo});
+      if (!mounted) return;
+      // Sin esto, el icono de reemplazar —condicionado a `_vinculo?.sorteado`—
+      // no aparece hasta salir a Mis grupos y volver a entrar: `_vinculo` solo
+      // se rellena desde `misGrupos` al empujar esta pantalla, y ejecutar el
+      // sorteo no vuelve a pasar por ahí. Se conservan `rol` y
+      // `participanteId`, que no cambian con el sorteo.
+      setState(() => _vinculo = MiVinculo(
+          rol: _vinculo!.rol,
+          participanteId: _vinculo!.participanteId,
+          sorteado: true));
       _avisar('🎲 ${t.sorteoListo}');
     } catch (e) {
       _avisarError(e);
