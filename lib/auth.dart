@@ -55,8 +55,34 @@ Stream<User?> get cambiosDeUsuario => _auth.userChanges();
 /// cabecera `Authorization: Bearer`. Devuelve null si no hay sesión.
 ///
 /// No se cachea: el SDK ya lo hace y lo refresca solo cuando caduca.
+///
+/// Mismo motivo que el reintento de `reload()` en `correoVerificado()`
+/// (acceso_cuenta.dart): Firebase Auth guarda la sesión en IndexedDB, y
+/// los navegadores móviles la cierran al mandar la pestaña a segundo
+/// plano — justo lo que pasa al salir al buzón de correo y volver.
+/// getIdToken() es de solo lectura e idempotente, así que un único
+/// reintento es seguro. A diferencia de reload(), esto se llama en CADA
+/// petición al servidor, no solo al verificar: la espera corta vive
+/// dentro del catch, así que el camino feliz (el normal, primer intento
+/// bien) no paga ninguna espera ni trabajo de más.
+///
+/// Si el segundo intento también falla, se antepone la marca "token: " al
+/// mensaje del error. Sin ella, este fallo y el de `correoVerificado()`
+/// llegan con el mismo código y clave genéricos («unknown» /
+/// «auth_desconocido»), y no habría forma de distinguirlos leyendo lo que
+/// alguien transcribe desde el móvil.
 Future<String?> tokenActual() async {
   final u = _auth.currentUser;
   if (u == null) return null;
-  return u.getIdToken();
+  try {
+    return await u.getIdToken();
+  } catch (_) {
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    try {
+      return await u.getIdToken();
+    } on FirebaseAuthException catch (e) {
+      final err = comoFuncionError(e);
+      throw FuncionError(err.codigo, err.clave, 'token: ${err.mensaje}');
+    }
+  }
 }

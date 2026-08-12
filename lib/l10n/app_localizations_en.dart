@@ -196,6 +196,14 @@ class TextosEn extends Textos {
       'Your name and surname can\'t be longer than 40 characters each.';
 
   @override
+  String get errorReemplazoInvalido =>
+      'This link is no longer valid. Ask the organiser for a new one.';
+
+  @override
+  String get errorGrupoSinSortear =>
+      'This group hasn\'t drawn yet. Remove this person and let someone else sign up.';
+
+  @override
   String get crearTitulo => 'Create group';
 
   @override
@@ -480,6 +488,32 @@ class TextosEn extends Textos {
   String get organizadorSacarBoton => 'Remove';
 
   @override
+  String get reemplazarTooltip => 'Replace this person';
+
+  @override
+  String reemplazarTitulo(String nombre) {
+    return 'Replace $nombre';
+  }
+
+  @override
+  String reemplazarAviso(String nombre) {
+    return '$nombre\'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to $nombre won\'t change, but will see a different name and wishes.\n· $nombre will lose their spot in the group.\n· What $nombre wrote in the chat stays, under their mask.';
+  }
+
+  @override
+  String get reemplazarGenerar => 'Create link';
+
+  @override
+  String reemplazarCompartir(String nombre, String enlace) {
+    return 'You\'re taking $nombre\'s place in our Secret Santa. Open this link: $enlace';
+  }
+
+  @override
+  String reemplazarOcupasPlaza(String nombre) {
+    return 'You\'re taking $nombre\'s place. Keep the name or change it to yours.';
+  }
+
+  @override
   String get sorteoBoton => 'DRAW NAMES';
 
   @override
@@ -487,7 +521,7 @@ class TextosEn extends Textos {
 
   @override
   String get sorteoTexto =>
-      'Each member gets their secret friend. Drawing again replaces the previous assignments.';
+      'Each member gets their secret friend. The draw happens only once and can\'t be repeated.';
 
   @override
   String get sorteoConfirmar => 'Draw';

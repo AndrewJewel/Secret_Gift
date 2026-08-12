@@ -58,6 +58,15 @@ class PantallaRegistro extends StatefulWidget {
   /// lista, y el portero en `resultado.grupos`.
   final MiVinculo? vinculo;
 
+  /// Token del enlace de reemplazo, si se llegó por uno. Null en el alta
+  /// normal.
+  ///
+  /// Se recibe por constructor y no se lee del disco por el mismo motivo
+  /// que `vinculo`: quien navega aquí ya lo tiene. Y además hace falta —
+  /// el portero borra la invitación ANTES de montar esta pantalla, así que
+  /// para cuando `initState` corriera ya no habría nada que leer.
+  final String? reemplazo;
+
   const PantallaRegistro({
     super.key,
     required this.codigo,
@@ -65,6 +74,7 @@ class PantallaRegistro extends StatefulWidget {
     required this.valorMinimo,
     this.nombreGrupo = '',
     this.vinculo,
+    this.reemplazo,
   });
 
   @override
@@ -137,9 +147,21 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   /// el resto del formulario en una sola llamada.
   String? _avatarBase64;
 
+  /// Token del enlace de reemplazo que trajo a esta pantalla, o null en un
+  /// alta normal. Si no es null, el botón del formulario canjea la plaza en
+  /// vez de crear una nueva.
+  String? _tokenReemplazo;
+
+  /// Nombre de la plaza que se va a ocupar, precargado en el campo del
+  /// nombre. Es lo que hace que un grupo temático funcione sin un modo
+  /// aparte: quedarse con el personaje es no tocar nada, y en un grupo
+  /// normal se escribe encima.
+  String _nombrePlaza = '';
+
   @override
   void initState() {
     super.initState();
+    _mirarSiHayReemplazo();
     _suscripcionGrupo = _grupoRef.snapshots().listen((snap) {
       if (!mounted) return;
       // El grupo dejó de existir: su organizador lo eliminó mientras
@@ -227,6 +249,46 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   // --- Registro de participantes --------------------------------------
 
+  /// Si se llegó por un enlace de reemplazo (el token viaja por
+  /// constructor, ver `widget.reemplazo`), se consulta al servidor qué
+  /// plaza es y se precarga su nombre en el formulario.
+  ///
+  /// Un token gastado o anulado no debe dejar la pantalla inservible: se
+  /// avisa y se sigue con el alta normal, que para un grupo ya sorteado el
+  /// servidor rechazará con su propio mensaje.
+  ///
+  /// Sale sin hacer nada si ya tienes plaza en el grupo. La URL de la
+  /// pestaña nunca cambia —no hay navegación de por medio, solo
+  /// `setState`—, así que `?codigo=&reemplazo=` se sigue capturando en
+  /// CADA recarga de la página, también para quien ya canjeó y está
+  /// dentro. Sin esta salida, quien acaba de ocupar la plaza recargaría y
+  /// vería «Este enlace ya no vale» sobre el mismo token que él mismo
+  /// gastó con éxito: una falsa alarma repetida, justo a la persona a la
+  /// que la función sirvió.
+  Future<void> _mirarSiHayReemplazo() async {
+    final token = widget.reemplazo;
+    if (token == null) return;
+    if (_vinculo?.estoyDentro == true) return;
+    try {
+      final r = await llamarFuncion('verReemplazo', {
+        'codigo': widget.codigo,
+        'token': token,
+      });
+      if (!mounted) return;
+      setState(() {
+        _tokenReemplazo = token;
+        _nombrePlaza = r['nombre'] as String? ?? '';
+        // El nombre de la plaza, precargado. En un grupo temático quedarse
+        // con el personaje es no tocar nada; en uno normal se escribe
+        // encima. Sin modos ni banderas.
+        _nombreController.text = _nombrePlaza;
+      });
+    } on FuncionError catch (e) {
+      if (!mounted) return;
+      _avisar('⚠️ ${e.texto(Textos.of(context))}');
+    }
+  }
+
   Future<void> _agregar() async {
     final t = Textos.of(context);
     final nombreLimpio = _nombreController.text.trim();
@@ -238,12 +300,20 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }
 
     try {
-      final creado = await llamarFuncion('agregarParticipante', {
-        'codigo': widget.codigo,
-        'nombre': nombreLimpio,
-        'deseos': deseosLimpios,
-        if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
-      });
+      final creado = _tokenReemplazo != null
+          ? await llamarFuncion('canjearReemplazo', {
+              'codigo': widget.codigo,
+              'token': _tokenReemplazo,
+              'nombre': nombreLimpio,
+              'deseos': deseosLimpios,
+              if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
+            })
+          : await llamarFuncion('agregarParticipante', {
+              'codigo': widget.codigo,
+              'nombre': nombreLimpio,
+              'deseos': deseosLimpios,
+              if (_avatarBase64 != null) 'avatarBase64': _avatarBase64,
+            });
       _nombreController.clear();
       _deseosController.clear();
       if (!mounted) return;
@@ -384,6 +454,16 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
     try {
       await llamarFuncion('ejecutarSorteo', {'codigo': widget.codigo});
+      if (!mounted) return;
+      // Sin esto, el icono de reemplazar —condicionado a `_vinculo?.sorteado`—
+      // no aparece hasta salir a Mis grupos y volver a entrar: `_vinculo` solo
+      // se rellena desde `misGrupos` al empujar esta pantalla, y ejecutar el
+      // sorteo no vuelve a pasar por ahí. Se conservan `rol` y
+      // `participanteId`, que no cambian con el sorteo.
+      setState(() => _vinculo = MiVinculo(
+          rol: _vinculo!.rol,
+          participanteId: _vinculo!.participanteId,
+          sorteado: true));
       _avisar('🎲 ${t.sorteoListo}');
     } catch (e) {
       _avisarError(e);
@@ -489,6 +569,44 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
         'codigo': widget.codigo,
         'participanteId': participanteId,
       });
+    } catch (e) {
+      _avisarError(e);
+    }
+  }
+
+  /// Genera un enlace de un solo uso para que otra persona ocupe esa plaza.
+  ///
+  /// El diálogo dice lo que va a pasar en concreto, no un "¿estás seguro?":
+  /// lo que se pierde y lo que NO cambia son cosas distintas y quien decide
+  /// necesita las dos.
+  Future<void> _reemplazar(String id, String nombre) async {
+    final t = Textos.of(context);
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(t.reemplazarTitulo(nombre)),
+        content: Text(t.reemplazarAviso(nombre)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(t.reemplazarGenerar),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+
+    try {
+      final r = await llamarFuncion('generarReemplazo', {
+        'codigo': widget.codigo,
+        'participanteId': id,
+      });
+      final enlace =
+          'https://secretgift.app/?codigo=${widget.codigo}&reemplazo=${r['token']}';
+      if (!mounted) return;
+      await SharePlus.instance
+          .share(ShareParams(text: t.reemplazarCompartir(nombre, enlace)));
     } catch (e) {
       _avisarError(e);
     }
@@ -795,6 +913,18 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
             onQuitar: () => setState(() => _avatarBase64 = null),
           ),
           const SizedBox(height: 12),
+          if (_tokenReemplazo != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                t.reemplazarOcupasPlaza(_nombrePlaza),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: _color.shade900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13),
+              ),
+            ),
           GlassTextField(
             color: _color,
             controller: _nombreController,
@@ -896,6 +1026,17 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                           tooltip: t.organizadorCorregirNombre,
                           onPressed: () => _editarNombre(id, nombre),
                         ),
+                        // Solo tras el sorteo: antes, la salida correcta es
+                        // sacar a esa persona y que se apunte otra, que ya
+                        // funciona. Reemplazar existe para conservar un
+                        // sitio en la cadena, y antes del sorteo no hay
+                        // cadena que conservar.
+                        if (_vinculo?.sorteado ?? false)
+                          IconButton(
+                            icon: Icon(Icons.swap_horiz, color: _color.shade700),
+                            tooltip: t.reemplazarTooltip,
+                            onPressed: () => _reemplazar(id, nombre),
+                          ),
                         IconButton(
                           icon: Icon(Icons.person_remove_outlined,
                               color: Colors.red.shade700),

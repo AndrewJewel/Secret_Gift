@@ -59,6 +59,19 @@ void main() {
     expect(prefs.getStringList('invitaciones_consumidas'), ['RJV2-HN8R']);
   });
 
+  test('guarda y recupera el token de reemplazo junto al resto', () async {
+    await guardarInvitacion('RJV2-HN8R', 'Navidad Familia', 'token-abc123');
+    final i = await leerInvitacion();
+    expect(i!.codigo, 'RJV2-HN8R');
+    expect(i.reemplazo, 'token-abc123');
+  });
+
+  test('sin token de reemplazo, la invitación lo recupera como null', () async {
+    await guardarInvitacion('RJV2-HN8R', 'Navidad Familia');
+    final i = await leerInvitacion();
+    expect(i!.reemplazo, isNull);
+  });
+
   test('la marca de consumida sobrevive a borrar la invitación', () async {
     // Es justo el caso que importa: en web la URL con ?codigo= sigue ahí
     // tras recargar, así que borrar la invitación no basta para que esa

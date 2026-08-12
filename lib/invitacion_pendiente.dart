@@ -14,18 +14,34 @@ class InvitacionPendiente {
   /// Puede venir vacío: hay grupos sin nombre.
   final String nombreGrupo;
 
-  const InvitacionPendiente(this.codigo, this.nombreGrupo);
+  /// Token del enlace de reemplazo, si la invitación venía de uno. Null en
+  /// una invitación normal.
+  ///
+  /// Se persiste con el resto porque quien recibe un enlace de reemplazo
+  /// puede no tener cuenta: entre pinchar y llegar al grupo hay un registro
+  /// entero y un viaje al buzón. Sin guardarlo, ese token se perdería por
+  /// el camino y el enlace quedaría gastado sin que nadie ocupara la plaza.
+  final String? reemplazo;
+
+  const InvitacionPendiente(this.codigo, this.nombreGrupo, {this.reemplazo});
 }
 
 const _claveCodigo = 'invitacion_codigo';
 const _claveNombre = 'invitacion_nombre';
 const _claveConsumidas = 'invitaciones_consumidas';
+const _claveReemplazo = 'invitacion_reemplazo';
 
-Future<void> guardarInvitacion(String codigo, String nombreGrupo) async {
+Future<void> guardarInvitacion(String codigo, String nombreGrupo,
+    [String? reemplazo]) async {
   try {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_claveCodigo, codigo);
     await prefs.setString(_claveNombre, nombreGrupo);
+    if (reemplazo == null) {
+      await prefs.remove(_claveReemplazo);
+    } else {
+      await prefs.setString(_claveReemplazo, reemplazo);
+    }
   } catch (_) {
     // Sin almacenamiento la invitación se pierde, pero la app sigue viva.
   }
@@ -36,7 +52,8 @@ Future<InvitacionPendiente?> leerInvitacion() async {
     final prefs = await SharedPreferences.getInstance();
     final codigo = prefs.getString(_claveCodigo);
     if (codigo == null) return null;
-    return InvitacionPendiente(codigo, prefs.getString(_claveNombre) ?? '');
+    return InvitacionPendiente(codigo, prefs.getString(_claveNombre) ?? '',
+        reemplazo: prefs.getString(_claveReemplazo));
   } catch (_) {
     return null;
   }
@@ -49,6 +66,7 @@ Future<void> borrarInvitacion() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_claveCodigo);
     await prefs.remove(_claveNombre);
+    await prefs.remove(_claveReemplazo);
   } catch (_) {
     // Nada que hacer.
   }

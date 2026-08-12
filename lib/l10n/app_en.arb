@@ -78,6 +78,10 @@
   "@errorDominioNoAutorizado": {"description": "Firebase Auth rejected the request because the site's domain is not in the project's authorized domains list — a project configuration problem, not something this person did"},
   "errorNombreLargo": "Your name and surname can't be longer than 40 characters each.",
   "@errorNombreLargo": {"description": "Name or surname over the server limit"},
+  "errorReemplazoInvalido": "This link is no longer valid. Ask the organiser for a new one.",
+  "@errorReemplazoInvalido": {"description": "The replacement token was already used, or the organiser generated a new one"},
+  "errorGrupoSinSortear": "This group hasn't drawn yet. Remove this person and let someone else sign up.",
+  "@errorGrupoSinSortear": {"description": "Tried to generate a replacement link before the draw, where removing works"},
 
   "crearTitulo": "Create group",
   "crearOcasion": "Occasion",
@@ -199,9 +203,43 @@
   "organizadorSacarTexto": "They will be deleted along with their wish list and their assignment.",
   "organizadorSacarBoton": "Remove",
 
+  "reemplazarTooltip": "Replace this person",
+  "@reemplazarTooltip": {"description": "Tooltip on the button that lets the organiser generate a replacement link, shown only after the draw"},
+  "reemplazarTitulo": "Replace {nombre}",
+  "@reemplazarTitulo": {
+    "description": "Title of the dialog that warns what replacing a participant will and won't change",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "reemplazarAviso": "{nombre}'s place will pass to someone else, who will keep giving to the same person.\n\n· Whoever gives to {nombre} won't change, but will see a different name and wishes.\n· {nombre} will lose their spot in the group.\n· What {nombre} wrote in the chat stays, under their mask.",
+  "@reemplazarAviso": {
+    "description": "Body of the replace-participant dialog: what changes and what does not",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "reemplazarGenerar": "Create link",
+  "@reemplazarGenerar": {"description": "Button that confirms generating the one-time replacement link"},
+  "reemplazarCompartir": "You're taking {nombre}'s place in our Secret Santa. Open this link: {enlace}",
+  "@reemplazarCompartir": {
+    "description": "Text shared (e.g. via WhatsApp) with the replacement link",
+    "placeholders": {
+      "nombre": { "type": "String" },
+      "enlace": { "type": "String" }
+    }
+  },
+  "reemplazarOcupasPlaza": "You're taking {nombre}'s place. Keep the name or change it to yours.",
+  "@reemplazarOcupasPlaza": {
+    "description": "Shown above the name field on the sign-up form when the link is a replacement one: tells whoever arrives they're taking someone's spot, not joining fresh",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+
   "sorteoBoton": "DRAW NAMES",
   "sorteoTitulo": "Draw names",
-  "sorteoTexto": "Each member gets their secret friend. Drawing again replaces the previous assignments.",
+  "sorteoTexto": "Each member gets their secret friend. The draw happens only once and can't be repeated.",
   "sorteoConfirmar": "Draw",
   "sorteoListo": "Names drawn!",
 

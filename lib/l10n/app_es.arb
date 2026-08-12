@@ -59,6 +59,8 @@
   "errorAuthDesconocido": "Algo salió mal al entrar. Vuelve a intentarlo. (código: {codigo} — {mensaje})",
   "errorDominioNoAutorizado": "Esta app no está bien configurada para este sitio. Avisa a quien la administra.",
   "errorNombreLargo": "El nombre y el apellido no pueden pasar de 40 caracteres cada uno.",
+  "errorReemplazoInvalido": "Este enlace ya no vale. Pídele otro al organizador.",
+  "errorGrupoSinSortear": "Este grupo todavía no ha sorteado. Saca a esta persona y que se apunte otra.",
 
   "crearTitulo": "Crear grupo",
   "crearOcasion": "Ocasión",
@@ -154,9 +156,16 @@
   "organizadorSacarTexto": "Se borra con su lista de deseos y su asignación.",
   "organizadorSacarBoton": "Sacar",
 
+  "reemplazarTooltip": "Reemplazar a esta persona",
+  "reemplazarTitulo": "Reemplazar a {nombre}",
+  "reemplazarAviso": "La plaza de {nombre} pasará a otra persona, que seguirá regalando a quien le tocaba.\n\n· Quien le regala a {nombre} NO cambia, pero verá otro nombre y otros deseos.\n· {nombre} perderá su plaza en el grupo.\n· Lo que {nombre} escribió en el chat se queda, con su máscara.",
+  "reemplazarGenerar": "Generar enlace",
+  "reemplazarCompartir": "Vas a ocupar el lugar de {nombre} en nuestro amigo secreto. Abre este enlace: {enlace}",
+  "reemplazarOcupasPlaza": "Vas a ocupar el lugar de {nombre}. Deja el nombre o cámbialo por el tuyo.",
+
   "sorteoBoton": "HACER EL SORTEO",
   "sorteoTitulo": "Hacer el sorteo",
-  "sorteoTexto": "Se le asigna a cada participante su amigo secreto. Volver a sortear reemplaza las asignaciones anteriores.",
+  "sorteoTexto": "Se le asigna a cada participante su amigo secreto. El sorteo se hace una sola vez: no se puede repetir.",
   "sorteoConfirmar": "Sortear",
   "sorteoListo": "¡Sorteo realizado!",
 

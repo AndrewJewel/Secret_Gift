@@ -48,6 +48,11 @@ dependencies:
   # Avatares. Redimensiona en el propio dispositivo antes de entregarnos
   # la imagen (maxWidth/maxHeight), así nunca sube una foto de 8MB.
   image_picker: ^1.2.0
+  # Solo se usa en web (recarga_pagina_web.dart), para sessionStorage y
+  # recargar la página. Ya llegaba de forma transitiva vía otros paquetes,
+  # pero se declara directa porque el código de la app la importa por su
+  # cuenta.
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:

@@ -195,6 +195,14 @@ class TextosEs extends Textos {
       'El nombre y el apellido no pueden pasar de 40 caracteres cada uno.';
 
   @override
+  String get errorReemplazoInvalido =>
+      'Este enlace ya no vale. Pídele otro al organizador.';
+
+  @override
+  String get errorGrupoSinSortear =>
+      'Este grupo todavía no ha sorteado. Saca a esta persona y que se apunte otra.';
+
+  @override
   String get crearTitulo => 'Crear grupo';
 
   @override
@@ -480,6 +488,32 @@ class TextosEs extends Textos {
   String get organizadorSacarBoton => 'Sacar';
 
   @override
+  String get reemplazarTooltip => 'Reemplazar a esta persona';
+
+  @override
+  String reemplazarTitulo(String nombre) {
+    return 'Reemplazar a $nombre';
+  }
+
+  @override
+  String reemplazarAviso(String nombre) {
+    return 'La plaza de $nombre pasará a otra persona, que seguirá regalando a quien le tocaba.\n\n· Quien le regala a $nombre NO cambia, pero verá otro nombre y otros deseos.\n· $nombre perderá su plaza en el grupo.\n· Lo que $nombre escribió en el chat se queda, con su máscara.';
+  }
+
+  @override
+  String get reemplazarGenerar => 'Generar enlace';
+
+  @override
+  String reemplazarCompartir(String nombre, String enlace) {
+    return 'Vas a ocupar el lugar de $nombre en nuestro amigo secreto. Abre este enlace: $enlace';
+  }
+
+  @override
+  String reemplazarOcupasPlaza(String nombre) {
+    return 'Vas a ocupar el lugar de $nombre. Deja el nombre o cámbialo por el tuyo.';
+  }
+
+  @override
   String get sorteoBoton => 'HACER EL SORTEO';
 
   @override
@@ -487,7 +521,7 @@ class TextosEs extends Textos {
 
   @override
   String get sorteoTexto =>
-      'Se le asigna a cada participante su amigo secreto. Volver a sortear reemplaza las asignaciones anteriores.';
+      'Se le asigna a cada participante su amigo secreto. El sorteo se hace una sola vez: no se puede repetir.';
 
   @override
   String get sorteoConfirmar => 'Sortear';

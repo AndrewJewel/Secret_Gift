@@ -67,7 +67,29 @@ Future<void> mandarVerificacion() async {
 Future<bool> correoVerificado() async {
   final u = FirebaseAuth.instance.currentUser;
   if (u == null) return false;
-  await _traduciendo(() => u.reload());
+  // Firebase Auth guarda la sesión en IndexedDB, y los navegadores móviles
+  // la cierran cuando la pestaña pasa a segundo plano para ahorrar
+  // memoria — justo lo que pasa al salir al buzón de correo a pinchar el
+  // enlace y volver. El primer reload() puede toparse con esa base de
+  // datos cerrada o cerrándose y fallar aunque todo esté bien. reload()
+  // es de solo lectura e idempotente, así que un único reintento tras una
+  // espera corta (para dar tiempo a que termine de cerrarse y el SDK la
+  // reabra) es seguro, sin necesidad de mirar qué error fue.
+  try {
+    await _traduciendo(() => u.reload());
+  } catch (_) {
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    try {
+      await _traduciendo(() => u.reload());
+    } on FuncionError catch (e) {
+      // Misma marca que usa tokenActual() en auth.dart, y por el mismo
+      // motivo: este fallo y el de tokenActual() llegan con el mismo
+      // código y clave genéricos, y sin distinguirlos no hay forma de
+      // saber, leyendo el mensaje que alguien transcribe desde el móvil,
+      // cuál de los dos rompió.
+      throw FuncionError(e.codigo, e.clave, 'reload: ${e.mensaje}');
+    }
+  }
   final verificado = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
   // reload() refresca el registro de usuario, NO el ID token: el que está en
   // memoria seguiría diciendo email_verified:false y el servidor rechazaría la

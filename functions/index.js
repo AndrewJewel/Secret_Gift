@@ -13,7 +13,7 @@ const bcrypt = require("bcryptjs");
 // secretos: el código del grupo —que desde que se cerró el `list` de
 // Firestore es la ÚNICA llave para llegar a él—, la cadena del sorteo, y
 // la máscara que sostiene el anonimato del chat.
-const {randomInt} = require("node:crypto");
+const {randomInt, randomBytes} = require("node:crypto");
 
 initializeApp();
 const db = getFirestore();
@@ -45,11 +45,15 @@ const BUCKET = "secretgift-app.firebasestorage.app";
 // solo para frenar un abuso, no para uso normal.
 const MAX_AVATAR_BYTES = 400 * 1024;
 
-// Sube la imagen y devuelve su URL pública. Devuelve null si no vino
-// ninguna imagen — el avatar siempre es opcional.
-async function guardarAvatar(codigo, participanteId, avatarBase64) {
-  if (!avatarBase64) return null;
-
+/**
+ * Decodifica y valida una imagen en base64, sin subirla.
+ *
+ * Es el mismo criterio que aplica `guardarAvatar` más abajo, extraído para
+ * poder llamarlo por separado ANTES de una transacción que gasta algo de
+ * un solo uso — ver el comentario en `canjearReemplazo` sobre por qué esta
+ * duplicación existe a propósito.
+ */
+function decodificarAvatar(avatarBase64) {
   // El cliente puede mandar "data:image/jpeg;base64,XXXX" o solo "XXXX".
   const limpio = String(avatarBase64).replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(limpio, "base64");
@@ -60,6 +64,15 @@ async function guardarAvatar(codigo, participanteId, avatarBase64) {
   if (buffer.length > MAX_AVATAR_BYTES) {
     throw new HttpsError("invalid-argument", "La imagen pesa demasiado.", {clave: "imagen_muy_grande"});
   }
+  return buffer;
+}
+
+// Sube la imagen y devuelve su URL pública. Devuelve null si no vino
+// ninguna imagen — el avatar siempre es opcional.
+async function guardarAvatar(codigo, participanteId, avatarBase64) {
+  if (!avatarBase64) return null;
+
+  const buffer = decodificarAvatar(avatarBase64);
 
   // Nombre con marca de tiempo: al cambiar de avatar cambia la URL, así
   // ningún caché del navegador se queda mostrando la imagen vieja.
@@ -612,6 +625,264 @@ exports.borrarParticipante = onCall(async (request) => {
   return {ok: true};
 });
 
+// --- Reemplazar a alguien tras el sorteo -------------------------------
+// Tras el sorteo la lista no cambia: `borrarParticipante` y
+// `agregarParticipante` están cerrados. Eso deja un grupo sin salida si
+// alguien no puede seguir jugando, y esta es esa salida: la plaza no se
+// borra, cambia de dueño conservando su id, así que la cadena no se entera.
+
+/**
+ * El token es una LLAVE: quien lo tenga toma esa plaza. Por eso sale de
+ * `crypto` y no de `Math.random`, igual que el código del grupo.
+ */
+function generarToken() {
+  return randomBytes(24).toString("base64url");
+}
+
+exports.generarReemplazo = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const participanteId = request.data?.participanteId;
+  if (!codigo || !participanteId) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
+  }
+
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+
+  const grupoSnap = await grupoRef(codigo).get();
+  if (!grupoSnap.exists) {
+    throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
+  }
+  // Antes del sorteo la salida correcta es borrar y volver a apuntarse, que
+  // ya funciona. Reemplazar solo tiene sentido cuando la plaza tiene un
+  // sitio en la cadena que hay que conservar.
+  if (grupoSnap.data().sorteado !== true) {
+    throw new HttpsError(
+        "failed-precondition",
+        "Este grupo todavía no ha sorteado: saca a esta persona y que se apunte otra.",
+        {clave: "grupo_sin_sortear"},
+    );
+  }
+
+  const plaza = await participanteRef(codigo, participanteId).get();
+  if (!plaza.exists) {
+    throw new HttpsError("not-found", "Ese participante ya no existe.", {clave: "participante_no_existe"});
+  }
+
+  const token = generarToken();
+
+  // Una plaza, un token vivo. Generar otro para la misma plaza borra el
+  // anterior: eso es lo que cumple "el organizador puede anularlo" sin
+  // añadir un botón de anular. Se hace en transacción porque hay que leer
+  // el mapa para saber cuáles borrar antes de escribir.
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(grupoPrivadoRef(codigo));
+    const reemplazos = snap.data()?.reemplazos || {};
+    // OJO: con `merge: true`, una clave que falta en el objeto no se borra
+    // en Firestore, se deja tal cual — el SDK arma la máscara de campos a
+    // partir de las claves QUE ESTÁN, así que omitir una clave nunca la
+    // toca. Para borrar un token viejo hay que decirlo explícitamente con
+    // `FieldValue.delete()`. Y el objeto solo lleva lo que cambia: los
+    // tokens de otras plazas ni se mencionan, así que una llamada
+    // simultánea sobre otra plaza no se pisa con esta.
+    const cambios = {};
+    for (const [t, id] of Object.entries(reemplazos)) {
+      if (id === participanteId) cambios[t] = FieldValue.delete();
+    }
+    cambios[token] = participanteId;
+    tx.set(grupoPrivadoRef(codigo), {reemplazos: cambios}, {merge: true});
+  });
+
+  return {token};
+});
+
+/**
+ * Lo justo para pintar el formulario de quien canjea: el nombre actual de
+ * la plaza y la temática del grupo.
+ *
+ * No revela nada nuevo — con el código ya se pueden leer todos los nombres
+ * del grupo. Lo único que añade es CUÁL de ellos es el de esta invitación,
+ * que es justo lo que quien tiene el token necesita saber.
+ */
+exports.verReemplazo = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const token = (request.data?.token || "").trim();
+  if (!codigo || !token) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o el enlace.", {clave: "faltan_datos"});
+  }
+  uidDe(request);
+
+  const priv = await grupoPrivadoRef(codigo).get();
+  const participanteId = (priv.data()?.reemplazos || {})[token];
+  if (!participanteId) {
+    throw new HttpsError("not-found", "Este enlace ya no vale.", {clave: "reemplazo_invalido"});
+  }
+
+  const plaza = await participanteRef(codigo, participanteId).get();
+  if (!plaza.exists) {
+    throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
+  }
+  const grupo = await grupoRef(codigo).get();
+
+  return {
+    nombre: plaza.data().nombre || "",
+    tematica: grupo.data()?.tematica || "",
+  };
+});
+
+exports.canjearReemplazo = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const token = (request.data?.token || "").trim();
+  const nombre = (request.data?.nombre || "").trim();
+  const deseos = (request.data?.deseos || "").trim();
+  if (!codigo || !token || !nombre) {
+    throw new HttpsError("invalid-argument", "Falta el grupo, el enlace o el nombre.", {clave: "faltan_datos_participante"});
+  }
+
+  // NO se usa `autorizar`: quien canjea todavía no tiene vínculo con el
+  // grupo, así que devolvería rol y participanteId nulos para alguien
+  // legítimo. La autorización la lleva el TOKEN.
+  const uid = uidDe(request);
+
+  // Se valida la imagen ANTES de reservar el token, aunque `guardarAvatar`
+  // vaya a repetir la misma comprobación más abajo cuando de verdad suba el
+  // archivo. El token se gasta en la transacción de aquí debajo y no hay
+  // forma de devolverlo: si la foto se rechazara DESPUÉS de reservarlo
+  // —`imagen_invalida`, `imagen_muy_grande`—, quien canjea vería el error,
+  // cambiaría la foto y volvería a pulsar Guardar solo para toparse con
+  // `reemplazo_invalido` sobre un enlace ya muerto. Que el token se pierda
+  // ante un fallo de red imprevisible es un coste aceptado; ante una rama
+  // de validación que la propia persona dispara, no.
+  if (request.data?.avatarBase64) {
+    decodificarAvatar(request.data.avatarBase64);
+  }
+
+  // El token se RESERVA antes de tocar nada más: leerlo y borrarlo por
+  // separado deja un hueco en el que dos personas canjean el mismo enlace
+  // a la vez y acaban las dos vinculadas a la misma plaza, pudiendo ver su
+  // asignación. Es el mismo fallo que tuvo el contador del PIN.
+  //
+  // La transacción DEVUELVE el veredicto en vez de lanzarlo: lanzar desde
+  // dentro haría depender el resultado de cómo clasifique el SDK ese error
+  // para decidir si reintenta la transacción, que no es una promesa que
+  // nos haya hecho nadie. Mismo patrón que `verAmigoSecreto`.
+  //
+  // Si algo falla MÁS ADELANTE en esta función, el token ya quedó gastado
+  // y la plaza sin cambiar: el organizador tendría que generar otro. Es
+  // peor que tener que reintentar, y mucho mejor que dos personas acabando
+  // ocupando la misma plaza.
+  const participanteId = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(grupoPrivadoRef(codigo));
+    const id = (snap.data()?.reemplazos || {})[token];
+    if (!id) return null;
+    tx.set(grupoPrivadoRef(codigo), {reemplazos: {[token]: FieldValue.delete()}}, {merge: true});
+    return id;
+  });
+  if (!participanteId) {
+    throw new HttpsError("not-found", "Este enlace ya no vale.", {clave: "reemplazo_invalido"});
+  }
+
+  const plazaRef = participanteRef(codigo, participanteId);
+  const plazaSnap = await plazaRef.get();
+  if (!plazaSnap.exists) {
+    throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
+  }
+
+  // Esta función no pasa por `autorizar`, así que hay que poner a mano la
+  // guarda que él hace de regalo: sin documento de perfil —por ejemplo
+  // porque `guardarPerfil` falló por red al registrarse— la persona
+  // quedaría atrapada más abajo. `vincularComoParticipante` le crearía el
+  // documento con solo el mapa `grupos`, sin `pinHash`: `misGrupos` la
+  // vería con `perfilCompleto: true`, `verAmigoSecreto` le daría
+  // `pin_incorrecto` para siempre, y `guardarPerfil` ya no podría escribir
+  // porque usa `create()`, que no toca un documento que ya existe.
+  const snapUsuario = await usuarioRef(uid).get();
+  if (!snapUsuario.exists) {
+    throw new HttpsError("unauthenticated", "Tu cuenta no tiene perfil. Vuelve a entrar.", {clave: "perfil_incompleto"});
+  }
+
+  // Una cuenta, una plaza por grupo. Misma regla que `agregarParticipante`
+  // y por el mismo motivo: dos plazas de la misma persona dejarían una
+  // huérfana dentro de la cadena.
+  const miVinculo = snapUsuario.data()?.grupos?.[codigo];
+  if (miVinculo?.participanteId) {
+    const mia = await participanteRef(codigo, miVinculo.participanteId).get();
+    if (mia.exists) {
+      throw new HttpsError("already-exists", "Ya tienes una plaza en este grupo.", {clave: "ya_estas_en_el_grupo"});
+    }
+  }
+
+  const privadoPlaza = await participantePrivadoRef(codigo, participanteId).get();
+  const datosPlaza = privadoPlaza.data() || {};
+  const cuentaAnterior = datosPlaza.cuenta;
+  const avatarAnterior = plazaSnap.data().avatarUrl;
+
+  // La imagen se sube ANTES de escribir en Firestore, como en el alta
+  // normal: si falla, no queda una plaza a medias apuntando a un avatar
+  // que no existe.
+  const avatarUrl = await guardarAvatar(codigo, participanteId, request.data?.avatarBase64);
+  const deseosNuevos = deseos || "¡Sorpréndeme!";
+
+  const batch = db.batch();
+
+  // La plaza conserva su id, su `asignado_a`, su `nombre_asignado` y su
+  // `deseos_asignado`: quien entra regala a la misma persona. Eso es lo que
+  // mantiene la cadena entera.
+  batch.update(plazaRef, {nombre, avatarUrl: avatarUrl || ""});
+  batch.set(participantePrivadoRef(codigo, participanteId), {
+    cuenta: uid,
+    deseos: deseosNuevos,
+    // Máscara nueva: quien entra no hereda las palabras de quien se fue.
+    mascara: FieldValue.delete(),
+    mascaraRepeticion: FieldValue.delete(),
+    ultimoMensajeMs: FieldValue.delete(),
+  }, {merge: true});
+
+  // EL ARREGLO DE VERDAD: quien le regala a esta plaza tiene guardados el
+  // nombre y los deseos de quien ya no está, y compraría para esa persona.
+  // `recibe_de` lo dice directamente; si no estuviera —grupo sorteado antes
+  // de que ese campo existiera— se barren los privados buscando quién
+  // apunta aquí.
+  let quienRegala = datosPlaza.recibe_de;
+  if (!quienRegala) {
+    const todos = await grupoRef(codigo).collection("participantes").get();
+    const privados = await Promise.all(
+        todos.docs.map((d) => participantePrivadoRef(codigo, d.id).get()));
+    const i = privados.findIndex((p) => p.data()?.asignado_a === participanteId);
+    if (i >= 0) quienRegala = todos.docs[i].id;
+  }
+  if (quienRegala) {
+    batch.set(participantePrivadoRef(codigo, quienRegala), {
+      nombre_asignado: nombre,
+      deseos_asignado: deseosNuevos,
+    }, {merge: true});
+  }
+
+  await batch.commit();
+
+  // Se despega la cuenta anterior. Mismo trato que en `borrarParticipante`:
+  // al organizador se le conserva la entrada con `participanteId: null`
+  // —quitarle la clave entera le quitaría el rol y dejaría el grupo
+  // ingobernable—, y al resto se le borra.
+  if (cuentaAnterior && cuentaAnterior !== uid) {
+    const refAnterior = usuarioRef(cuentaAnterior);
+    const snapAnterior = await refAnterior.get();
+    if (snapAnterior.exists) {
+      const vinculo = (snapAnterior.data().grupos || {})[codigo];
+      await refAnterior.update(
+          new FieldPath("grupos", codigo),
+          vinculo?.rol === "organizador" ?
+            {rol: "organizador", participanteId: null} :
+            FieldValue.delete(),
+      );
+    }
+  }
+
+  await vincularComoParticipante(uid, codigo, participanteId);
+  await borrarAvatarPorUrl(avatarAnterior);
+
+  return {id: participanteId};
+});
+
 // Cambiar la propia imagen, o quitarle una inapropiada a alguien si eres
 // el organizador: `autorizar` ya sabe si eres una cosa o la otra.
 // Mandar avatarBase64 vacío o nulo equivale a quitar la imagen.
@@ -796,6 +1067,15 @@ exports.ejecutarSorteo = onCall(async (request) => {
       asignado_a: docRecibe.id,
       nombre_asignado: docRecibe.data().nombre,
       deseos_asignado: deseosRecibe,
+    }, {merge: true});
+    // El puntero INVERSO: quién le regala a quien recibe. La cadena ya se
+    // conoce en las dos direcciones aquí dentro, así que escribirlo cuesta
+    // una línea. Sin él, reemplazar a alguien obligaría a leer los privados
+    // de todo el grupo buscando cuál apunta a esa plaza — y hay que
+    // actualizar `nombre_asignado` de quien le regala o esa persona
+    // compraría para quien ya no está.
+    batch.set(participantePrivadoRef(codigo, docRecibe.id), {
+      recibe_de: docs[iRegala].id,
     }, {merge: true});
     batch.update(docs[iRegala].ref, {tieneAmigo: true});
   }

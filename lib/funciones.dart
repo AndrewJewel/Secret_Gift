@@ -85,6 +85,8 @@ extension MensajeLocalizado on FuncionError {
         'grupo_cerrado' => t.errorGrupoCerrado,
         'sorteo_ya_hecho' => t.errorSorteoYaHecho,
         'pin_bloqueado' => t.errorPinBloqueado,
+        'reemplazo_invalido' => t.errorReemplazoInvalido,
+        'grupo_sin_sortear' => t.errorGrupoSinSortear,
         _ => mensaje,
       };
 }
@@ -105,6 +107,13 @@ Future<Map<String, dynamic>> llamarFuncion(String nombre, Map<String, dynamic> d
   String? token;
   try {
     token = await tokenActual();
+  } on FuncionError {
+    // tokenActual() ya lo convirtió (y, si tocaba, le puso la marca
+    // "token: " delante del mensaje — ver el comentario de tokenActual()
+    // en auth.dart). Aquí solo hace falta dejarlo pasar tal cual: si
+    // cayera en el catch de abajo perdería el código y la clave
+    // originales.
+    rethrow;
   } on FirebaseAuthException catch (e) {
     throw comoFuncionError(e);
   } catch (e) {

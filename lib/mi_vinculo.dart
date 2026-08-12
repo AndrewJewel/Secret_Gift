@@ -13,8 +13,13 @@ class MiVinculo {
   /// todavía no te inscribiste.
   final String? participanteId;
 
-  /// Si el grupo ya sorteó. Manda qué acciones de organizador tienen
-  /// sentido: tras el sorteo no se puede sacar a nadie.
+  /// Si el grupo ya sorteó.
+  ///
+  /// El botón de SACAR queda visible a propósito también tras el sorteo:
+  /// el servidor lo rechaza con un mensaje que menciona el reemplazo, y ese
+  /// mensaje es cómo la gente descubre que esa función existe. Este campo
+  /// manda, en cambio, el botón de REEMPLAZAR: no tiene sentido antes del
+  /// sorteo, porque sin sorteo no hay cadena de asignaciones que conservar.
   final bool sorteado;
 
   const MiVinculo({required this.rol, this.participanteId, this.sorteado = false});
