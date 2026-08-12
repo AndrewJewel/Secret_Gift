@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Android 13 (API 33) y superiores exigen pedir este permiso en
+         tiempo de ejecución. Sin declararlo aquí, `requestPermission()`
+         devuelve "denegado" sin llegar a enseñar el diálogo — y no da
+         ningún aviso de que falta. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:label="Secret Gift"
         android:name="${applicationName}"

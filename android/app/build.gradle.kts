@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.santa_secreto"
+    namespace = "app.secretgift"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.santa_secreto"
+        applicationId = "app.secretgift"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

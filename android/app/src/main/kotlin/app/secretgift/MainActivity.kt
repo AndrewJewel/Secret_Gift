@@ -1,4 +1,4 @@
-package com.example.santa_secreto
+package app.secretgift
 
 import io.flutter.embedding.android.FlutterActivity
 
