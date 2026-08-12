@@ -144,30 +144,32 @@ fusionado. La rama `reemplazar-participante` está borrada.
 
 ## Pendientes
 
-### 1. `secretgift.app` está CAÍDO
+### 1. ~~`secretgift.app` caído~~ — RESUELTO el mismo día
 
-Devuelve *«Site Not Found»*. Se quitó del proyecto viejo y no se ha dado de
-alta en el nuevo. Al intentarlo, la consola falla al crear el dominio.
+Estuvo un rato devolviendo *«Site Not Found»*: se había quitado del
+proyecto viejo y no se había dado de alta en el nuevo, y al intentarlo la
+consola fallaba al crear el dominio.
 
-**Causa, comprobada por DNS:** el dominio tiene **dos** reclamaciones de
+**Causa, comprobada por DNS:** el dominio tenía **dos** reclamaciones de
 propiedad a la vez.
 
 ```
 firebase=secretgift-app          <- el bueno
-firebase=santa-secreto-860c3     <- sobra, hay que borrarlo
+firebase=santa-secreto-860c3     <- el que sobraba
 ```
 
-Firebase decide de quién es un dominio leyendo ese TXT, y con dos no sabe a
-cuál dárselo.
+Firebase decide de quién es un dominio leyendo ese TXT, y con dos no sabía
+a cuál dárselo. Borrado el segundo, el dominio se añadió sin problema.
 
-**Qué hacer:** borrar en Cloudflare **solo** el TXT `firebase=santa-secreto-860c3`,
-esperar a que propague, y volver a añadir el dominio en Hosting del
-proyecto nuevo. No tocar `firebase=secretgift-app`, `hosting-site=secretgift-app`
-ni el `v=spf1`.
+Comprobado al cerrar: `secretgift.app/__/firebase/init.json` responde
+`secretgift-app`, y en el DNS solo quedan los tres registros buenos.
 
 Ese registro estaba en la lista de limpieza de ayer con la nota «ninguno
 molesta, así que sin prisa». **Sí molestaba.** Se dio por inofensivo sin
-comprobarlo.
+comprobarlo, y costó un dominio caído.
+
+**Y la verificación en dispositivo de P4 se hizo sobre `secretgift.app` ya
+apuntando al proyecto nuevo**, así que vale.
 
 ### 2. Subir `main` a GitHub
 
