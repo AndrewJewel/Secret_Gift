@@ -1316,6 +1316,181 @@ git commit -m "Ofrece los avisos al entrar por primera vez y abre el grupo al to
 
 ---
 
+### Tarea 8b: Que nadie se quede sin poder activarlos
+
+**Decidido por el humano el 2026-08-12**, a raíz de un agujero que encontró
+la revisión de la Tarea 8: la pantalla de permiso solo se enseña al crear
+la cuenta, pero **quien ya tiene sesión iniciada entra por
+`_entrarConLaSesionDeAuth`, que no pasa por `_trasVerificar`**. A todas las
+cuentas que ya existen no se les preguntaría jamás, y se quedarían sin
+avisos sin enterarse.
+
+**Ficheros:**
+- Modificar: `lib/pantalla_raiz.dart` (`_entrarConLaSesionDeAuth`)
+- Modificar: `lib/hoja_configuracion.dart`
+- Modificar: `lib/almacen_local.dart`
+- Modificar: `functions/index.js`
+- Modificar: `lib/l10n/app_en.arb`, `lib/l10n/app_es.arb` (+ generados)
+- Modificar: `scripts/probar.mjs`
+
+**Interfaces:**
+- Consume: `pedirPermisoYRegistrar()`, `PantallaPermisoAvisos`,
+  `yaSePreguntoPorAvisos()`, `marcarPreguntadoPorAvisos()`.
+- Produce: `borrarTokenPush({token})` en el servidor;
+  `tokenDeEsteDispositivo()` y `apagarAvisos()` en `lib/push.dart`.
+
+## Lo que hay que entender antes de escribir nada
+
+**Apagar sí se puede; encender no siempre.** Si alguien denegó el permiso
+en el navegador o en Android, **no hay forma de que la app lo revierta**:
+volver a llamar al permiso no muestra nada. Solo se puede decirle dónde
+cambiarlo.
+
+Por eso el interruptor **no puede limitarse a fingir que funciona**. Al
+intentar encenderlo, si el permiso está denegado por el sistema, tiene que
+volver a su sitio y explicar por qué, no quedarse encendido mintiendo.
+
+Y **apagar tiene que apagar de verdad**: borrar el token de este
+dispositivo en el servidor, para que deje de recibir. Guardar solo una
+preferencia local no serviría — los avisos seguirían llegando.
+
+- [ ] **Paso 1: La función que borra el token**
+
+En `functions/index.js`, junto a `guardarTokenPush`:
+
+```js
+/**
+ * Borra el token de ESTA instalación.
+ *
+ * Apagar los avisos tiene que apagarlos de verdad: si solo se guardara una
+ * preferencia en el dispositivo, el servidor seguiría mandando y las
+ * notificaciones seguirían saliendo. Se borra la clave del mapa.
+ *
+ * No exige que el perfil exista, al revés que `guardarTokenPush`: si no
+ * existe, no hay nada que borrar y `update` sobre un documento ausente
+ * fallaría. Se usa `set` con `merge` sobre un borrado, que es inofensivo.
+ */
+exports.borrarTokenPush = onCall(async (request) => {
+  const uid = uidDe(request);
+  const token = request.data?.token;
+  if (typeof token !== "string" || !token.trim()) {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+  const snap = await usuarioRef(uid).get();
+  if (!snap.exists) return {ok: true};
+  await usuarioRef(uid).set({
+    tokensPush: {[token.trim()]: FieldValue.delete()},
+  }, {merge: true});
+  return {ok: true};
+});
+```
+
+- [ ] **Paso 2: Saber y apagar, en el cliente**
+
+En `lib/push.dart`, siguiendo el estilo que ya tenga el fichero:
+
+```dart
+/// El token de esta instalación, o null si no hay.
+///
+/// No pide permiso: si no está concedido, `getToken` devuelve null y eso
+/// es exactamente la respuesta que queremos aquí.
+Future<String?> tokenDeEsteDispositivo() async {
+  try {
+    return await FirebaseMessaging.instance
+        .getToken(vapidKey: kIsWeb ? _vapid : null);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Apaga los avisos en ESTE dispositivo, de verdad.
+///
+/// Borra el token en el servidor. Sin esto, apagar el interruptor sería
+/// decorativo: el servidor seguiría mandando avisos a este dispositivo.
+Future<void> apagarAvisos() async {
+  final token = await tokenDeEsteDispositivo();
+  if (token == null) return;
+  try {
+    await llamarFuncion('borrarTokenPush', {'token': token});
+  } catch (_) {
+    // Apagar no puede romperle la pantalla a nadie.
+  }
+}
+```
+
+- [ ] **Paso 3: Preguntar también al entrar**
+
+En `lib/pantalla_raiz.dart`, dentro de `_entrarConLaSesionDeAuth`, **el
+mismo bloque** que la Tarea 8 puso en `_trasVerificar`.
+
+Repítelo, no lo extraigas a una función compartida todavía: son dos sitios
+y la Tarea 8 ya dejó tres copias idénticas; unificar las cinco de golpe es
+un cambio aparte, y hacerlo aquí mezclaría dos cosas en la misma revisión.
+**Anótalo en el informe como deuda.**
+
+- [ ] **Paso 4: El interruptor**
+
+En `lib/hoja_configuracion.dart`, siguiendo el estilo de las opciones que
+ya tenga. Comportamiento exacto:
+
+- **Refleja si hay token registrado**, no una preferencia local a secas.
+- **Al encender**: llama a `pedirPermisoYRegistrar()`. Si devuelve `false`,
+  **el interruptor vuelve a apagado** y sale un aviso con el texto
+  `avisosBloqueados`. No se queda encendido.
+- **Al apagar**: llama a `apagarAvisos()`.
+
+- [ ] **Paso 5: Los textos**
+
+En `lib/l10n/app_en.arb` (con sus `@clave` y `description`) y
+`lib/l10n/app_es.arb`:
+
+```json
+  "avisosInterruptor": "Notifications",
+  "avisosBloqueados": "Your browser or phone is blocking notifications for this app. You'll need to allow them in its settings — we can't do it from here."
+```
+
+```json
+  "avisosInterruptor": "Avisos",
+  "avisosBloqueados": "Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos."
+```
+
+Luego `flutter gen-l10n` y **commitea los generados**.
+
+- [ ] **Paso 6: Un caso en la batería**
+
+En `scripts/probar.mjs`, copiando su estilo:
+
+```js
+await paso('borrarTokenPush quita solo ese token', async () => {
+  await llamar(sesionA, 'guardarTokenPush', {token: 'token-apagar-1'});
+  await llamar(sesionA, 'guardarTokenPush', {token: 'token-apagar-2'});
+  await llamar(sesionA, 'borrarTokenPush', {token: 'token-apagar-1'});
+  const doc = await leerUsuario(sesionA.uid);
+  const tokens = Object.keys(doc.tokensPush || {});
+  afirmar(!tokens.includes('token-apagar-1'), 'el borrado desaparece');
+  afirmar(tokens.includes('token-apagar-2'),
+      'el OTRO dispositivo de la misma persona NO se ve afectado');
+});
+```
+
+Ese segundo `afirmar` es el que importa: apagar los avisos en el móvil no
+puede apagárselos a esa misma persona en el portátil.
+
+- [ ] **Paso 7: Comprobar y commitear**
+
+```bash
+flutter analyze && flutter test
+firebase deploy --only functions
+node scripts/probar.mjs
+```
+
+```bash
+git add -A
+git commit -m "Los avisos se pueden activar y apagar desde Configuración"
+```
+
+---
+
 ### Tarea 9: La batería de integración
 
 **Ficheros:**
