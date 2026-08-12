@@ -416,15 +416,16 @@ cd functions && node --test
 
 Esperado: los cuatro casos en verde.
 
-- [ ] **Paso 5: Comprueba que el lint de funciones sigue limpio**
+- [ ] **Paso 5: (no hay lint que pasar)**
 
-```bash
-cd functions && npm run lint
-```
+`functions/` **no tiene ESLint ni ningún script de npm** — comprobado el
+2026-08-12: `functions/package.json` no trae `scripts` ni
+`devDependencies`. Una versión anterior de este plan mandaba correr
+`npm run lint`, que no existe.
 
-Esperado: sin errores. Si `push.test.js` da problemas de lint por usar
-`require` de módulos de Node, mira cómo está configurado `.eslintrc` en
-`functions/` y ajústalo ahí, no desactives reglas dentro del fichero.
+**No instales ESLint para cumplir este paso.** Montar el lint del backend
+es una decisión propia, no un detalle de esta tarea, y nadie la ha tomado.
+`node --test` es toda la comprobación automática que hay aquí.
 
 - [ ] **Paso 6: Commit**
 
@@ -515,13 +516,13 @@ cd functions && node -e "const f=require('./index.js'); console.log(typeof f.gua
 Esperado: `object` (es un objeto de CloudFunction, no una función suelta).
 
 Este paso no es ceremonia: durante la migración a `firebase-admin` v13 el
-módulo entero dejó de cargar por un import mal puesto, y `npm run lint` no
-lo detectó.
+módulo entero dejó de cargar por un import mal puesto, y ninguna otra
+comprobación lo detectó.
 
 - [ ] **Paso 5: Lint y test de funciones**
 
 ```bash
-cd functions && npm run lint && node --test
+cd functions && node --test
 ```
 
 Esperado: ambos limpios.
@@ -641,7 +642,7 @@ correspondiente de `participantes.docs` en vez de por `p.id`.
 - [ ] **Paso 4: Comprueba que el módulo sigue cargando**
 
 ```bash
-cd functions && node -e "require('./index.js'); console.log('carga bien')" && npm run lint && node --test
+cd functions && node -e "require('./index.js'); console.log('carga bien')" && node --test
 ```
 
 Esperado: los tres limpios.
