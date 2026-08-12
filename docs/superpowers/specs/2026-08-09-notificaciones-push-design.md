@@ -1,7 +1,12 @@
 # Diseño — Notificaciones push (FCM)
 
 **Fecha:** 2026-08-09
-**Estado:** aprobado, pendiente de plan de implementación
+**Estado:** aprobado. **Revisado el 2026-08-12** antes de escribir el plan:
+tres correcciones técnicas por cosas que cambiaron después (API modular de
+`firebase-admin`, proyecto nuevo, y `recibe_de` que da una plaza y no un
+uid) y un cambio de alcance decidido por el humano (el permiso se pide al
+crear la cuenta, tras una pantalla propia, y sirve para tres avisos en vez
+de uno). Los cambios van marcados en su sitio.
 **Rama prevista:** propia, **después** de Firebase Auth y **después** de
 reemplazar participante (`2026-08-09-reemplazar-participante-design.md`),
 que es su primer y único cliente.
@@ -82,8 +87,15 @@ Un helper en `functions/index.js`:
 async function avisar(uid, {titulo, cuerpo, datos})
 ```
 
-Lee los tokens de ese uid, manda con `admin.messaging().sendEachForMulticast`,
-y borra del mapa los que FCM rechace por no estar registrados.
+Lee los tokens de ese uid, los manda, y borra del mapa los que FCM rechace
+por no estar registrados.
+
+**CORREGIDO el 2026-08-12: `admin.messaging()` ya no existe.** Este proyecto
+usa `firebase-admin` v14, que retiró la API con espacio de nombres — es lo
+mismo que tumbó el módulo entero durante la migración a Node 22. Va
+`const {getMessaging} = require("firebase-admin/messaging")` y luego
+`getMessaging().sendEachForMulticast(...)`. Ese método sí sigue existiendo
+en la v14.2.0 instalada; está comprobado, no supuesto.
 
 **Nunca hace fallar a quien la llama.** Si el envío truena, se registra y se
 sigue. Un reemplazo que funcionó no puede deshacerse porque una notificación
@@ -92,15 +104,50 @@ esto.
 
 ### El permiso, y cuándo se pide
 
-**No al entrar.** Pedir notificaciones nada más abrir la app es la forma
-más segura de que la denieguen. Se pide **la primera vez que alguien se
-apunta a un grupo**, junto a una frase que dice para qué:
+**REVISADO el 2026-08-12.** El diseño original lo pedía al apuntarse a un
+grupo. Eso dejaba fuera precisamente a quien más lo necesita: **quien ya
+está dentro de un grupo nunca sería preguntado**, y en los grupos que ya
+existen no llegaría ningún aviso — sin que ni esa persona ni el organizador
+lo supieran.
 
-> Te avisaremos si algo cambia en tu grupo — por ejemplo, si tu amigo
-> secreto cambia de persona.
+Se pide **al crear la cuenta**, que es el único momento por el que pasa
+todo el mundo.
 
-Si lo deniega, no se le vuelve a preguntar: el navegador recuerda la
-decisión y volver a pedirlo no la cambia.
+**Con una condición que no es opcional: primero se pregunta en una pantalla
+nuestra, y solo si dicen que sí se llama al navegador.**
+
+El motivo es que **al navegador solo se le puede preguntar una vez en la
+práctica**: si lo deniegan, queda denegado para siempre y las siguientes
+llamadas no muestran nada. Y al crear la cuenta la persona todavía no ha
+visto la app ni está en ningún grupo — es el momento con más probabilidad
+de un «no» por costumbre.
+
+Con la pantalla propia delante, un «ahora no» **no gasta nada**, y se puede
+volver a ofrecer más tarde (al entrar a un grupo, por ejemplo). Sin ella,
+un «no» automático deja a esa persona sin avisos para siempre.
+
+Texto de la pantalla propia:
+
+> **¿Te avisamos?**
+> Te diremos cuando tu grupo sortee, cuando escriban en el chat y si tu
+> amigo secreto cambia de persona.
+> [Sí, avísame] [Ahora no]
+
+### De qué se avisa
+
+**REVISADO el 2026-08-12.** El diseño original avisaba solo del reemplazo y
+dejaba el resto fuera de alcance. Como el permiso ahora se pide una vez y
+sirve para todo, entran tres:
+
+| Suceso | Aviso |
+|---|---|
+| Reemplazo de una plaza | A quien le regala a esa plaza |
+| El grupo sortea | A todos los participantes |
+| Mensaje en el chat | Al resto del grupo |
+
+**El chat lleva una regla propia:** no se avisa a quien está mirando ese
+chat en ese momento. Avisar de cada mensaje a quien lo está leyendo es la
+forma rápida de que la gente apague los avisos para siempre.
 
 ### Qué dice el aviso
 
@@ -109,6 +156,12 @@ mano, así que no lleva ni el nombre del amigo secreto ni el de nadie:
 
 > **Tu amigo secreto cambió**
 > En «Navidad Oficina». Ábrelo para ver quién es ahora.
+
+El del chat tampoco dice quién escribió ni qué: eso volvería a filtrar por
+la pantalla de bloqueo lo que el grupo se está diciendo.
+
+> **Nuevo mensaje**
+> En «Navidad Oficina».
 
 Los datos (`data`) llevan el código del grupo, para que tocar la
 notificación abra ese grupo.
@@ -119,8 +172,17 @@ notificación abra ese grupo.
 
 - **`guardarTokenPush({token})`** — función nueva.
 - **`avisar(uid, {...})`** — helper interno.
-- **`canjearReemplazo`** llama a `avisar` con el uid de quien regala a la
-  plaza, **después** de que el lote se haya escrito.
+- **`canjearReemplazo`** avisa a quien le regala a la plaza, **después** de
+  `batch.commit()`.
+
+  **CORREGIDO el 2026-08-12:** el diseño decía «con el uid de quien regala».
+  `recibe_de` **no da un uid**: da el **id de la plaza** que regala. El uid
+  está en el privado de esa plaza, en el campo `cuenta`. Es una lectura más,
+  y hace falta una guarda por si esa plaza no tiene cuenta.
+- **`ejecutarSorteo`** avisa a todos los participantes del grupo, después de
+  escribir el sorteo.
+- **`mandarMensaje`** avisa al resto del grupo, con la regla de no avisar a
+  quien esté mirando ese chat.
 
 ### Cliente
 
@@ -133,6 +195,14 @@ notificación abra ese grupo.
 - **`lib/push.dart`** — nuevo. Pedir permiso, obtener el token, renovarlo,
   y qué hacer al tocar la notificación.
 - La clave VAPID del proyecto, necesaria para web.
+
+  **CORREGIDO el 2026-08-12:** tanto la clave VAPID como la configuración
+  del *service worker* tienen que salir de **`secretgift-app`**. Este
+  diseño se escribió antes de la mudanza de proyecto, y una clave del
+  proyecto viejo fallaría sin decir por qué.
+
+- **La pantalla propia de permiso** (ver «El permiso»), que sale al crear
+  la cuenta y es la que decide si se llega a llamar al navegador.
 
 ## Verificación
 
@@ -147,16 +217,24 @@ notificación abra ese grupo.
   grupo sorteado. Reemplazar una plaza y comprobar que a quien le regalaba
   **le llega la notificación con la app cerrada**. Es lo único que prueba
   que esto funciona; todo lo demás puede estar verde y el push no salir.
-- **Probar también denegando el permiso**, y comprobar que el reemplazo
-  sigue funcionando entero y sin errores visibles.
+- **Los otros dos avisos, también en dispositivo:** que al sortear les
+  llega a todos, y que un mensaje de chat avisa al resto **pero no a quien
+  está mirando ese chat**.
+- **Que «Ahora no» no gasta el permiso.** Pulsarlo al crear la cuenta y
+  comprobar después que el navegador **sigue pudiendo preguntar**. Si esta
+  falla, la pantalla propia no sirve para nada y el diseño entero se cae.
+- **Probar también denegando el permiso** en el cuadro del navegador, y
+  comprobar que el reemplazo, el sorteo y el chat siguen funcionando
+  enteros y sin errores visibles.
 
 ## Fuera de alcance
 
 - **El aviso dentro de la app** para quien no tenga push. Es la red de
   seguridad del riesgo asumido arriba, y va aparte.
-- **Cualquier otra notificación**: que el grupo sorteó, mensajes de chat,
-  recordatorios de fecha. Este subsistema los hará posibles; ninguno se
-  construye aquí.
+- ~~Cualquier otra notificación~~ — **REVISADO el 2026-08-12.** El sorteo y
+  los mensajes de chat **entran** (ver «De qué se avisa»). Siguen fuera los
+  **recordatorios de fecha**, que necesitan trabajo programado y no tienen
+  ninguno de los dos disparadores que ya existen.
 - **Preferencias de notificación.** No hay nada que apagar todavía.
 - **iOS.** La app es web y Android; el push web en iOS exige que la app
   esté instalada en la pantalla de inicio y no se va a probar.
