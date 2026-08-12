@@ -79,7 +79,16 @@ Future<bool> correoVerificado() async {
     await _traduciendo(() => u.reload());
   } catch (_) {
     await Future<void>.delayed(const Duration(milliseconds: 400));
-    await _traduciendo(() => u.reload());
+    try {
+      await _traduciendo(() => u.reload());
+    } on FuncionError catch (e) {
+      // Misma marca que usa tokenActual() en auth.dart, y por el mismo
+      // motivo: este fallo y el de tokenActual() llegan con el mismo
+      // código y clave genéricos, y sin distinguirlos no hay forma de
+      // saber, leyendo el mensaje que alguien transcribe desde el móvil,
+      // cuál de los dos rompió.
+      throw FuncionError(e.codigo, e.clave, 'reload: ${e.mensaje}');
+    }
   }
   final verificado = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
   // reload() refresca el registro de usuario, NO el ID token: el que está en
