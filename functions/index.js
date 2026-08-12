@@ -5,6 +5,7 @@ const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore");
 const {getStorage} = require("firebase-admin/storage");
+const {avisar, avisarAVarios} = require("./push");
 const bcrypt = require("bcryptjs");
 // `Math.random` no sirve para nada de esto. V8 lo implementa con
 // xorshift128+, que no es un generador criptográfico: a partir de unas
@@ -265,6 +266,37 @@ exports.cambiarPin = onCall(async (request) => {
     pinFallos: 0,
     pinBloqueadoHasta: 0,
   });
+  return {ok: true};
+});
+
+/**
+ * Guarda un token de FCM de esta instalación.
+ *
+ * Es un MAPA `token -> fecha`, no un array. Un array con `arrayUnion`
+ * compara por igualdad, y esa comparación ya falló una vez en este
+ * proyecto; con el mapa, guardar dos veces el mismo token no puede crear
+ * un duplicado ni queriendo.
+ *
+ * La fecha sirve para limpiar más adelante: un token que lleva meses sin
+ * renovarse es de un dispositivo que ya no existe. Hoy no hay nada que la
+ * lea, y se guarda igual porque el dato no se puede reconstruir después.
+ */
+exports.guardarTokenPush = onCall(async (request) => {
+  const uid = uidDe(request);
+  const token = (request.data?.token || "").trim();
+
+  // Un token de FCM ronda los 150-200 caracteres. El tope alto es para no
+  // dejar que nadie llene el documento con basura: la clave de un mapa de
+  // Firestore no puede pasar de 1500 bytes, y llegar a ese límite haría
+  // fallar la escritura entera de esa persona.
+  if (!token || token.length > 500) {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+
+  await usuarioRef(uid).set({
+    tokensPush: {[token]: Date.now()},
+  }, {merge: true});
+
   return {ok: true};
 });
 
