@@ -234,6 +234,19 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       );
       return;
     }
+
+    // Mismo bloque que `_trasVerificar` de abajo (deuda: son ya CUATRO
+    // copias del patrón completo —las otras dos en `_trasVerificar` de
+    // `pantalla_crear_cuenta.dart` y `pantalla_iniciar_sesion.dart`—,
+    // aparte de la extracción parcial que ya hizo la Tarea 8 en
+    // `oferta_avisos.dart`; unificarlas es un cambio aparte, para no
+    // mezclarlo con el agujero que esto tapa). Quien entra por AQUÍ ya
+    // tenía sesión iniciada y NUNCA pasa por `_trasVerificar` — sin esta
+    // llamada, a toda cuenta ya existente no se le preguntaría jamás por
+    // los avisos.
+    await ofrecerAvisosSiHaceFalta(context);
+    if (!mounted) return;
+
     await irADondeToque(context, resultado);
   }
 

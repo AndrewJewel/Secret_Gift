@@ -813,4 +813,11 @@ class TextosEn extends Textos {
   @override
   String get errorTokenInvalido =>
       'We couldn\'t set up notifications. Nothing else is affected.';
+
+  @override
+  String get avisosInterruptor => 'Notifications';
+
+  @override
+  String get avisosBloqueados =>
+      'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.';
 }

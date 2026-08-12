@@ -173,6 +173,37 @@ async function llamar(nombre, datos, idToken) {
 const claims = (idToken) =>
   JSON.parse(Buffer.from(idToken.split(".")[1], "base64").toString());
 
+// A diferencia de `grupos/{codigo}` y sus subcolecciones, `usuarios/{uid}`
+// NO es de lectura pública (ver firestore.rules: solo la propia cuenta
+// puede leer su documento), así que aquí sí hace falta el idToken.
+async function leerUsuario(uid, idToken) {
+  const r = await fetch(`${FIRESTORE}/usuarios/${uid}`, {
+    headers: {Authorization: `Bearer ${idToken}`},
+  });
+  const j = await r.json();
+  return campoAValor({mapValue: {fields: j.fields || {}}});
+}
+
+// Convierte un valor con la forma de la API REST de Firestore
+// (`{mapValue: {fields: {...}}}`, `{stringValue: "..."}`, etc.) a su
+// equivalente en JS. Hace falta para `tokensPush`: es un mapa de mapas, y
+// sin desenvolver cada nivel las claves seguirían envueltas en
+// `{integerValue: "..."}` en vez de quedar como un objeto plano con el que
+// `Object.keys` sirva de algo.
+function campoAValor(campo) {
+  if (!campo) return undefined;
+  if ("mapValue" in campo) {
+    const obj = {};
+    for (const [k, v] of Object.entries(campo.mapValue.fields || {})) obj[k] = campoAValor(v);
+    return obj;
+  }
+  if ("stringValue" in campo) return campo.stringValue;
+  if ("integerValue" in campo) return Number(campo.integerValue);
+  if ("booleanValue" in campo) return campo.booleanValue;
+  if ("nullValue" in campo) return null;
+  return campo;
+}
+
 function ok(titulo, condicion, detalle = "") {
   if (condicion) {
     console.log(`  OK  ${titulo}`);
@@ -300,7 +331,7 @@ async function seguir(emailOrganizador, emailParticipante, emailTercero) {
         `esperaba UNAUTHENTICATED, llegó ${e.status}`);
   }
 
-  const {idToken: tokenOrg} = await entrar(emailOrganizador, PASSWORD);
+  const {idToken: tokenOrg, localId: uidOrg} = await entrar(emailOrganizador, PASSWORD);
   const {idToken: tokenPart} = await entrar(emailParticipante, PASSWORD);
   const {idToken: tokenTercero} = await entrar(emailTercero, PASSWORD);
   const verificadaOrg = claims(tokenOrg).email_verified === true;
@@ -339,6 +370,27 @@ async function seguir(emailOrganizador, emailParticipante, emailTercero) {
   const perfilOrgOtraVez = await llamar("guardarPerfil", {nombre: "Otro", apellido: "Nombre", pin: "0000"}, tokenOrg);
   ok("guardarPerfil es idempotente (no revienta la segunda vez)",
       perfilOrgOtraVez.ok === true, `llegó ${JSON.stringify(perfilOrgOtraVez)}`);
+
+  // --- borrarTokenPush: apagar en un dispositivo no apaga el otro --------
+  // Los tokens son por DISPOSITIVO, no por cuenta: la misma persona en el
+  // móvil y en el portátil tiene dos tokens distintos. Es el caso que más
+  // importa de toda esta tarea — apagar los avisos en uno no puede
+  // apagárselos en el otro.
+  await llamar("guardarTokenPush", {token: "token-apagar-1"}, tokenOrg);
+  await llamar("guardarTokenPush", {token: "token-apagar-2"}, tokenOrg);
+  await llamar("borrarTokenPush", {token: "token-apagar-1"}, tokenOrg);
+  const usuarioOrg = await leerUsuario(uidOrg, tokenOrg);
+  const tokensOrg = Object.keys(usuarioOrg.tokensPush || {});
+  ok("borrarTokenPush quita solo ese token", !tokensOrg.includes("token-apagar-1"),
+      `sigue presente: ${JSON.stringify(tokensOrg)}`);
+  ok("el OTRO dispositivo de la misma persona NO se ve afectado",
+      tokensOrg.includes("token-apagar-2"), `tokens restantes: ${JSON.stringify(tokensOrg)}`);
+
+  // Borrar un token que ya no está (o que nunca estuvo) no puede reventar:
+  // es justo lo que hace `apagarAvisos()` en el cliente si `getToken()`
+  // devuelve null o si el token ya se había borrado antes.
+  const otraVezBorrado = await llamar("borrarTokenPush", {token: "token-apagar-1"}, tokenOrg);
+  ok("borrar un token ya borrado no revienta", otraVezBorrado.ok === true);
 
   // La cuenta participante, en cambio, TODAVÍA no ha llamado a
   // guardarPerfil. Es el estado exacto de alguien que se registró y

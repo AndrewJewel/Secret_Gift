@@ -812,4 +812,11 @@ class TextosEs extends Textos {
   @override
   String get errorTokenInvalido =>
       'No pudimos activar los avisos. Lo demás sigue funcionando.';
+
+  @override
+  String get avisosInterruptor => 'Avisos';
+
+  @override
+  String get avisosBloqueados =>
+      'Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos.';
 }

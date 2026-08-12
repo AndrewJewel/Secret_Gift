@@ -263,5 +263,7 @@
   "avisosTexto": "Te diremos cuando tu grupo sortee, cuando escriban en el chat y si tu amigo secreto cambia de persona.",
   "avisosSi": "Sí, avísame",
   "avisosAhoraNo": "Ahora no",
-  "errorTokenInvalido": "No pudimos activar los avisos. Lo demás sigue funcionando."
+  "errorTokenInvalido": "No pudimos activar los avisos. Lo demás sigue funcionando.",
+  "avisosInterruptor": "Avisos",
+  "avisosBloqueados": "Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos."
 }

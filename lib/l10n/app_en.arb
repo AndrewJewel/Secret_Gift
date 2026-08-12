@@ -360,5 +360,13 @@
   "errorTokenInvalido": "We couldn't set up notifications. Nothing else is affected.",
   "@errorTokenInvalido": {
     "description": "Shown if the server rejects the push token. Reassures that the rest of the app is unaffected."
+  },
+  "avisosInterruptor": "Notifications",
+  "@avisosInterruptor": {
+    "description": "Label of the notifications on/off switch in Settings."
+  },
+  "avisosBloqueados": "Your browser or phone is blocking notifications for this app. You'll need to allow them in its settings — we can't do it from here.",
+  "@avisosBloqueados": {
+    "description": "Shown when turning the switch on fails because the OS/browser already denied the permission. The app cannot re-request it, only explain where to fix it."
   }
 }

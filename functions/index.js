@@ -321,6 +321,31 @@ exports.guardarTokenPush = onCall(async (request) => {
 });
 
 /**
+ * Borra el token de ESTA instalación.
+ *
+ * Apagar los avisos tiene que apagarlos de verdad: si solo se guardara una
+ * preferencia en el dispositivo, el servidor seguiría mandando y las
+ * notificaciones seguirían saliendo. Se borra la clave del mapa.
+ *
+ * No exige que el perfil exista, al revés que `guardarTokenPush`: si no
+ * existe, no hay nada que borrar y `update` sobre un documento ausente
+ * fallaría. Se usa `set` con `merge` sobre un borrado, que es inofensivo.
+ */
+exports.borrarTokenPush = onCall(async (request) => {
+  const uid = uidDe(request);
+  const token = request.data?.token;
+  if (typeof token !== "string" || !token.trim()) {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+  const snap = await usuarioRef(uid).get();
+  if (!snap.exists) return {ok: true};
+  await usuarioRef(uid).set({
+    tokensPush: {[token.trim()]: FieldValue.delete()},
+  }, {merge: true});
+  return {ok: true};
+});
+
+/**
  * El perfil y los grupos de quien llama.
  *
  * Sigue siendo una Cloud Function y no una lectura directa de Firestore

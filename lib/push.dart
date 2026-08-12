@@ -78,6 +78,33 @@ Future<bool> pedirPermisoYRegistrar() async {
   }
 }
 
+/// El token de esta instalación, o null si no hay.
+///
+/// No pide permiso: si no está concedido, `getToken` devuelve null y eso
+/// es exactamente la respuesta que queremos aquí.
+Future<String?> tokenDeEsteDispositivo() async {
+  try {
+    return await FirebaseMessaging.instance
+        .getToken(vapidKey: kIsWeb ? _vapid : null);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Apaga los avisos en ESTE dispositivo, de verdad.
+///
+/// Borra el token en el servidor. Sin esto, apagar el interruptor sería
+/// decorativo: el servidor seguiría mandando avisos a este dispositivo.
+Future<void> apagarAvisos() async {
+  final token = await tokenDeEsteDispositivo();
+  if (token == null) return;
+  try {
+    await llamarFuncion('borrarTokenPush', {'token': token});
+  } catch (_) {
+    // Apagar no puede romperle la pantalla a nadie.
+  }
+}
+
 /// Decide si hay que abrir un aviso, a partir de su identificador de
 /// mensaje y del último que ya se abrió. Función pura, sin nada de FCM, a
 /// propósito: así se puede probar el deduplicado con un test normal, sin

@@ -1535,6 +1535,18 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'We couldn\'t set up notifications. Nothing else is affected.'**
   String get errorTokenInvalido;
+
+  /// Label of the notifications on/off switch in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get avisosInterruptor;
+
+  /// Shown when turning the switch on fails because the OS/browser already denied the permission. The app cannot re-request it, only explain where to fix it.
+  ///
+  /// In en, this message translates to:
+  /// **'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.'**
+  String get avisosBloqueados;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {
