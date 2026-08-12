@@ -45,11 +45,15 @@ const BUCKET = "secretgift-app.firebasestorage.app";
 // solo para frenar un abuso, no para uso normal.
 const MAX_AVATAR_BYTES = 400 * 1024;
 
-// Sube la imagen y devuelve su URL pública. Devuelve null si no vino
-// ninguna imagen — el avatar siempre es opcional.
-async function guardarAvatar(codigo, participanteId, avatarBase64) {
-  if (!avatarBase64) return null;
-
+/**
+ * Decodifica y valida una imagen en base64, sin subirla.
+ *
+ * Es el mismo criterio que aplica `guardarAvatar` más abajo, extraído para
+ * poder llamarlo por separado ANTES de una transacción que gasta algo de
+ * un solo uso — ver el comentario en `canjearReemplazo` sobre por qué esta
+ * duplicación existe a propósito.
+ */
+function decodificarAvatar(avatarBase64) {
   // El cliente puede mandar "data:image/jpeg;base64,XXXX" o solo "XXXX".
   const limpio = String(avatarBase64).replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(limpio, "base64");
@@ -60,6 +64,15 @@ async function guardarAvatar(codigo, participanteId, avatarBase64) {
   if (buffer.length > MAX_AVATAR_BYTES) {
     throw new HttpsError("invalid-argument", "La imagen pesa demasiado.", {clave: "imagen_muy_grande"});
   }
+  return buffer;
+}
+
+// Sube la imagen y devuelve su URL pública. Devuelve null si no vino
+// ninguna imagen — el avatar siempre es opcional.
+async function guardarAvatar(codigo, participanteId, avatarBase64) {
+  if (!avatarBase64) return null;
+
+  const buffer = decodificarAvatar(avatarBase64);
 
   // Nombre con marca de tiempo: al cambiar de avatar cambia la URL, así
   // ningún caché del navegador se queda mostrando la imagen vieja.
@@ -729,6 +742,19 @@ exports.canjearReemplazo = onCall(async (request) => {
   // grupo, así que devolvería rol y participanteId nulos para alguien
   // legítimo. La autorización la lleva el TOKEN.
   const uid = uidDe(request);
+
+  // Se valida la imagen ANTES de reservar el token, aunque `guardarAvatar`
+  // vaya a repetir la misma comprobación más abajo cuando de verdad suba el
+  // archivo. El token se gasta en la transacción de aquí debajo y no hay
+  // forma de devolverlo: si la foto se rechazara DESPUÉS de reservarlo
+  // —`imagen_invalida`, `imagen_muy_grande`—, quien canjea vería el error,
+  // cambiaría la foto y volvería a pulsar Guardar solo para toparse con
+  // `reemplazo_invalido` sobre un enlace ya muerto. Que el token se pierda
+  // ante un fallo de red imprevisible es un coste aceptado; ante una rama
+  // de validación que la propia persona dispara, no.
+  if (request.data?.avatarBase64) {
+    decodificarAvatar(request.data.avatarBase64);
+  }
 
   // El token se RESERVA antes de tocar nada más: leerlo y borrarlo por
   // separado deja un hueco en el que dos personas canjean el mismo enlace
