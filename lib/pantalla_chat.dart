@@ -7,6 +7,8 @@ import 'l10n/app_localizations.dart';
 import 'mascara.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
+import 'push.dart';
+import 'ruta_observer.dart';
 import 'tematica.dart';
 
 /// Chat grupal anónimo.
@@ -37,7 +39,7 @@ class PantallaChat extends StatefulWidget {
   State<PantallaChat> createState() => _PantallaChatState();
 }
 
-class _PantallaChatState extends State<PantallaChat> {
+class _PantallaChatState extends State<PantallaChat> with RouteAware {
   final TextEditingController _mensajeController = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
@@ -57,14 +59,51 @@ class _PantallaChatState extends State<PantallaChat> {
   void initState() {
     super.initState();
     _cargarMiMascara();
+    // Mientras esta pantalla esté a la vista no se enseñan avisos de
+    // mensajes de ESTE grupo: ya los estás leyendo.
+    mirandoGrupo(widget.codigo);
+  }
+
+  // Se suscribe al observador global de rutas (ver ruta_observer.dart) para
+  // enterarse de cuando esta pantalla queda TAPADA por otra sin llegar a
+  // destruirse —por ejemplo, si desde aquí se navega a otra pantalla y esta
+  // se queda debajo, viva, esperando a que vuelvan—. `dispose` NO se entera
+  // de eso: solo se llama cuando la ruta se destruye de verdad. Sin este
+  // observador, `_grupoALaVista` se quedaría con este código mientras la
+  // persona mira otra cosa, y esta pantalla dejaría de enseñar avisos de
+  // ESTE grupo aunque ya nadie la esté leyendo.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ruta = ModalRoute.of(context);
+    if (ruta is PageRoute) rutaObserver.subscribe(this, ruta);
   }
 
   @override
   void dispose() {
+    rutaObserver.unsubscribe(this);
     _mensajeController.dispose();
     _scroll.dispose();
+    // Red de seguridad para TODAS las formas de cerrar esta pantalla —el
+    // botón atrás propio, el gesto de volver de Android/iOS, un pop desde
+    // código—: todas terminan destruyendo esta ruta y pasando por aquí. Si
+    // este valor se quedara pegado, a quien lo sufra no le llegaría NUNCA
+    // MÁS un aviso de este grupo, y nadie se enteraría.
+    mirandoGrupo(null);
     super.dispose();
   }
+
+  // --- Observador de rutas ------------------------------------------------
+
+  /// Esta pantalla queda tapada por otra que se apila encima: deja de
+  /// estar "a la vista" sin destruirse, así que hay que apagarlo aquí y no
+  /// esperar a `dispose`.
+  @override
+  void didPushNext() => mirandoGrupo(null);
+
+  /// Vuelve a estar a la vista tras cerrarse la pantalla que la tapaba.
+  @override
+  void didPopNext() => mirandoGrupo(widget.codigo);
 
   Future<void> _cargarMiMascara() async {
     if (widget.vinculo?.estoyDentro != true) return;

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'acceso_cuenta.dart';
+import 'almacen_local.dart';
 import 'auth.dart';
 import 'destino_inicial.dart';
 import 'funciones.dart';
@@ -15,8 +16,10 @@ import 'ocasion.dart';
 import 'pantalla_completar_perfil.dart';
 import 'pantalla_crear_cuenta.dart';
 import 'pantalla_mis_grupos.dart';
+import 'pantalla_permiso_avisos.dart';
 import 'pantalla_registro.dart';
 import 'pantalla_verificar_correo.dart';
+import 'push.dart';
 import 'tematica.dart';
 
 /// Primera pantalla real de la app: decide a dónde va cada quien.
@@ -42,7 +45,49 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   @override
   void initState() {
     super.initState();
+    // Se captura el Navigator ANTES de arrancar: `_arrancar` casi siempre
+    // termina en un `pushReplacement` que saca esta pantalla de la pila y
+    // destruye este State, así que a partir de ahí `context` deja de
+    // servir. El NavigatorState, en cambio, sigue siendo el mismo durante
+    // toda la vida de la app (es el mismo truco que usa `irADondeToque`
+    // más abajo, ver su comentario). Sin capturarlo aquí, tocar un aviso
+    // minutos después de arrancar no tendría dónde navegar: el callback
+    // de `alTocarAviso` vería `mounted == false` y no haría nada nunca.
+    final navegador = Navigator.of(context);
+    // Tocar un aviso abre su grupo. Sin esto, el aviso lleva a la pantalla
+    // de inicio y la persona tiene que buscar el grupo a mano — que es
+    // justo la fricción que el aviso venía a quitar.
+    alTocarAviso((codigo) => _abrirGrupoDesdeAviso(navegador, codigo));
     _arrancar();
+  }
+
+  /// Abre el grupo de un aviso tocado, reutilizando el MISMO camino que ya
+  /// usa la app para entrar a un grupo por su código —el de la invitación
+  /// por URL (ver `invitacion_pendiente.dart` y `destino_inicial.dart`)—:
+  /// se guarda como invitación pendiente y se resuelve con
+  /// `irADondeToque`, que ya sabe construir la pila (Mis grupos + el
+  /// grupo) y ya sabe qué hacer si la persona es nueva en el grupo o ya
+  /// tiene plaza. Escribir aquí una navegación paralela dejaría dos formas
+  /// de abrir un grupo por código que acabarían desincronizándose.
+  Future<void> _abrirGrupoDesdeAviso(NavigatorState navegador, String codigo) async {
+    if (usuarioActual == null) return; // sin sesión no hay grupo que abrir
+    try {
+      await guardarInvitacion(codigo, '');
+      final resultado = await cargarMisGrupos();
+      if (resultado == null) return;
+      // `contexto` es el del propio Navigator raíz, no el de esta
+      // pantalla: sigue válido aunque `_PantallaRaizState` ya esté
+      // destruida, por la misma razón explicada en `initState`. El
+      // chequeo de `mounted` es igual de defensivo: entre los dos `await`
+      // de arriba la app entera podría (en teoría) haberse cerrado.
+      final contexto = navegador.context;
+      if (!contexto.mounted) return;
+      await irADondeToque(contexto, resultado);
+    } catch (_) {
+      // Sin conexión o grupo ya borrado: no hay nada sensato que hacer con
+      // un toque sobre un aviso salvo ignorarlo, igual que ya se ignora en
+      // `_entrarAlGrupo` cuando el grupo no existe.
+    }
   }
 
   /// Si la URL trae ?codigo=XXXX se guarda como invitación ANTES de
@@ -167,6 +212,34 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       );
       return;
     }
+
+    // El permiso de avisos se ofrece aquí, en el primer momento en que
+    // esta persona entra de verdad. Antes de verificar el correo no puede
+    // hacer nada, y preguntárselo mientras espera sería interrumpirla en
+    // mitad de otra cosa.
+    //
+    // `yaSePreguntoPorAvisos` es por DISPOSITIVO, no por cuenta: el
+    // permiso es del navegador, así que la misma persona tiene que poder
+    // decidirlo en el móvil y en el portátil por separado.
+    if (!await yaSePreguntoPorAvisos()) {
+      await marcarPreguntadoPorAvisos();
+      if (!context.mounted) return;
+      await Navigator.push(context, MaterialPageRoute(
+        builder: (_) => PantallaPermisoAvisos(
+          alAceptar: () async {
+            await pedirPermisoYRegistrar();
+            if (context.mounted) Navigator.pop(context);
+          },
+          alSaltar: () => Navigator.pop(context),
+        ),
+      ));
+    }
+    // El `if` de arriba empieza con un `await` en su propia condición
+    // (`yaSePreguntoPorAvisos`): incluso cuando ya se había preguntado y
+    // el cuerpo no llega a ejecutarse, ese `await` ya es un hueco async
+    // que hay que volver a comprobar antes de seguir usando `context`.
+    if (!context.mounted) return;
+
     await irADondeToque(context, r);
   }
 
