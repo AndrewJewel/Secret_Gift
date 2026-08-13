@@ -146,6 +146,33 @@ test("avisar no lanza si la llaman sin el segundo argumento", async (t) => {
   await assert.doesNotReject(() => avisar("u4"));
 });
 
+test("el aviso del reemplazo no deja deducir quién regala a quién", () => {
+  // El aviso de `reemplazarParticipante` va SOLO a quien le regala a la
+  // plaza que acaba de cambiar de manos, y quién ocupaba esa plaza es
+  // público dentro del grupo. Un texto como «Tu amigo secreto cambió» en
+  // la pantalla de bloqueo le entrega el par a cualquiera que mire el
+  // móvil, sin desbloquear siquiera — justo lo que esta app protege
+  // poniendo la asignación detrás de un PIN.
+  //
+  // Se comprueba sobre el fuente y no llamando a la función porque
+  // `reemplazarParticipante` es un `onCall` atado a Firestore entero; lo
+  // que hay que fijar aquí es el TEXTO, y el texto está en el fuente.
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const fuente = fs.readFileSync(path.join(__dirname, "index.js"), "utf8");
+
+  // El único aviso dirigido a una sola persona por su papel en el sorteo.
+  const inicio = fuente.indexOf("avisar(uidRegala");
+  assert.notStrictEqual(inicio, -1,
+      "cambió el aviso del reemplazo: revisa este test antes de tocarlo");
+  const bloque = fuente.slice(inicio, fuente.indexOf("});", inicio));
+
+  for (const prohibido of ["amigo secreto", "te regala", "te toca"]) {
+    assert.ok(!bloque.toLowerCase().includes(prohibido),
+        `el aviso del reemplazo menciona «${prohibido}»: revela el par`);
+  }
+});
+
 test("avisarAVarios no deja que un uid roto se lleve por delante a los demás", async (t) => {
   t.mock.method(console, "error", () => {});
   reiniciar();

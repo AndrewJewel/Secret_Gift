@@ -953,9 +953,21 @@ exports.canjearReemplazo = onCall(async (request) => {
       // fichero; si viniera vacío, mejor un código legible que un «».
       const grupoSnap = await grupoRef(codigo).get();
       const nombreGrupo = grupoSnap.data()?.nombreGrupo || codigo;
+      // TEXTO NEUTRO A PROPÓSITO. Este aviso va SOLO a quien le regala a
+      // la plaza que acaba de cambiar de manos, y quién ocupaba esa plaza
+      // es público dentro del grupo. Un «Tu amigo secreto cambió» en la
+      // pantalla de bloqueo le decía a cualquiera que mirase el móvil que
+      // esta persona le regala a esa plaza: el par deducido, sin
+      // desbloquear siquiera. Es justo lo que esta app protege poniendo la
+      // asignación detrás de un PIN (ver el comentario de
+      // `verAmigoSecreto`), y el aviso lo estaba regalando por fuera.
+      //
+      // Lo que queda dicho aquí —que algo cambió en un grupo— ya lo sabe
+      // todo el grupo, así que leerlo no añade nada. Quién es ahora el
+      // amigo secreto se ve dentro, tras el PIN.
       await avisar(uidRegala, {
-        titulo: "Tu amigo secreto cambió",
-        cuerpo: `En «${nombreGrupo}». Ábrelo para ver quién es ahora.`,
+        titulo: "Novedades en tu grupo",
+        cuerpo: `Algo cambió en «${nombreGrupo}». Ábrelo para verlo.`,
         datos: {codigo},
       });
     }

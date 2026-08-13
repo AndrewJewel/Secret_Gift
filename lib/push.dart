@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
+import 'almacen_local.dart';
 import 'funciones.dart';
 
 /// Sacada de la consola: Configuración del proyecto → Cloud Messaging →
@@ -30,11 +33,61 @@ void mirandoGrupo(String? codigo) {
 @visibleForTesting
 String? get grupoALaVistaParaPruebas => _grupoALaVista;
 
-/// Pide el permiso al navegador y registra el token.
+/// Si un estado del permiso del sistema deja mandar avisos.
 ///
-/// SOLO debe llamarse desde el «Sí, avísame» de PantallaPermisoAvisos.
-/// Llamarla en cualquier otro sitio gasta el permiso del navegador, que
-/// solo se puede pedir una vez.
+/// `provisional` cuenta: es el permiso silencioso de iOS, que entrega los
+/// avisos aunque sin sonido.
+bool permisoConcedido(AuthorizationStatus estado) =>
+    estado == AuthorizationStatus.authorized ||
+    estado == AuthorizationStatus.provisional;
+
+/// Qué dice el sistema AHORA sobre el permiso, sin pedirle nada a nadie.
+///
+/// `getNotificationSettings()` solo LEE el estado —en web es literalmente
+/// `Notification.permission`, en Android `areNotificationsEnabled()`— y por
+/// eso es seguro llamarla en cualquier sitio y tantas veces como haga
+/// falta. `getToken()` NO lo es: ver el comentario de
+/// `tokenDeEsteDispositivo`.
+///
+/// Ante un fallo responde `notDetermined`, que es la respuesta prudente:
+/// "no consta que esté concedido", y con ella nadie registra nada.
+Future<AuthorizationStatus> estadoDelPermiso() async {
+  try {
+    final ajustes = await FirebaseMessaging.instance.getNotificationSettings();
+    return ajustes.authorizationStatus;
+  } catch (_) {
+    return AuthorizationStatus.notDetermined;
+  }
+}
+
+/// Si los avisos están de verdad activos PARA ESTA CUENTA en ESTE
+/// dispositivo. Función pura, sin nada de FCM a propósito —igual que
+/// `debeAbrirseElAviso`—: los dos únicos defectos del cliente que llegaron
+/// hasta la revisión final vivían justo en esta decisión, y así se prueban
+/// con un test normal.
+///
+/// Hacen falta las DOS condiciones. El interruptor de Configuración leía
+/// solo `getToken() != null`, y eso significa "este dispositivo puede tener
+/// un token", que no es lo mismo:
+///
+/// - Con el permiso denegado, `getToken()` pedía el permiso él solo y, si
+///   ya estaba quemado, lanzaba; el `catch` lo volvía null. Ahora el
+///   permiso se lee aparte y sin pedirlo.
+/// - Con el permiso concedido pero el servidor SIN el token —falló la red
+///   justo después de aceptar, o se cambió de cuenta en este mismo
+///   dispositivo— el interruptor decía ENCENDIDO y no llegaba ni un aviso.
+bool avisosActivos(AuthorizationStatus estadoPermiso, bool hayTokenEnServidor) =>
+    permisoConcedido(estadoPermiso) && hayTokenEnServidor;
+
+/// Lo mismo, leyendo el estado real. No pide permiso ni toca el servidor.
+Future<bool> avisosActivosAhora() async =>
+    avisosActivos(await estadoDelPermiso(), await hayTokenPushEnServidor());
+
+/// Pide el permiso al sistema y registra el token.
+///
+/// SOLO debe llamarse desde el «Sí, avísame» de PantallaPermisoAvisos y
+/// desde el interruptor de Configuración. Llamarla en cualquier otro sitio
+/// gasta el permiso del navegador, que solo se puede pedir una vez.
 ///
 /// Nunca lanza: quien la llama (la pantalla de permiso) solo tiene un
 /// `try/finally` alrededor, sin `catch`, porque hasta ahora `alAceptar` no
@@ -48,28 +101,24 @@ Future<bool> pedirPermisoYRegistrar() async {
   try {
     final messaging = FirebaseMessaging.instance;
     final ajustes = await messaging.requestPermission();
-    if (ajustes.authorizationStatus != AuthorizationStatus.authorized &&
-        ajustes.authorizationStatus != AuthorizationStatus.provisional) {
+    if (!permisoConcedido(ajustes.authorizationStatus)) {
+      // Dijo que no en el cuadro del sistema. La intención queda en "no"
+      // para que la reconciliación del arranque no le registre nada por su
+      // cuenta si el permiso se concediera después desde los ajustes del
+      // navegador.
+      await marcarAvisosQueridos(false);
       return false;
     }
 
-    // La vapidKey SOLO en web. En Android el dispositivo ya está
-    // identificado por google-services.json.
-    final token = await messaging.getToken(vapidKey: kIsWeb ? _vapid : null);
-    if (token == null) return false;
-    await llamarFuncion('guardarTokenPush', {'token': token});
-
-    // El token puede cambiar sin que nadie haga nada (el navegador lo
-    // renueva). Si no se vuelve a guardar, los avisos dejan de llegar sin
-    // que nadie se entere.
-    messaging.onTokenRefresh.listen((nuevo) {
-      llamarFuncion('guardarTokenPush', {'token': nuevo}).catchError((_) {
-        // Renovar en segundo plano no puede molestar a nadie con un error.
-        return <String, dynamic>{};
-      });
-    });
-
-    return true;
+    // La intención se marca AQUÍ, antes de llamar al servidor, y no
+    // después de que salga bien: si `guardarTokenPush` falla por red, esta
+    // persona SÍ quiere avisos y el permiso ya está concedido. Con la
+    // marca puesta, `reconciliarAvisos` lo arregla sola en el arranque
+    // siguiente. Al revés —marcarla solo tras el éxito— era el segundo de
+    // los tres caminos que dejaban a alguien sin avisos para siempre y en
+    // silencio, porque la pantalla de permiso ya no se vuelve a ofrecer.
+    await marcarAvisosQueridos(true);
+    return await _registrarToken(messaging);
   } catch (_) {
     // Ver el comentario de arriba: esta función nunca lanza. Cualquier
     // fallo —permiso, red, VAPID, service worker— se cuenta como "no
@@ -78,12 +127,95 @@ Future<bool> pedirPermisoYRegistrar() async {
   }
 }
 
+/// Vuelve a dejar el token de este dispositivo en la cuenta que hay
+/// abierta. Es la reconciliación del arranque, y sin ella el token se
+/// escribía UNA vez y no lo revisaba nadie nunca más.
+///
+/// No pide permiso: solo mira el que ya hay. Si no está concedido, o si en
+/// este dispositivo nadie pidió los avisos (o los apagó), no hace nada.
+///
+/// Nunca lanza: se llama en pleno camino de entrada.
+Future<bool> reconciliarAvisos() async {
+  try {
+    if (!await avisosQueridosAqui()) return false;
+    if (!permisoConcedido(await estadoDelPermiso())) return false;
+    return await _registrarToken(FirebaseMessaging.instance);
+  } catch (_) {
+    // Sin red no hay nada que hacer más que reintentarlo en el arranque
+    // siguiente. `hayTokenPushEnServidor` sigue en false, así que el
+    // interruptor dirá "apagado", que es la verdad.
+    return false;
+  }
+}
+
+/// Pide el token y lo guarda en la cuenta abierta. Único sitio que escribe
+/// `guardarTokenPush` en el camino normal, para que la marca local y la
+/// escucha de renovaciones no puedan quedar descuadradas según por dónde
+/// se llegue.
+Future<bool> _registrarToken(FirebaseMessaging messaging) async {
+  // La vapidKey SOLO en web. En Android el dispositivo ya está
+  // identificado por google-services.json.
+  final token = await messaging.getToken(vapidKey: kIsWeb ? _vapid : null);
+  if (token == null) return false;
+  await llamarFuncion('guardarTokenPush', {'token': token});
+  await marcarTokenPushEnServidor(true);
+  _escucharRenovaciones(messaging);
+  return true;
+}
+
+/// La escucha de renovaciones del token, o null si no hay ninguna viva.
+///
+/// Se guarda para poder CANCELARLA al apagar los avisos o al cerrar
+/// sesión. Antes se suscribía sin guardar nada: la escucha sobrevivía al
+/// apagado y podía volver a registrar el token ella sola, y además se
+/// suscribía otra vez en cada `pedirPermisoYRegistrar`, acumulando
+/// escuchas duplicadas sobre el mismo stream.
+StreamSubscription<String>? _escuchaDeRenovaciones;
+
+/// El token puede cambiar sin que nadie haga nada. Si no se vuelve a
+/// guardar, los avisos dejan de llegar sin que nadie se entere.
+///
+/// EN WEB NO SIRVE DE NADA: `onTokenRefresh` de `firebase_messaging_web`
+/// es un stream vacío que NO EMITE JAMÁS (`_noopOnTokenRefreshStream`, con
+/// el propio paquete documentando que la API está obsoleta en web). Por eso
+/// se sale antes en web —suscribirse allí sería fingir una protección que
+/// no existe— y por eso la reconciliación del arranque
+/// (`reconciliarAvisos`) es la ÚNICA red que hay en web contra un token que
+/// cambia.
+void _escucharRenovaciones(FirebaseMessaging messaging) {
+  if (kIsWeb) return;
+  if (_escuchaDeRenovaciones != null) return;
+  _escuchaDeRenovaciones = messaging.onTokenRefresh.listen((nuevo) async {
+    try {
+      await llamarFuncion('guardarTokenPush', {'token': nuevo});
+      await marcarTokenPushEnServidor(true);
+    } catch (_) {
+      // Renovar en segundo plano no puede molestar a nadie con un error.
+    }
+  });
+}
+
+Future<void> _dejarDeEscucharRenovaciones() async {
+  final escucha = _escuchaDeRenovaciones;
+  _escuchaDeRenovaciones = null;
+  await escucha?.cancel();
+}
+
 /// El token de esta instalación, o null si no hay.
 ///
-/// No pide permiso: si no está concedido, `getToken` devuelve null y eso
-/// es exactamente la respuesta que queremos aquí.
+/// La comprobación del permiso NO es un adorno ni un atajo: `getToken()`
+/// PIDE EL PERMISO ÉL MISMO. En el SDK de JavaScript que carga esta app
+/// (firebase-js 12.17.0) lo primero que hace es
+/// `if ("default" === Notification.permission) await
+/// Notification.requestPermission()`, y si no queda concedido lanza
+/// `permission-blocked`. O sea: llamarla sin más abría el cuadro del
+/// navegador a quien solo venía a cambiar el idioma, sin contexto y sin
+/// haberlo pedido — y si lo denegaba ahí, el permiso quedaba quemado para
+/// siempre. `getNotificationSettings()` sí es de solo lectura, así que
+/// preguntándole antes se sale sin tocar nada.
 Future<String?> tokenDeEsteDispositivo() async {
   try {
+    if (!permisoConcedido(await estadoDelPermiso())) return null;
     return await FirebaseMessaging.instance
         .getToken(vapidKey: kIsWeb ? _vapid : null);
   } catch (_) {
@@ -91,17 +223,68 @@ Future<String?> tokenDeEsteDispositivo() async {
   }
 }
 
-/// Apaga los avisos en ESTE dispositivo, de verdad.
+/// Apaga los avisos en ESTE dispositivo, de verdad y para que se quede
+/// apagado.
 ///
-/// Borra el token en el servidor. Sin esto, apagar el interruptor sería
-/// decorativo: el servidor seguiría mandando avisos a este dispositivo.
+/// Tres cosas, y las tres hacen falta:
+/// - La intención pasa a "no", o la reconciliación del arranque volvería a
+///   registrar el token en cuanto se reabriera la app (el permiso del
+///   sistema sigue concedido, apagar el interruptor no lo revoca).
+/// - Se borra el token en el servidor, o los avisos seguirían saliendo.
+/// - Se borra el token en el dispositivo (`deleteToken`), o el interruptor
+///   volvería a salir ENCENDIDO al reabrir Configuración.
 Future<void> apagarAvisos() async {
-  final token = await tokenDeEsteDispositivo();
-  if (token == null) return;
+  await marcarAvisosQueridos(false);
+  await soltarTokenDeEsteDispositivo();
+}
+
+/// Suelta el token de este dispositivo de la cuenta que hay abierta, sin
+/// tocar la intención.
+///
+/// Se llama al cerrar sesión (ver `salir()` en `acceso_cuenta.dart`), y
+/// ahí el orden importa: ANTES del `signOut`, porque borrar el token en el
+/// servidor necesita justo la sesión que se va a cerrar. Sin esto, el
+/// token seguía colgando de la cuenta anterior: esa cuenta seguía
+/// recibiendo avisos en este teléfono y tocar uno abría el alta de su
+/// grupo, entregándole el código —la única llave que hay— a quien ahora
+/// usa el teléfono.
+///
+/// `deleteToken()` además obliga a acuñar un token NUEVO, así que la
+/// cuenta siguiente no hereda el identificador de la anterior.
+///
+/// La intención (`avisosQueridos`) NO se toca a propósito: es del
+/// dispositivo, no de la cuenta. Conservarla es lo que hace que la cuenta
+/// siguiente registre su propio token en `reconciliarAvisos` sin volver a
+/// preguntarle nada a nadie.
+///
+/// Nunca lanza.
+Future<void> soltarTokenDeEsteDispositivo() async {
   try {
-    await llamarFuncion('borrarTokenPush', {'token': token});
+    await _dejarDeEscucharRenovaciones();
+    final token = await tokenDeEsteDispositivo();
+    if (token != null) {
+      try {
+        // Con tope: `llamarFuncion` no lo lleva, y esto está en el camino
+        // de cerrar sesión. Sin red, un POST colgado dejaría a esa persona
+        // mirando un botón que no responde.
+        await llamarFuncion('borrarTokenPush', {'token': token})
+            .timeout(const Duration(seconds: 6));
+      } catch (_) {
+        // Apagar no puede romperle la pantalla a nadie. Y aunque el
+        // servidor se quede con el token, el `deleteToken()` de abajo lo
+        // mata: el primer envío lo verá muerto y lo limpiará solo (ver
+        // `tokensMuertos` en functions/push.js).
+      }
+    }
+    await marcarTokenPushEnServidor(false);
+    try {
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (_) {
+      // Idem.
+    }
   } catch (_) {
-    // Apagar no puede romperle la pantalla a nadie.
+    // Nunca lanza: quien la llama está cerrando sesión o apagando un
+    // interruptor, y ninguna de las dos cosas puede fallar por esto.
   }
 }
 

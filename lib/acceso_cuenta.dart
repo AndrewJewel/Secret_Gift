@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth.dart';
 import 'funciones.dart';
 import 'idioma.dart';
+import 'push.dart';
 
 /// El perfil y los grupos de quien ha entrado.
 class ResultadoAcceso {
@@ -141,7 +142,20 @@ Future<void> mandarRecuperacion(String correo) async {
   }
 }
 
-Future<void> salir() => FirebaseAuth.instance.signOut();
+/// Cierra la sesión y suelta antes los avisos de este dispositivo.
+///
+/// El orden no es opcional: `borrarTokenPush` necesita la sesión que
+/// estamos a punto de cerrar. Sin este paso el token seguía colgando de la
+/// cuenta anterior, así que quien usara el teléfono después recibía SUS
+/// avisos, y tocar uno abría la pantalla de alta de ese grupo — el código
+/// del grupo es la única llave que hay, y se la estábamos entregando a
+/// otra persona. Aparte, la cuenta nueva nunca llegaba a registrar el
+/// suyo. Ver `soltarTokenDeEsteDispositivo` en `push.dart`, que nunca
+/// lanza: un fallo suyo no puede impedir cerrar sesión.
+Future<void> salir() async {
+  await soltarTokenDeEsteDispositivo();
+  await FirebaseAuth.instance.signOut();
+}
 
 /// Vuelve a demostrar la contraseña. Actualiza el claim `auth_time` del
 /// token, que es lo ÚNICO que el servidor mira para saber si la sesión es

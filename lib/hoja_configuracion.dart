@@ -40,10 +40,12 @@ class HojaConfiguracion extends StatefulWidget {
 class _HojaConfiguracionState extends State<HojaConfiguracion> {
   bool _cambiandoPin = false;
 
-  /// Si hay avisos activos EN ESTE dispositivo. Se lee del propio token de
-  /// FCM (`tokenDeEsteDispositivo`), no de una preferencia guardada aparte:
-  /// una preferencia local podría decir "activado" mientras el navegador o
-  /// el móvil lo tienen bloqueado por su cuenta, y el interruptor mentiría.
+  /// Si hay avisos activos para ESTA cuenta en ESTE dispositivo. Lo decide
+  /// `avisosActivos` (en `push.dart`) cruzando dos cosas: el permiso que
+  /// dice el sistema y si el token está guardado en el servidor. Con una
+  /// sola no basta — el permiso concedido no significa que ESTA cuenta
+  /// tenga token, y una preferencia local a solas diría "activado" con el
+  /// navegador bloqueándolo por su cuenta.
   bool _avisosActivos = false;
   bool _cambiandoAvisos = false;
 
@@ -53,9 +55,14 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
     _leerEstadoAvisos();
   }
 
+  /// Solo LEE. Antes llamaba a `tokenDeEsteDispositivo()`, que acaba en
+  /// `getToken()`, y `getToken()` pide el permiso él mismo: abrir
+  /// Configuración para cambiar el idioma le sacaba el cuadro del
+  /// navegador a quien nunca lo pidió, y denegarlo ahí quemaba el permiso
+  /// para siempre. `avisosActivosAhora()` no pide nada.
   Future<void> _leerEstadoAvisos() async {
-    final token = await tokenDeEsteDispositivo();
-    if (mounted) setState(() => _avisosActivos = token != null);
+    final activos = await avisosActivosAhora();
+    if (mounted) setState(() => _avisosActivos = activos);
   }
 
   /// Al encender: pide permiso y registra. Si el sistema lo tiene

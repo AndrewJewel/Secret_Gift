@@ -52,6 +52,62 @@ void main() {
     });
   });
 
+  group('avisosQueridosAqui / hayTokenPushEnServidor', () {
+    test('sin nada guardado, las dos dicen que no', () async {
+      // El valor de reserva de las dos es `false`, y es el seguro: nadie
+      // registra avisos que no pidió, y el interruptor no dice "encendido"
+      // sin constarle que el servidor tenga el token.
+      expect(await avisosQueridosAqui(), isFalse);
+      expect(await hayTokenPushEnServidor(), isFalse);
+    });
+
+    test('son marcas DISTINTAS y no se pisan entre ellas', () async {
+      // La intención y el hecho tienen que poder discrepar: es justo lo
+      // que pasa cuando alguien acepta los avisos y `guardarTokenPush`
+      // falla por red. Quiere avisos (y por eso `reconciliarAvisos` los
+      // arreglará en el arranque siguiente) pero el servidor no tiene su
+      // token todavía.
+      await marcarAvisosQueridos(true);
+      expect(await avisosQueridosAqui(), isTrue);
+      expect(await hayTokenPushEnServidor(), isFalse);
+
+      await marcarTokenPushEnServidor(true);
+      expect(await hayTokenPushEnServidor(), isTrue);
+      expect(await avisosQueridosAqui(), isTrue);
+    });
+
+    test('cerrar sesión suelta el token pero conserva la intención',
+        () async {
+      // Reproduce lo que hace `soltarTokenDeEsteDispositivo`: la marca del
+      // servidor se cae (ese token ya no cuelga de la cuenta que se va)
+      // pero la intención sobrevive, porque es del DISPOSITIVO. Si se
+      // borrara, la cuenta siguiente no registraría nada: la pantalla de
+      // permiso no se vuelve a ofrecer nunca en este dispositivo.
+      await marcarAvisosQueridos(true);
+      await marcarTokenPushEnServidor(true);
+
+      await marcarTokenPushEnServidor(false);
+
+      expect(await hayTokenPushEnServidor(), isFalse);
+      expect(await avisosQueridosAqui(), isTrue);
+    });
+
+    test('apagar el interruptor sí tumba la intención', () async {
+      // Sin esto, apagar no se queda apagado: el permiso del sistema sigue
+      // concedido, así que `reconciliarAvisos` volvería a registrar el
+      // token en el arranque siguiente.
+      await marcarAvisosQueridos(true);
+      await marcarAvisosQueridos(false);
+      expect(await avisosQueridosAqui(), isFalse);
+    });
+
+    test('ninguna de las dos se confunde con "ya se preguntó"', () async {
+      await marcarPreguntadoPorAvisos();
+      expect(await avisosQueridosAqui(), isFalse);
+      expect(await hayTokenPushEnServidor(), isFalse);
+    });
+  });
+
   group('almacén roto', () {
     test('yaSePreguntoPorAvisos responde false, NO true, si el almacén falla',
         () async {
@@ -69,6 +125,19 @@ void main() {
         () async {
       SharedPreferencesStorePlatform.instance = _AlmacenRotoDePrueba();
       await expectLater(marcarPreguntadoPorAvisos(), completes);
+    });
+
+    test('las marcas de avisos responden false y no lanzan si el almacén falla',
+        () async {
+      // Mismo criterio que arriba, y con la misma consecuencia: leer
+      // `false` como reserva hace que el interruptor diga "apagado" y que
+      // no se registre nada solo. Decir `true` sin saberlo registraría
+      // avisos que nadie pidió o mostraría un interruptor mintiendo.
+      SharedPreferencesStorePlatform.instance = _AlmacenRotoDePrueba();
+      expect(await avisosQueridosAqui(), isFalse);
+      expect(await hayTokenPushEnServidor(), isFalse);
+      await expectLater(marcarAvisosQueridos(true), completes);
+      await expectLater(marcarTokenPushEnServidor(true), completes);
     });
   });
 }

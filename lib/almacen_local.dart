@@ -83,3 +83,79 @@ Future<void> marcarPreguntadoPorAvisos() async {
     // motivo para tumbar el camino de entrada.
   }
 }
+
+const _claveAvisosQueridos = 'avisos_queridos';
+
+/// Si en ESTE dispositivo se pidieron los avisos: la INTENCIÓN de la
+/// persona, no el hecho de que estén funcionando.
+///
+/// Hacen falta las dos cosas por separado, y esta es la que decide si la
+/// app puede registrar el token sola al arrancar (ver `reconciliarAvisos`
+/// en `push.dart`). Sin esta marca no se puede reconciliar sin hacer daño:
+///
+/// - Apagar el interruptor borra el token, pero el permiso del sistema
+///   sigue concedido. Una reconciliación que mirara SOLO el permiso lo
+///   volvería a registrar en el arranque siguiente, y apagar los avisos no
+///   se quedaría apagado nunca.
+/// - En Android anterior al 13 no existe el permiso `POST_NOTIFICATIONS`:
+///   las notificaciones vienen habilitadas de fábrica, así que el sistema
+///   responde "concedido" incluso a quien acaba de pulsar «Ahora no» en
+///   nuestra propia pantalla. Sin esta marca le registraríamos el token
+///   justo después de que dijera que no.
+///
+/// Es del DISPOSITIVO y sobrevive a cerrar sesión, igual que
+/// `yaSePreguntoPorAvisos` y por el mismo motivo: el permiso es del
+/// navegador o del móvil, no de la cuenta. Que sobreviva es justo lo que
+/// hace que la cuenta siguiente que entre en este teléfono registre su
+/// propio token sin volver a preguntar nada.
+Future<bool> avisosQueridosAqui() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_claveAvisosQueridos) ?? false;
+  } catch (_) {
+    // Ante la duda, no: registrar avisos que nadie pidió es peor que no
+    // registrar los que sí.
+    return false;
+  }
+}
+
+Future<void> marcarAvisosQueridos(bool queridos) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_claveAvisosQueridos, queridos);
+  } catch (_) {
+    // Igual que la marca de arriba: sin almacenamiento no se recuerda,
+    // pero no se tumba nada.
+  }
+}
+
+const _claveTokenEnServidor = 'token_push_en_servidor';
+
+/// Si la última operación que hicimos dejó el token de este dispositivo
+/// guardado en la cuenta que hay ahora abierta: el HECHO, no la intención.
+///
+/// Lo escribe `guardarTokenPush` cuando responde bien y lo borran apagar
+/// los avisos y cerrar sesión. Es el segundo dato que necesita
+/// `avisosActivos` (en `push.dart`) para no mentir en el interruptor: el
+/// permiso concedido solo dice que este dispositivo PUEDE tener token, no
+/// que ESTA cuenta lo tenga.
+Future<bool> hayTokenPushEnServidor() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_claveTokenEnServidor) ?? false;
+  } catch (_) {
+    return false;
+  }
+}
+
+Future<void> marcarTokenPushEnServidor(bool hay) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_claveTokenEnServidor, hay);
+  } catch (_) {
+    // Sin almacenamiento el interruptor dirá "apagado" aunque los avisos
+    // lleguen. Es el error seguro de los dos: encender otra vez es
+    // inofensivo (vuelve a guardar el mismo token), y decir "encendido"
+    // sin serlo es el fallo que esta ronda vino a arreglar.
+  }
+}

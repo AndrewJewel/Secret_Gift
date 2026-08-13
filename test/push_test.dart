@@ -1,10 +1,13 @@
+import 'package:firebase_messaging/firebase_messaging.dart'
+    show AuthorizationStatus;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:santa_secreto/push.dart';
 
-/// Pruebas de `debeAbrirseElAviso`, la decisión pura detrás del
-/// deduplicado de `alTocarAviso` (ver `push.dart`). No hace falta
-/// simular nada de FCM: la función solo compara identificadores de
-/// mensaje, así que se prueba con strings sueltos.
+/// Pruebas de las dos decisiones PURAS de `push.dart`:
+/// `debeAbrirseElAviso` (el deduplicado de `alTocarAviso`) y
+/// `avisosActivos` (lo que enseña el interruptor de Configuración). Ni una
+/// ni otra tocan FCM a propósito, así que se prueban con valores sueltos,
+/// sin simular nada de Firebase.
 void main() {
   group('debeAbrirseElAviso', () {
     test('sin nada visto todavía, se abre', () {
@@ -45,6 +48,64 @@ void main() {
       // nunca.
       expect(debeAbrirseElAviso(null, 'msg-1'), isTrue);
       expect(debeAbrirseElAviso(null, null), isTrue);
+    });
+  });
+
+  group('avisosActivos', () {
+    // Los DOS defectos del cliente que llegaron hasta la revisión final
+    // vivían en esta decisión, y los dos hacían decir ENCENDIDO al
+    // interruptor con el servidor vacío o el permiso denegado. La decisión
+    // está sacada a esta función precisamente para poder fijarlos aquí.
+
+    test('permiso concedido y token en el servidor: activos', () {
+      expect(avisosActivos(AuthorizationStatus.authorized, true), isTrue);
+    });
+
+    test('provisional (el permiso silencioso de iOS) también cuenta', () {
+      // `provisional` entrega los avisos, solo que sin sonido. Tratarlo
+      // como "denegado" apagaría el interruptor a quien sí los recibe.
+      expect(avisosActivos(AuthorizationStatus.provisional, true), isTrue);
+    });
+
+    test(
+      'DEFECTO 1: permiso NO concedido, aunque el dispositivo tuviera token',
+      () {
+        // El interruptor leía `getToken() != null`, que significa "este
+        // dispositivo puede tener token", no "los avisos funcionan". Con
+        // el permiso denegado o sin decidir no llega ni uno, diga lo que
+        // diga el token.
+        expect(avisosActivos(AuthorizationStatus.denied, true), isFalse);
+        expect(avisosActivos(AuthorizationStatus.notDetermined, true), isFalse);
+      },
+    );
+
+    test(
+      'DEFECTO 2: permiso concedido pero el SERVIDOR no tiene el token',
+      () {
+        // Los tres caminos silenciosos: el token cambió y nadie lo
+        // reconcilió, `guardarTokenPush` falló por red justo después de
+        // aceptar, o se cambió de cuenta en este mismo dispositivo. En los
+        // tres el permiso sigue concedido y no llega ningún aviso.
+        expect(avisosActivos(AuthorizationStatus.authorized, false), isFalse);
+        expect(avisosActivos(AuthorizationStatus.provisional, false), isFalse);
+      },
+    );
+
+    test('ni permiso ni token: apagados', () {
+      expect(avisosActivos(AuthorizationStatus.denied, false), isFalse);
+    });
+  });
+
+  group('permisoConcedido', () {
+    // Es la puerta que decide si `reconciliarAvisos` y
+    // `tokenDeEsteDispositivo` siguen adelante, y por tanto lo que impide
+    // que se llame a `getToken()` —que PIDE EL PERMISO ÉL MISMO— sin
+    // tenerlo ya concedido.
+    test('authorized y provisional sí; el resto no', () {
+      expect(permisoConcedido(AuthorizationStatus.authorized), isTrue);
+      expect(permisoConcedido(AuthorizationStatus.provisional), isTrue);
+      expect(permisoConcedido(AuthorizationStatus.denied), isFalse);
+      expect(permisoConcedido(AuthorizationStatus.notDetermined), isFalse);
     });
   });
 }
