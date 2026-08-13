@@ -257,18 +257,50 @@ Future<void> apagarAvisos() async {
 /// siguiente registre su propio token en `reconciliarAvisos` sin volver a
 /// preguntarle nada a nadie.
 ///
-/// Nunca lanza.
+/// Nunca lanza, y NUNCA tarda más de [_topeSoltarToken].
 Future<void> soltarTokenDeEsteDispositivo() async {
+  // Lo que no toca la red va PRIMERO y fuera del tope: si el tope salta,
+  // el estado local que lee el interruptor ya quedó en "apagado" —que es
+  // la verdad para la cuenta que se va— en vez de heredarse a la
+  // siguiente. Bajar la marca antes es además el orden seguro: mentir
+  // hacia "apagado" hace que se vuelva a intentar; mentir hacia
+  // "encendido" es el fallo que esta ronda vino a arreglar.
+  await marcarTokenPushEnServidor(false);
+  await _dejarDeEscucharRenovaciones();
+
+  // UN SOLO tope, y envuelve TODAS las llamadas de red de golpe. Acotar
+  // únicamente el POST de `borrarTokenPush` no bastaba: en este mismo
+  // camino hay otras tres esperas que también pueden colgarse —
+  // `getNotificationSettings()`, `getToken()` y `deleteToken()`—, y
+  // `getToken()` en web espera a `navigator.serviceWorker.ready`, que NO
+  // TERMINA NUNCA si el service worker no llega a activar (justo lo que
+  // puede pasar en un dispositivo que aún tenga cacheado el service worker
+  // viejo tras el salto a firebase-js 12.17.0).
+  //
+  // Esto está en el camino de cerrar sesión, y ese botón no tiene ni
+  // indicador ni estado deshabilitado: sin el tope, cerrar sesión se
+  // quedaba colgado con el botón repulsable cuando antes era instantáneo.
+  // Al expirar se sigue adelante y la sesión se cierra igual — no poder
+  // soltar el token no puede impedirle a nadie salir de su cuenta.
+  //
+  // El tope no cancela nada, solo deja de esperar: si las llamadas
+  // terminan más tarde, lo hacen sobre una sesión ya cerrada y sus fallos
+  // se los tragan los `catch` de dentro.
+  await _soltarEnElServidor().timeout(_topeSoltarToken, onTimeout: () {});
+}
+
+/// Cuánto se espera como MUCHO a soltar el token. Pasado esto se sigue
+/// adelante sin él.
+const _topeSoltarToken = Duration(seconds: 6);
+
+/// La parte que habla con la red. Separada solo para poder envolverla
+/// entera en un único `timeout`. Nunca lanza.
+Future<void> _soltarEnElServidor() async {
   try {
-    await _dejarDeEscucharRenovaciones();
     final token = await tokenDeEsteDispositivo();
     if (token != null) {
       try {
-        // Con tope: `llamarFuncion` no lo lleva, y esto está en el camino
-        // de cerrar sesión. Sin red, un POST colgado dejaría a esa persona
-        // mirando un botón que no responde.
-        await llamarFuncion('borrarTokenPush', {'token': token})
-            .timeout(const Duration(seconds: 6));
+        await llamarFuncion('borrarTokenPush', {'token': token});
       } catch (_) {
         // Apagar no puede romperle la pantalla a nadie. Y aunque el
         // servidor se quede con el token, el `deleteToken()` de abajo lo
@@ -276,7 +308,6 @@ Future<void> soltarTokenDeEsteDispositivo() async {
         // `tokensMuertos` en functions/push.js).
       }
     }
-    await marcarTokenPushEnServidor(false);
     try {
       await FirebaseMessaging.instance.deleteToken();
     } catch (_) {

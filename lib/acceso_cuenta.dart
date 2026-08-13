@@ -150,8 +150,16 @@ Future<void> mandarRecuperacion(String correo) async {
 /// avisos, y tocar uno abría la pantalla de alta de ese grupo — el código
 /// del grupo es la única llave que hay, y se la estábamos entregando a
 /// otra persona. Aparte, la cuenta nueva nunca llegaba a registrar el
-/// suyo. Ver `soltarTokenDeEsteDispositivo` en `push.dart`, que nunca
-/// lanza: un fallo suyo no puede impedir cerrar sesión.
+/// suyo.
+///
+/// `soltarTokenDeEsteDispositivo` nunca lanza Y LLEVA SU PROPIO TOPE que
+/// envuelve todas sus llamadas de red (ver `push.dart`), así que este
+/// `await` no puede colgar el cierre de sesión: pasados unos segundos se
+/// sigue adelante y la sesión se cierra igual, con token soltado o sin él.
+/// Hace falta el tope porque este botón no tiene ni indicador ni estado
+/// deshabilitado, y porque sin red —o con el service worker de web
+/// atascado— `getToken()` puede no volver nunca. No poder soltar el token
+/// no puede impedirle a nadie salir de su cuenta.
 Future<void> salir() async {
   await soltarTokenDeEsteDispositivo();
   await FirebaseAuth.instance.signOut();
