@@ -155,8 +155,11 @@ Ahora que las notificaciones existen, se usan en los dos sentidos:
 - Opción **«Eliminar mi cuenta»** en `lib/hoja_configuracion.dart`, con el
   aspecto que la app dé a lo destructivo.
 - El diálogo de confirmación, con la lista de grupos.
-- La pantalla de reautenticación **ya existe** (la usa cambiar el PIN): se
-  reutiliza, no se escribe otra.
+- La reautenticación **ya está en ese mismo fichero**: `reautenticar(...)`
+  vive en `lib/acceso_cuenta.dart` y `hoja_configuracion.dart` ya la usa
+  para cambiar el PIN, con su campo de contraseña. **No es una pantalla
+  aparte** — se reutiliza ese mismo patrón unas líneas más abajo, no se
+  escribe nada nuevo. (Comprobado el 2026-08-12, no supuesto.)
 - `FuncionError` tiene que poder llevar **datos extra** del servidor —hoy
   solo lleva `clave` y `mensaje`—, para que el mensaje del bloqueo pueda
   enumerar los grupos.
