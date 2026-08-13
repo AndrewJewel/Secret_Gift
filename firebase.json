@@ -6,6 +6,14 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "comment": "Atajo para instalar la app de prueba en Android desde el móvil. Es una REDIRECCIÓN y no una reescritura a propósito: así el fichero que se descarga conserva su nombre y su extensión .apk, que es lo que hace que Android lo reconozca como instalable. Sirviendo el contenido bajo /apk, el archivo llegaría sin extensión y el móvil no sabría qué hacer con él. Temporal (302), porque el APK no vive en el repositorio: se copia a mano a build/web antes de desplegar y desaparece en el siguiente despliegue normal.",
+        "source": "/apk",
+        "destination": "/secretgift.apk",
+        "type": 302
+      }
+    ],
     "rewrites": [
       {
         "source": "**",
