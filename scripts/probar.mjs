@@ -371,13 +371,40 @@ async function seguir(emailOrganizador, emailParticipante, emailTercero) {
   ok("guardarPerfil es idempotente (no revienta la segunda vez)",
       perfilOrgOtraVez.ok === true, `llegó ${JSON.stringify(perfilOrgOtraVez)}`);
 
-  // --- borrarTokenPush: apagar en un dispositivo no apaga el otro --------
-  // Los tokens son por DISPOSITIVO, no por cuenta: la misma persona en el
-  // móvil y en el portátil tiene dos tokens distintos. Es el caso que más
-  // importa de toda esta tarea — apagar los avisos en uno no puede
-  // apagárselos en el otro.
+  // --- guardarTokenPush: el mapa no admite duplicados ---------------------
+  // Lo que se prueba aquí es el MAPA, que es donde estaba el riesgo: si
+  // `tokensPush` fuera un array, `arrayUnion` compararía por igualdad y
+  // guardar dos veces el mismo token dejaría dos entradas — esa comparación
+  // por igualdad ya falló una vez en este proyecto. Con el mapa no puede
+  // pasar ni queriendo, y este caso es lo que impide que alguien lo
+  // convierta en array más adelante sin enterarse.
+  const guardado1 = await llamar("guardarTokenPush", {token: "token-apagar-1"}, tokenOrg);
+  ok("guardarTokenPush guarda el token", guardado1.ok === true, `llegó ${JSON.stringify(guardado1)}`);
+
   await llamar("guardarTokenPush", {token: "token-apagar-1"}, tokenOrg);
+  const usuarioOrgUnaVez = await leerUsuario(uidOrg, tokenOrg);
+  const tokensOrgUnaVez = Object.keys(usuarioOrgUnaVez.tokensPush || {});
+  ok("guardarlo dos veces deja UNA sola entrada",
+      tokensOrgUnaVez.filter((t) => t === "token-apagar-1").length === 1,
+      `esperaba una sola entrada, tokens: ${JSON.stringify(tokensOrgUnaVez)}`);
+
+  // Los tokens son por DISPOSITIVO, no por cuenta: la misma persona en el
+  // móvil y en el portátil tiene dos tokens distintos, y los dos tienen que
+  // convivir.
   await llamar("guardarTokenPush", {token: "token-apagar-2"}, tokenOrg);
+  const usuarioOrgDosTokens = await leerUsuario(uidOrg, tokenOrg);
+  const tokensOrgDosTokens = Object.keys(usuarioOrgDosTokens.tokensPush || {});
+  ok("dos dispositivos distintos dejan dos entradas",
+      tokensOrgDosTokens.includes("token-apagar-1") && tokensOrgDosTokens.includes("token-apagar-2"),
+      `los dos tokens tienen que convivir: son dos dispositivos de la misma persona; llegó ${JSON.stringify(tokensOrgDosTokens)}`);
+
+  await debeFallar("un token vacío se rechaza", "token_invalido",
+      () => llamar("guardarTokenPush", {token: "   "}, tokenOrg));
+
+  // --- borrarTokenPush: apagar en un dispositivo no apaga el otro --------
+  // Los dos tokens de arriba ya están guardados. Es el caso que más importa
+  // de toda esta tarea — apagar los avisos en uno no puede apagárselos en
+  // el otro.
   await llamar("borrarTokenPush", {token: "token-apagar-1"}, tokenOrg);
   const usuarioOrg = await leerUsuario(uidOrg, tokenOrg);
   const tokensOrg = Object.keys(usuarioOrg.tokensPush || {});
