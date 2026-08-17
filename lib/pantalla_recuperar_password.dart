@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'acceso_cuenta.dart';
 import 'funciones.dart';
+import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'ocasion.dart';
+import 'tematica.dart';
 
 class PantallaRecuperarPassword extends StatefulWidget {
   const PantallaRecuperarPassword({super.key});
@@ -44,41 +47,54 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(t.recuperarTitulo)),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: _mandado
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.mark_email_read_outlined, size: 64),
-                    const SizedBox(height: 16),
-                    Text(t.recuperarEnviado, textAlign: TextAlign.center),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(t.cerrar)),
-                  ],
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(t.recuperarTexto),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _correo,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(labelText: t.cuentaCorreo),
+    // FondoNeutro es quien pinta el fondo (manchas de color sobre
+    // degradado); un Scaffold suelto, sin este envoltorio ni el Theme de
+    // temaGlass, sale con el gris por defecto de Material. En web no se
+    // notaba porque el fondo de web/index.html lo tapaba; en Android no
+    // hay nada debajo y se ve. Mismo envoltorio que el resto de pantallas
+    // (ver pantalla_crear_cuenta.dart).
+    return Theme(
+      data: temaGlass(colorNeutro),
+      child: FondoNeutro(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(title: Text(t.recuperarTitulo)),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: _mandado
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.mark_email_read_outlined, size: 64),
+                        const SizedBox(height: 16),
+                        Text(t.recuperarEnviado, textAlign: TextAlign.center),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(t.cerrar)),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(t.recuperarTexto),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _correo,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration:
+                              InputDecoration(labelText: t.cuentaCorreo),
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                            onPressed: _mandando ? null : _mandar,
+                            child: Text(t.recuperarBoton)),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                        onPressed: _mandando ? null : _mandar,
-                        child: Text(t.recuperarBoton)),
-                  ],
-                ),
+            ),
+          ),
         ),
       ),
     );

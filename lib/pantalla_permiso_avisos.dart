@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'ocasion.dart';
+import 'tematica.dart';
 
 /// Pregunta por los avisos ANTES que el navegador.
 ///
@@ -47,32 +50,45 @@ class _PantallaPermisoAvisosState extends State<PantallaPermisoAvisos> {
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.notifications_active_outlined, size: 64),
-                const SizedBox(height: 16),
-                Text(t.avisosTitulo,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                Text(t.avisosTexto, textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _pidiendo ? null : _aceptar,
-                  child: Text(t.avisosSi),
+    // FondoNeutro es quien pinta el fondo (manchas de color sobre
+    // degradado); un Scaffold suelto, sin este envoltorio ni el Theme de
+    // temaGlass, sale con el gris por defecto de Material. En web no se
+    // notaba porque el fondo de web/index.html lo tapaba; en Android no
+    // hay nada debajo y se ve. Mismo envoltorio que el resto de pantallas
+    // (ver pantalla_crear_cuenta.dart) — justo el que le faltaba a esta
+    // pantalla, copiada en su día de una de las que estaban rotas.
+    return Theme(
+      data: temaGlass(colorNeutro),
+      child: FondoNeutro(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.notifications_active_outlined, size: 64),
+                    const SizedBox(height: 16),
+                    Text(t.avisosTitulo,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    Text(t.avisosTexto, textAlign: TextAlign.center),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: _pidiendo ? null : _aceptar,
+                      child: Text(t.avisosSi),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _pidiendo ? null : widget.alSaltar,
+                      child: Text(t.avisosAhoraNo),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _pidiendo ? null : widget.alSaltar,
-                  child: Text(t.avisosAhoraNo),
-                ),
-              ],
+              ),
             ),
           ),
         ),
