@@ -47,6 +47,7 @@
   "errorYaEstasEnElGrupo": "Ya tienes una plaza en este grupo",
   "errorGrupoYaSorteado": "El sorteo ya se hizo. A esta persona no se la puede sacar: hay que reemplazarla para que la cadena siga entera.",
   "errorGrupoCerrado": "El sorteo ya se hizo, así que este grupo está cerrado a gente nueva. Pídele al organizador que te dé el sitio de alguien.",
+  "errorNoPuedesSalirSorteado": "El sorteo ya se hizo, así que no puedes salirte tú solo. Pídele al organizador que te reemplace.",
   "errorSorteoYaHecho": "Este grupo ya sorteó. El sorteo no se puede repetir.",
   "errorPinBloqueado": "Demasiados PIN incorrectos. Espera unos minutos, o cambia tu PIN desde Configuración.",
   "errorCorreoSinVerificar": "Verifica tu correo para continuar.",

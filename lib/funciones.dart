@@ -83,6 +83,7 @@ extension MensajeLocalizado on FuncionError {
         'ya_estas_en_el_grupo' => t.errorYaEstasEnElGrupo,
         'grupo_ya_sorteado' => t.errorGrupoYaSorteado,
         'grupo_cerrado' => t.errorGrupoCerrado,
+        'no_puedes_salir_sorteado' => t.errorNoPuedesSalirSorteado,
         'sorteo_ya_hecho' => t.errorSorteoYaHecho,
         'pin_bloqueado' => t.errorPinBloqueado,
         'reemplazo_invalido' => t.errorReemplazoInvalido,

@@ -649,6 +649,34 @@ exports.borrarParticipante = onCall(async (request) => {
   // borrarla.
   const grupoSnap = await grupoRef(codigo).get();
   if (grupoSnap.data()?.sorteado === true) {
+    // A partir de aquí llegan tres casos distintos, y solo uno necesita
+    // texto propio:
+    //  - El organizador saca a OTRO participante: `grupo_ya_sorteado` es
+    //    exactamente correcto para él ("a esta persona hay que
+    //    reemplazarla") — es él quien puede generar el reemplazo.
+    //  - Un participante intenta salirse ÉL MISMO (no es organizador):
+    //    ese mismo texto no le sirve de nada — no le dice que la salida
+    //    existe ni que tiene que pedírsela al organizador. Por eso la
+    //    clave propia `no_puedes_salir_sorteado`, con el mismo patrón que
+    //    ya resolvió esto en `agregarParticipante` con `grupo_cerrado`
+    //    (ver la nota de ahí arriba, sobre la línea 560).
+    //  - El organizador se saca a SÍ MISMO (participanteId propio): NO
+    //    entra en el caso anterior, aunque `sesion.participanteId ===
+    //    participanteId` también sea cierto aquí — decirle "pídele al
+    //    organizador que te reemplace" sería pedirle que se pregunte a sí
+    //    mismo. Para él `grupo_ya_sorteado` sigue siendo correcto:
+    //    `generarReemplazo` es cosa del organizador y admite cualquier
+    //    `participanteId`, incluida su propia plaza.
+    //
+    // La guarda de abajo distingue "yo mismo, sin ser organizador" usando
+    // `sesion.rol`, el mismo dato que ya comprueba `exigirOrganizador`.
+    if (sesion.participanteId === participanteId && sesion.rol !== "organizador") {
+      throw new HttpsError(
+          "failed-precondition",
+          "El sorteo ya se hizo: no puedes salirte tú solo. Pídele al organizador que te reemplace.",
+          {clave: "no_puedes_salir_sorteado"},
+      );
+    }
     throw new HttpsError(
         "failed-precondition",
         "El sorteo ya se hizo: a esta persona hay que reemplazarla, no sacarla.",

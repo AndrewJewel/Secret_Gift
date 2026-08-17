@@ -148,6 +148,10 @@ class TextosEs extends Textos {
       'El sorteo ya se hizo, así que este grupo está cerrado a gente nueva. Pídele al organizador que te dé el sitio de alguien.';
 
   @override
+  String get errorNoPuedesSalirSorteado =>
+      'El sorteo ya se hizo, así que no puedes salirte tú solo. Pídele al organizador que te reemplace.';
+
+  @override
   String get errorSorteoYaHecho =>
       'Este grupo ya sorteó. El sorteo no se puede repetir.';
 
