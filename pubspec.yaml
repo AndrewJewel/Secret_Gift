@@ -40,6 +40,7 @@ dependencies:
   firebase_core: ^4.3.0
   firebase_auth: ^6.1.0
   cloud_firestore: ^6.1.1
+  firebase_messaging: ^16.0.0
   http: ^1.6.0
   shared_preferences: ^2.5.5
   share_plus: ^13.3.0
@@ -64,6 +65,19 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+  # Ya llegaba de forma transitiva vía `shared_preferences`, pero se
+  # declara directa porque `test/almacen_local_test.dart` la importa por
+  # su cuenta: sustituye `SharedPreferencesStorePlatform.instance` por un
+  # fake que revienta al leer, para poder probar de verdad el `try/catch`
+  # contra un almacén roto (con `setMockInitialValues` no se puede: ese
+  # nunca lanza).
+  shared_preferences_platform_interface: ^2.4.2
+
+  # Genera los iconos de Android (normales + adaptativo) a partir de
+  # assets/logo.png. Es solo una herramienta de build: no debe acabar en
+  # la app publicada, de ahí que vaya en dev_dependencies.
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -112,3 +126,26 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Configuración de flutter_launcher_icons: solo Android (iOS/macOS/Windows
+# no se tocan). Genera el icono adaptativo (mipmap-anydpi-v26, con capa de
+# fondo y de figura) y también los ic_launcher.png sueltos para Android
+# antiguo, ambos desde assets/logo.png.
+#
+# El fondo #FBF6EE es el mismo crema que ya usa web/icons/Icon-maskable-512.png
+# (medido de ese fichero, no aproximado).
+#
+# adaptive_icon_foreground_inset al 20%: el lienzo adaptativo es de 108dp
+# pero el launcher solo garantiza el círculo interior de 66dp; el resto se
+# recorta. assets/logo.png llena casi todo su lienzo (el dibujo ocupa ~81-90%
+# del PNG de 512px), así que sin encogerlo el launcher le cortaría bordes.
+# Un inset del 20% por lado deja la figura final al ~60% del lienzo, la misma
+# proporción que ya tiene Icon-maskable-512.png respecto a su propio lienzo
+# (esa referencia se resolvió por prueba y no se recalcula aquí: se mide con
+# el script de comprobación, no se aproxima a ojo).
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/logo.png"
+  adaptive_icon_background: "#FBF6EE"
+  adaptive_icon_foreground: "assets/logo.png"
+  adaptive_icon_foreground_inset: 20

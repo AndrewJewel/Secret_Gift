@@ -5,6 +5,7 @@ const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore");
 const {getStorage} = require("firebase-admin/storage");
+const {avisar, avisarAVarios} = require("./push");
 const bcrypt = require("bcryptjs");
 // `Math.random` no sirve para nada de esto. V8 lo implementa con
 // xorshift128+, que no es un generador criptográfico: a partir de unas
@@ -265,6 +266,82 @@ exports.cambiarPin = onCall(async (request) => {
     pinFallos: 0,
     pinBloqueadoHasta: 0,
   });
+  return {ok: true};
+});
+
+/**
+ * Guarda un token de FCM de esta instalación.
+ *
+ * Es un MAPA `token -> fecha`, no un array. Un array con `arrayUnion`
+ * compara por igualdad, y esa comparación ya falló una vez en este
+ * proyecto; con el mapa, guardar dos veces el mismo token no puede crear
+ * un duplicado ni queriendo.
+ *
+ * La fecha sirve para limpiar más adelante: un token que lleva meses sin
+ * renovarse es de un dispositivo que ya no existe. Hoy no hay nada que la
+ * lea, y se guarda igual porque el dato no se puede reconstruir después.
+ */
+exports.guardarTokenPush = onCall(async (request) => {
+  const uid = uidDe(request);
+  const token = request.data?.token;
+
+  // Antes de `.trim()`: un token que no sea texto (número, booleano,
+  // array) no tiene ese método y reventaría con un TypeError genérico en
+  // vez de la clave `token_invalido` que promete el contrato de errores.
+  if (typeof token !== "string") {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+  const tokenLimpio = token.trim();
+
+  // Un token de FCM ronda los 150-200 caracteres. El tope alto es para no
+  // dejar que nadie llene el documento con basura: la clave de un mapa de
+  // Firestore no puede pasar de 1500 bytes, y llegar a ese límite haría
+  // fallar la escritura entera de esa persona.
+  if (!tokenLimpio || tokenLimpio.length > 500) {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+
+  // `set` con `merge` CREARÍA el documento si no existiera todavía —el
+  // mismo agujero que `vincularComoParticipante` ya tapa más abajo. El
+  // permiso de avisos se pide justo después de verificar el correo, que es
+  // precisamente la franja en la que puede no haberse llamado aún a
+  // `guardarPerfil`: sin esta guarda quedaría un `usuarios/{uid}` a
+  // medias, con solo `tokensPush` y sin `pinHash`, y `guardarPerfil` ya no
+  // podría completarlo después porque usa `create()`.
+  const snap = await usuarioRef(uid).get();
+  if (!snap.exists) {
+    throw new HttpsError("unauthenticated", "Tu cuenta no tiene perfil. Vuelve a entrar.", {clave: "perfil_incompleto"});
+  }
+
+  await usuarioRef(uid).set({
+    tokensPush: {[tokenLimpio]: Date.now()},
+  }, {merge: true});
+
+  return {ok: true};
+});
+
+/**
+ * Borra el token de ESTA instalación.
+ *
+ * Apagar los avisos tiene que apagarlos de verdad: si solo se guardara una
+ * preferencia en el dispositivo, el servidor seguiría mandando y las
+ * notificaciones seguirían saliendo. Se borra la clave del mapa.
+ *
+ * No exige que el perfil exista, al revés que `guardarTokenPush`: si no
+ * existe, no hay nada que borrar y `update` sobre un documento ausente
+ * fallaría. Se usa `set` con `merge` sobre un borrado, que es inofensivo.
+ */
+exports.borrarTokenPush = onCall(async (request) => {
+  const uid = uidDe(request);
+  const token = request.data?.token;
+  if (typeof token !== "string" || !token.trim()) {
+    throw new HttpsError("invalid-argument", "Token de avisos inválido.", {clave: "token_invalido"});
+  }
+  const snap = await usuarioRef(uid).get();
+  if (!snap.exists) return {ok: true};
+  await usuarioRef(uid).set({
+    tokensPush: {[token.trim()]: FieldValue.delete()},
+  }, {merge: true});
   return {ok: true};
 });
 
@@ -572,6 +649,34 @@ exports.borrarParticipante = onCall(async (request) => {
   // borrarla.
   const grupoSnap = await grupoRef(codigo).get();
   if (grupoSnap.data()?.sorteado === true) {
+    // A partir de aquí llegan tres casos distintos, y solo uno necesita
+    // texto propio:
+    //  - El organizador saca a OTRO participante: `grupo_ya_sorteado` es
+    //    exactamente correcto para él ("a esta persona hay que
+    //    reemplazarla") — es él quien puede generar el reemplazo.
+    //  - Un participante intenta salirse ÉL MISMO (no es organizador):
+    //    ese mismo texto no le sirve de nada — no le dice que la salida
+    //    existe ni que tiene que pedírsela al organizador. Por eso la
+    //    clave propia `no_puedes_salir_sorteado`, con el mismo patrón que
+    //    ya resolvió esto en `agregarParticipante` con `grupo_cerrado`
+    //    (ver la nota de ahí arriba, sobre la línea 560).
+    //  - El organizador se saca a SÍ MISMO (participanteId propio): NO
+    //    entra en el caso anterior, aunque `sesion.participanteId ===
+    //    participanteId` también sea cierto aquí — decirle "pídele al
+    //    organizador que te reemplace" sería pedirle que se pregunte a sí
+    //    mismo. Para él `grupo_ya_sorteado` sigue siendo correcto:
+    //    `generarReemplazo` es cosa del organizador y admite cualquier
+    //    `participanteId`, incluida su propia plaza.
+    //
+    // La guarda de abajo distingue "yo mismo, sin ser organizador" usando
+    // `sesion.rol`, el mismo dato que ya comprueba `exigirOrganizador`.
+    if (sesion.participanteId === participanteId && sesion.rol !== "organizador") {
+      throw new HttpsError(
+          "failed-precondition",
+          "El sorteo ya se hizo: no puedes salirte tú solo. Pídele al organizador que te reemplace.",
+          {clave: "no_puedes_salir_sorteado"},
+      );
+    }
     throw new HttpsError(
         "failed-precondition",
         "El sorteo ya se hizo: a esta persona hay que reemplazarla, no sacarla.",
@@ -859,6 +964,43 @@ exports.canjearReemplazo = onCall(async (request) => {
 
   await batch.commit();
 
+  // El aviso va DESPUÉS del commit: antes sería avisar de un cambio que
+  // todavía puede no llegar a escribirse.
+  //
+  // `quienRegala` es un id de PLAZA, no un uid. El uid está en el privado
+  // de esa plaza, en `cuenta`. La guarda del `if` no sobra: una plaza de
+  // un grupo viejo puede no tener cuenta, y `avisar(undefined)` sería un
+  // viaje a Firestore para nada.
+  if (quienRegala) {
+    const privRegala = await participantePrivadoRef(codigo, quienRegala).get();
+    const uidRegala = privRegala.data()?.cuenta;
+    if (uidRegala) {
+      // El nombre no estaba a mano en esta función: la única lectura del
+      // grupo hasta aquí es la de `verReemplazo`, que no comparte alcance.
+      // El campo es `nombreGrupo` (no `nombre`), como en el resto del
+      // fichero; si viniera vacío, mejor un código legible que un «».
+      const grupoSnap = await grupoRef(codigo).get();
+      const nombreGrupo = grupoSnap.data()?.nombreGrupo || codigo;
+      // TEXTO NEUTRO A PROPÓSITO. Este aviso va SOLO a quien le regala a
+      // la plaza que acaba de cambiar de manos, y quién ocupaba esa plaza
+      // es público dentro del grupo. Un «Tu amigo secreto cambió» en la
+      // pantalla de bloqueo le decía a cualquiera que mirase el móvil que
+      // esta persona le regala a esa plaza: el par deducido, sin
+      // desbloquear siquiera. Es justo lo que esta app protege poniendo la
+      // asignación detrás de un PIN (ver el comentario de
+      // `verAmigoSecreto`), y el aviso lo estaba regalando por fuera.
+      //
+      // Lo que queda dicho aquí —que algo cambió en un grupo— ya lo sabe
+      // todo el grupo, así que leerlo no añade nada. Quién es ahora el
+      // amigo secreto se ve dentro, tras el PIN.
+      await avisar(uidRegala, {
+        titulo: "Novedades en tu grupo",
+        cuerpo: `Algo cambió en «${nombreGrupo}». Ábrelo para verlo.`,
+        datos: {codigo},
+      });
+    }
+  }
+
   // Se despega la cuenta anterior. Mismo trato que en `borrarParticipante`:
   // al organizador se le conserva la entrada con `participanteId: null`
   // —quitarle la clave entera le quitaría el rol y dejaría el grupo
@@ -1084,6 +1226,19 @@ exports.ejecutarSorteo = onCall(async (request) => {
   // participantes buscando un tieneAmigo:true.
   batch.update(grupoRef(codigo), {sorteado: true});
   await batch.commit();
+
+  // Los uids salen de `privSnaps`, que esta función ya leyó para sortear.
+  // Volver a leer los privados aquí serían N lecturas de más por sorteo.
+  //
+  // El nombre sale de `grupoSnap`, ya leído arriba; el campo es
+  // `nombreGrupo` (no `nombre`).
+  await avisarAVarios(
+      privSnaps.map((p) => p.data()?.cuenta),
+      {
+        titulo: "¡Ya hay amigo secreto!",
+        cuerpo: `En «${grupoSnap.data()?.nombreGrupo || codigo}». Entra a ver a quién te toca.`,
+        datos: {codigo},
+      });
   return {ok: true};
 });
 
@@ -1158,6 +1313,40 @@ exports.enviarMensaje = onCall(async (request) => {
     fecha: FieldValue.serverTimestamp(),
   });
   await participantePrivadoRef(codigo, participanteId).set({ultimoMensajeMs: ahora}, {merge: true});
+
+  // A todo el grupo MENOS a quien acaba de escribir. Avisarle de su propio
+  // mensaje sería absurdo, y en un grupo de veinte serían veinte avisos
+  // por mensaje en vez de diecinueve.
+  //
+  // Que no se avise a quien está MIRANDO este chat no se decide aquí: eso
+  // lo resuelve el cliente en primer plano (ver lib/push.dart). El
+  // servidor no sabe ni tiene por qué saber quién está mirando qué, y
+  // guardar presencia sería una escritura por persona y por segundo.
+  const participantes = await grupoRef(codigo).collection("participantes").get();
+  const privados = await Promise.all(
+      participantes.docs.map((d) => participantePrivadoRef(codigo, d.id).get()));
+  // OJO: el id de CADA doc de `privados` es literalmente "data" —
+  // `participantePrivadoRef` cuelga siempre de ese mismo nombre fijo, no
+  // del id del participante. Filtrar por `p.id !== participanteId` no
+  // quitaría nunca a quien escribió: se filtra por el índice, que sí se
+  // corresponde uno a uno con `participantes.docs`.
+  const otros = privados
+      .filter((p, i) => participantes.docs[i].id !== participanteId)
+      .map((p) => p.data()?.cuenta);
+  // El nombre no está a mano en esta función: no hay ninguna lectura del
+  // grupo hasta aquí. Campo `nombreGrupo` (no `nombre`), con el código
+  // como respaldo si viniera vacío.
+  const grupoSnap = await grupoRef(codigo).get();
+  const nombreGrupo = grupoSnap.data()?.nombreGrupo || codigo;
+  await avisarAVarios(otros, {
+    // Ni quién escribió ni qué dice: esto se lee desde la pantalla de
+    // bloqueo, con el teléfono en la mano de cualquiera. Decir el texto
+    // filtraría la conversación del grupo, y decir la máscara ayudaría a
+    // deducir quién es.
+    titulo: "Nuevo mensaje",
+    cuerpo: `En «${nombreGrupo}».`,
+    datos: {codigo},
+  });
 
   return {ok: true, mascara, repeticion};
 });

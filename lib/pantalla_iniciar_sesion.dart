@@ -6,6 +6,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
+import 'oferta_avisos.dart';
 import 'pantalla_completar_perfil.dart';
 import 'pantalla_crear_cuenta.dart' show AlEntrar;
 import 'pantalla_recuperar_password.dart';
@@ -91,6 +92,10 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
       );
       return;
     }
+
+    await ofrecerAvisosSiHaceFalta(context);
+    if (!context.mounted) return;
+
     await widget.alEntrar(context, r);
   }
 

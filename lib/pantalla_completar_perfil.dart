@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'acceso_cuenta.dart';
 import 'funciones.dart';
+import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'ocasion.dart';
+import 'tematica.dart';
 
 /// Red de seguridad: hay cuenta de Auth pero no documento de perfil.
 /// Pasa si `guardarPerfil` falló por red justo después de registrarse.
@@ -58,40 +61,54 @@ class _PantallaCompletarPerfilState extends State<PantallaCompletarPerfil> {
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(t.completarPerfilTitulo,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                Text(t.completarPerfilTexto, textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                TextField(
-                    controller: _nombre,
-                    decoration: InputDecoration(labelText: t.cuentaNombre)),
-                const SizedBox(height: 12),
-                TextField(
-                    controller: _apellido,
-                    decoration: InputDecoration(labelText: t.cuentaApellido)),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _pin,
-                  keyboardType: TextInputType.number,
-                  maxLength: 4,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: t.cuentaPin),
+    // FondoNeutro es quien pinta el fondo (manchas de color sobre
+    // degradado); un Scaffold suelto, sin este envoltorio ni el Theme de
+    // temaGlass, sale con el gris por defecto de Material. En web no se
+    // notaba porque el fondo de web/index.html lo tapaba; en Android no
+    // hay nada debajo y se ve. Mismo envoltorio que el resto de pantallas
+    // (ver pantalla_crear_cuenta.dart).
+    return Theme(
+      data: temaGlass(colorNeutro),
+      child: FondoNeutro(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(t.completarPerfilTitulo,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    Text(t.completarPerfilTexto, textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    TextField(
+                        controller: _nombre,
+                        decoration:
+                            InputDecoration(labelText: t.cuentaNombre)),
+                    const SizedBox(height: 12),
+                    TextField(
+                        controller: _apellido,
+                        decoration:
+                            InputDecoration(labelText: t.cuentaApellido)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _pin,
+                      keyboardType: TextInputType.number,
+                      maxLength: 4,
+                      obscureText: true,
+                      decoration: InputDecoration(labelText: t.cuentaPin),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                        onPressed: _guardando ? null : _guardar,
+                        child: Text(t.guardar)),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                FilledButton(
-                    onPressed: _guardando ? null : _guardar,
-                    child: Text(t.guardar)),
-              ],
+              ),
             ),
           ),
         ),

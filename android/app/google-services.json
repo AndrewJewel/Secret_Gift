@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "176155117392",
-    "project_id": "santa-secreto-860c3",
-    "storage_bucket": "santa-secreto-860c3.firebasestorage.app"
+    "project_number": "997384680563",
+    "project_id": "secretgift-app",
+    "storage_bucket": "secretgift-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:176155117392:android:8f23344646e492edd08e55",
+        "mobilesdk_app_id": "1:997384680563:android:14a775972dbdc909f0a606",
         "android_client_info": {
-          "package_name": "com.example.santa_secreto"
+          "package_name": "app.secretgift"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB3VhxRD-eBap28W1qHUjCa-_DM-CAEMeQ"
+          "current_key": "AIzaSyCHVzwmpktHzBEGpL9VyLl8YrBMYwrUtMw"
         }
       ],
       "services": {

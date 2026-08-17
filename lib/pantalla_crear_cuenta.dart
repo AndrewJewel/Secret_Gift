@@ -5,6 +5,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
+import 'oferta_avisos.dart';
 import 'pantalla_completar_perfil.dart';
 import 'pantalla_iniciar_sesion.dart';
 import 'pantalla_verificar_correo.dart';
@@ -139,6 +140,10 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
       );
       return;
     }
+
+    await ofrecerAvisosSiHaceFalta(context);
+    if (!context.mounted) return;
+
     await widget.alEntrar(context, r);
   }
 

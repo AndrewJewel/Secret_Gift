@@ -5,6 +5,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
+import 'push.dart';
 import 'selector_idioma.dart';
 
 /// Ajustes de la cuenta, desde "Mis grupos".
@@ -38,6 +39,60 @@ class HojaConfiguracion extends StatefulWidget {
 
 class _HojaConfiguracionState extends State<HojaConfiguracion> {
   bool _cambiandoPin = false;
+
+  /// Si hay avisos activos para ESTA cuenta en ESTE dispositivo. Lo decide
+  /// `avisosActivos` (en `push.dart`) cruzando dos cosas: el permiso que
+  /// dice el sistema y si el token está guardado en el servidor. Con una
+  /// sola no basta — el permiso concedido no significa que ESTA cuenta
+  /// tenga token, y una preferencia local a solas diría "activado" con el
+  /// navegador bloqueándolo por su cuenta.
+  bool _avisosActivos = false;
+  bool _cambiandoAvisos = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _leerEstadoAvisos();
+  }
+
+  /// Solo LEE. Antes llamaba a `tokenDeEsteDispositivo()`, que acaba en
+  /// `getToken()`, y `getToken()` pide el permiso él mismo: abrir
+  /// Configuración para cambiar el idioma le sacaba el cuadro del
+  /// navegador a quien nunca lo pidió, y denegarlo ahí quemaba el permiso
+  /// para siempre. `avisosActivosAhora()` no pide nada.
+  Future<void> _leerEstadoAvisos() async {
+    final activos = await avisosActivosAhora();
+    if (mounted) setState(() => _avisosActivos = activos);
+  }
+
+  /// Al encender: pide permiso y registra. Si el sistema lo tiene
+  /// bloqueado —lo denegó antes, en el navegador o en Android—, no hay
+  /// forma de que la app lo revierta desde aquí: `pedirPermisoYRegistrar`
+  /// devuelve `false` y el interruptor tiene que volver a su sitio, no
+  /// quedarse encendido mintiendo.
+  ///
+  /// Al apagar: borra el token en el servidor de verdad (`apagarAvisos`),
+  /// no solo una preferencia local, o los avisos seguirían llegando.
+  Future<void> _cambiarAvisos(bool encender) async {
+    final t = Textos.of(context);
+    setState(() => _cambiandoAvisos = true);
+    if (encender) {
+      final registrado = await pedirPermisoYRegistrar();
+      if (!mounted) return;
+      setState(() {
+        _avisosActivos = registrado;
+        _cambiandoAvisos = false;
+      });
+      if (!registrado) _avisar(t.avisosBloqueados);
+    } else {
+      await apagarAvisos();
+      if (!mounted) return;
+      setState(() {
+        _avisosActivos = false;
+        _cambiandoAvisos = false;
+      });
+    }
+  }
 
   void _avisar(String mensaje) {
     if (!mounted) return;
@@ -122,6 +177,19 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
                 textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
             const SizedBox(height: 20),
             const CampoIdioma(),
+            const SizedBox(height: 16),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(
+                _avisosActivos
+                    ? Icons.notifications_active_outlined
+                    : Icons.notifications_off_outlined,
+                color: colorNeutro.shade700,
+              ),
+              title: Text(t.avisosInterruptor),
+              value: _avisosActivos,
+              onChanged: _cambiandoAvisos ? null : _cambiarAvisos,
+            ),
             const SizedBox(height: 16),
             GlassOutlineButton(
               color: colorNeutro,

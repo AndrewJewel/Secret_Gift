@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -12,11 +14,13 @@ import 'invitacion_pendiente.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
+import 'oferta_avisos.dart';
 import 'pantalla_completar_perfil.dart';
 import 'pantalla_crear_cuenta.dart';
 import 'pantalla_mis_grupos.dart';
 import 'pantalla_registro.dart';
 import 'pantalla_verificar_correo.dart';
+import 'push.dart';
 import 'tematica.dart';
 
 /// Primera pantalla real de la app: decide a dónde va cada quien.
@@ -39,10 +43,84 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   /// con la pantalla de error delante.
   Object? _errorArranque;
 
+  /// Se completa cuando el primer `_arrancar()` termina de construir su
+  /// pila (o de dejar puesta la pantalla de error). Sirve para que un
+  /// aviso tocado justo al arrancar ESPERE a que esa primera
+  /// reconstrucción termine antes de tocar la pila él mismo: los dos
+  /// acaban en `pushAndRemoveUntil` sobre el mismo Navigator, y sin
+  /// serializarlos gana el que responda antes, dejando una carrera entre
+  /// dos pilas distintas.
+  final Completer<void> _primerArranqueListo = Completer<void>();
+
   @override
   void initState() {
     super.initState();
+    // Se captura el Navigator ANTES de arrancar: `_arrancar` casi siempre
+    // termina en un `pushReplacement` que saca esta pantalla de la pila y
+    // destruye este State, así que a partir de ahí `context` deja de
+    // servir. El NavigatorState, en cambio, sigue siendo el mismo durante
+    // toda la vida de la app (es el mismo truco que usa `irADondeToque`
+    // más abajo, ver su comentario). Sin capturarlo aquí, tocar un aviso
+    // minutos después de arrancar no tendría dónde navegar: el callback
+    // de `alTocarAviso` vería `mounted == false` y no haría nada nunca.
+    final navegador = Navigator.of(context);
+    // Tocar un aviso abre su grupo. Sin esto, el aviso lleva a la pantalla
+    // de inicio y la persona tiene que buscar el grupo a mano — que es
+    // justo la fricción que el aviso venía a quitar.
+    alTocarAviso((codigo) => _abrirGrupoDesdeAviso(navegador, codigo));
     _arrancar();
+  }
+
+  /// Abre el grupo de un aviso tocado, reutilizando el MISMO camino que ya
+  /// usa la app para resolver un código y llegar a la pantalla de un
+  /// grupo (`_resolverGrupoPorCodigo` + `_apilarMisGruposConGrupo`, más
+  /// abajo, que también usa `irADondeToque`). Escribir aquí una
+  /// navegación paralela dejaría dos formas de abrir un grupo por código
+  /// que acabarían desincronizándose.
+  ///
+  /// Lo que NO hace, a propósito, es tocar `guardarInvitacion` /
+  /// `borrarInvitacion` / `marcarInvitacionConsumida`: esa contabilidad es
+  /// del camino de la invitación por URL (un enlace de un solo uso). Un
+  /// aviso no es una invitación — la persona que lo recibe ya está en el
+  /// grupo, es justo por eso que le llegó el aviso—, así que no hay nada
+  /// que consumir. Pisar esas claves con `guardarInvitacion(codigo, '')`
+  /// destruía cualquier invitación de verdad que estuviera esperando en
+  /// disco (por ejemplo, un token de reemplazo guardado porque la red
+  /// falló al resolverlo — ver el comentario de `_entrarAlGrupo` sobre por
+  /// qué esa invitación se conserva a propósito).
+  Future<void> _abrirGrupoDesdeAviso(NavigatorState navegador, String codigo) async {
+    // Espera a que el primer `_arrancar()` termine su propia
+    // reconstrucción de la pila antes de tocar la suya. Con tope: si la
+    // red está de verdad colgada (no solo lenta) y `_arrancar()` no
+    // llegara nunca a completar, es mejor aceptar la carrera residual que
+    // dejar el toque del aviso sin efecto para siempre.
+    await _primerArranqueListo.future
+        .timeout(const Duration(seconds: 8), onTimeout: () {});
+    if (usuarioActual == null) return; // sin sesión no hay grupo que abrir
+    try {
+      final resultado = await cargarMisGrupos();
+      if (resultado == null) return;
+      // `contexto` es el del propio Navigator raíz, no el de esta
+      // pantalla: sigue válido aunque `_PantallaRaizState` ya esté
+      // destruida, por la misma razón explicada en `initState`.
+      final contexto = navegador.context;
+      if (!contexto.mounted) return;
+
+      PantallaRegistro? registro;
+      try {
+        registro = await _resolverGrupoPorCodigo(codigo, resultado.grupos);
+      } catch (_) {
+        return; // sin conexión: no hay nada sensato que hacer con el toque
+      }
+      if (registro == null) return; // el grupo ya no existe
+      if (!contexto.mounted) return;
+
+      _apilarMisGruposConGrupo(contexto, resultado, registro);
+    } catch (_) {
+      // Cualquier otro fallo (p.ej. `cargarMisGrupos` sin red) se ignora:
+      // es un toque sobre un aviso, no hay nada mejor que hacer que
+      // dejarlo sin efecto.
+    }
   }
 
   /// Si la URL trae ?codigo=XXXX se guarda como invitación ANTES de
@@ -77,30 +155,38 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   }
 
   Future<void> _arrancar() async {
-    await _capturarInvitacionDeLaUrl();
-    final u = usuarioActual;
-    final invitacion = await leerInvitacion();
-    if (!mounted) return;
+    try {
+      await _capturarInvitacionDeLaUrl();
+      final u = usuarioActual;
+      final invitacion = await leerInvitacion();
+      if (!mounted) return;
 
-    switch (decidirDestino(
-        haySesion: u != null, hayInvitacion: invitacion != null)) {
-      case DestinoInicial.crearCuenta:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PantallaCrearCuenta(
-                alEntrar: irADondeToque,
-                nombreGrupoInvitacion: invitacion?.nombreGrupo),
-          ),
-        );
-      // Los dos destinos con sesión se tratan igual a propósito: se entra
-      // con la cuenta UNA sola vez y es `irADondeToque` quien decide si
-      // además hay que apilar el grupo de la invitación. Así el camino
-      // del QR hereda el mismo tratamiento de errores que el normal, y
-      // hay un único sitio que construye la pila.
-      case DestinoInicial.grupo:
-      case DestinoInicial.misGrupos:
-        await _entrarConLaSesionDeAuth(u!);
+      switch (decidirDestino(
+          haySesion: u != null, hayInvitacion: invitacion != null)) {
+        case DestinoInicial.crearCuenta:
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PantallaCrearCuenta(
+                  alEntrar: irADondeToque,
+                  nombreGrupoInvitacion: invitacion?.nombreGrupo),
+            ),
+          );
+        // Los dos destinos con sesión se tratan igual a propósito: se
+        // entra con la cuenta UNA sola vez y es `irADondeToque` quien
+        // decide si además hay que apilar el grupo de la invitación. Así
+        // el camino del QR hereda el mismo tratamiento de errores que el
+        // normal, y hay un único sitio que construye la pila.
+        case DestinoInicial.grupo:
+        case DestinoInicial.misGrupos:
+          await _entrarConLaSesionDeAuth(u!);
+      }
+    } finally {
+      // Pase lo que pase (éxito, error puesto, `return` temprano por
+      // `!mounted`), la primera reconstrucción de la pila ya terminó: a
+      // partir de aquí es seguro que un aviso tocado toque la suya sin
+      // pisarse con esta.
+      if (!_primerArranqueListo.isCompleted) _primerArranqueListo.complete();
     }
   }
 
@@ -148,6 +234,19 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       );
       return;
     }
+
+    // Mismo bloque que `_trasVerificar` de abajo (deuda: son ya CUATRO
+    // copias del patrón completo —las otras dos en `_trasVerificar` de
+    // `pantalla_crear_cuenta.dart` y `pantalla_iniciar_sesion.dart`—,
+    // aparte de la extracción parcial que ya hizo la Tarea 8 en
+    // `oferta_avisos.dart`; unificarlas es un cambio aparte, para no
+    // mezclarlo con el agujero que esto tapa). Quien entra por AQUÍ ya
+    // tenía sesión iniciada y NUNCA pasa por `_trasVerificar` — sin esta
+    // llamada, a toda cuenta ya existente no se le preguntaría jamás por
+    // los avisos.
+    await ofrecerAvisosSiHaceFalta(context);
+    if (!mounted) return;
+
     await irADondeToque(context, resultado);
   }
 
@@ -167,6 +266,10 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       );
       return;
     }
+
+    await ofrecerAvisosSiHaceFalta(context);
+    if (!context.mounted) return;
+
     await irADondeToque(context, r);
   }
 
@@ -239,6 +342,52 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   }
 }
 
+/// Resuelve un código de grupo contra Firestore y arma la pantalla de
+/// registro que le corresponde (con vínculo si la cuenta ya tiene plaza
+/// en `grupos`, sin él si no). Es la pieza reutilizable de verdad —
+/// "resolver un código y llegar a la pantalla del grupo"— que comparten
+/// `_entrarAlGrupo` (la invitación por URL, que ADEMÁS lleva su propia
+/// contabilidad de un solo uso alrededor de esta llamada) y
+/// `_abrirGrupoDesdeAviso` en `_PantallaRaizState` (un aviso, que NO debe
+/// tocar esa contabilidad: no es una invitación, la persona ya está en el
+/// grupo).
+///
+/// NO toca `guardarInvitacion` / `borrarInvitacion` /
+/// `marcarInvitacionConsumida` — eso es responsabilidad de quien la llama,
+/// no de esta función. Lanza si falla la red (quien llama decide qué
+/// hacer con eso); devuelve `null` si el grupo ya no existe.
+Future<PantallaRegistro?> _resolverGrupoPorCodigo(
+    String codigo, List<Map<String, dynamic>> grupos, {String? reemplazo}) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('grupos')
+      .doc(codigo)
+      .get()
+      .timeout(const Duration(seconds: 6));
+  if (!doc.exists) return null;
+  final data = doc.data()!;
+  // Si la cuenta ya tiene vínculo con este grupo se le pasa; si no, null,
+  // que es lo que hace que la pantalla ofrezca el formulario de alta.
+  //
+  // Con un bucle y no con `firstOrNull`: esa extensión vive en
+  // `package:collection`, que este proyecto no importa, y añadir una
+  // dependencia por una línea no compensa.
+  Map<String, dynamic>? entrada;
+  for (final g in grupos) {
+    if (g['codigo'] == codigo) {
+      entrada = g;
+      break;
+    }
+  }
+  return PantallaRegistro(
+    codigo: codigo,
+    ocasion: Ocasion.desdeId(data['ocasion'] as String),
+    valorMinimo: data['valorMinimo'] as String? ?? '',
+    nombreGrupo: data['nombreGrupo'] as String? ?? '',
+    vinculo: entrada == null ? null : MiVinculo.desdeMapa(entrada),
+    reemplazo: reemplazo,
+  );
+}
+
 /// Resuelve el grupo de una invitación y la consume. Devuelve la pantalla
 /// que hay que apilar, o `null` si no se pudo: entre validar el código y
 /// usarlo pueden pasar minutos (los que tarda alguien en rellenar el
@@ -252,13 +401,13 @@ class _PantallaRaizState extends State<PantallaRaiz> {
 /// forma debe tener la pila entera.
 Future<PantallaRegistro?> _entrarAlGrupo(
     InvitacionPendiente i, List<Map<String, dynamic>> grupos) async {
-  final DocumentSnapshot<Map<String, dynamic>> doc;
+  final PantallaRegistro? registro;
   try {
-    doc = await FirebaseFirestore.instance
-        .collection('grupos')
-        .doc(i.codigo)
-        .get()
-        .timeout(const Duration(seconds: 6));
+    // `i.reemplazo` se lee aquí, no después de borrar: es una variable en
+    // memoria (no del disco), así que da igual el orden para ella, pero
+    // así queda junto al resto de datos de la invitación que también se
+    // leen antes de tocar el almacén.
+    registro = await _resolverGrupoPorCodigo(i.codigo, grupos, reemplazo: i.reemplazo);
   } catch (_) {
     // Sin conexión o error de Firestore: la invitación puede seguir
     // siendo válida, así que NO se borra ni se marca como consumida.
@@ -267,7 +416,7 @@ Future<PantallaRegistro?> _entrarAlGrupo(
     return null;
   }
 
-  if (!doc.exists) {
+  if (registro == null) {
     // El grupo ya no existe: la invitación está muerta. Se borra y además
     // se marca el código como consumido, porque ese código no va a volver
     // a servir jamás —los códigos identifican al documento del grupo, que
@@ -284,43 +433,45 @@ Future<PantallaRegistro?> _entrarAlGrupo(
   // a esa persona en ese grupo.
   await borrarInvitacion();
   await marcarInvitacionConsumida(i.codigo);
-  final data = doc.data()!;
-  // Si la cuenta ya tiene vínculo con este grupo se le pasa; si no, null,
-  // que es lo que hace que la pantalla ofrezca el formulario de alta.
-  //
-  // Con un bucle y no con `firstOrNull`: esa extensión vive en
-  // `package:collection`, que este proyecto no importa, y añadir una
-  // dependencia por una línea no compensa.
-  Map<String, dynamic>? entrada;
-  for (final g in grupos) {
-    if (g['codigo'] == i.codigo) {
-      entrada = g;
-      break;
-    }
-  }
-  return PantallaRegistro(
-    codigo: i.codigo,
-    ocasion: Ocasion.desdeId(data['ocasion'] as String),
-    valorMinimo: data['valorMinimo'] as String? ?? '',
-    nombreGrupo: data['nombreGrupo'] as String? ?? '',
-    vinculo: entrada == null ? null : MiVinculo.desdeMapa(entrada),
-    // Se lee de `i` (la invitación), no del disco: `borrarInvitacion()` ya
-    // se llamó arriba, así que para cuando esta pantalla monte no habría
-    // nada que leer. `i.reemplazo` sigue vivo aquí porque es una variable
-    // en memoria, ya capturada antes del borrado.
-    reemplazo: i.reemplazo,
+  return registro;
+}
+
+/// Apila "Mis grupos" como única ruta y raíz de todo lo demás y, encima
+/// —si hay uno—, el grupo ya resuelto. Sacada de `irADondeToque` para que
+/// también la use `_abrirGrupoDesdeAviso`, que resuelve su grupo por otro
+/// camino (directo, sin pasar por invitaciones) pero necesita llegar a la
+/// MISMA forma de pila.
+///
+/// Nunca deja el registro solo: es lo que da botón atrás, y lo que hace
+/// que los `popUntil((r) => r.isFirst)` de la pantalla de grupo (cuando el
+/// organizador lo elimina) aterricen en Mis grupos en vez de en un sitio
+/// absurdo.
+void _apilarMisGruposConGrupo(
+    BuildContext context, ResultadoAcceso resultado, PantallaRegistro? registro) {
+  // Se coge el Navigator antes de vaciar la pila: el context de quien
+  // llama deja de servir en cuanto su ruta desaparece, pero el
+  // NavigatorState sigue siendo el mismo.
+  final navegador = Navigator.of(context);
+
+  navegador.pushAndRemoveUntil(
+    MaterialPageRoute(
+      builder: (_) =>
+          PantallaMisGrupos(nombre: resultado.nombre, grupos: resultado.grupos),
+    ),
+    (r) => false,
   );
+
+  // Va encima con push —no replace— para que haya vuelta atrás. Si no se
+  // pudo resolver (grupo borrado, sin red) se queda en Mis grupos, que es
+  // un sitio del que sí se puede salir.
+  if (registro != null) {
+    navegador.push(MaterialPageRoute(builder: (_) => registro));
+  }
 }
 
 /// A dónde se va tras crear cuenta, iniciar sesión o validar la sesión
 /// guardada. Lo usan las pantallas de cuenta y el portero para no
 /// duplicar la decisión.
-///
-/// Deja la pila en `[MisGrupos]` o, si había invitación que se pudo
-/// resolver, en `[MisGrupos, Registro]`. Nunca deja el registro solo: es
-/// lo que da botón atrás, y lo que hace que los `popUntil((r) => r.isFirst)`
-/// de la pantalla de grupo (cuando el organizador lo elimina) aterricen
-/// en Mis grupos en vez de en un sitio absurdo.
 Future<void> irADondeToque(BuildContext context, ResultadoAcceso resultado) async {
   final invitacion = await leerInvitacion();
   if (!context.mounted) return;
@@ -332,24 +483,5 @@ Future<void> irADondeToque(BuildContext context, ResultadoAcceso resultado) asyn
       invitacion == null ? null : await _entrarAlGrupo(invitacion, resultado.grupos);
   if (!context.mounted) return;
 
-  // Se coge el Navigator antes de vaciar la pila: el context de quien
-  // llama deja de servir en cuanto su ruta desaparece, pero el
-  // NavigatorState sigue siendo el mismo.
-  final navegador = Navigator.of(context);
-
-  // Mis grupos queda como única ruta y raíz de todo lo demás.
-  navegador.pushAndRemoveUntil(
-    MaterialPageRoute(
-      builder: (_) =>
-          PantallaMisGrupos(nombre: resultado.nombre, grupos: resultado.grupos),
-    ),
-    (r) => false,
-  );
-
-  // Y el grupo de la invitación va encima con push —no replace— para que
-  // haya vuelta atrás. Si no se pudo resolver (grupo borrado, sin red) se
-  // queda en Mis grupos, que es un sitio del que sí se puede salir.
-  if (registro != null) {
-    navegador.push(MaterialPageRoute(builder: (_) => registro));
-  }
+  _apilarMisGruposConGrupo(context, resultado, registro);
 }

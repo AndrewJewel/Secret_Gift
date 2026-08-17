@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth.dart';
 import 'funciones.dart';
 import 'idioma.dart';
+import 'push.dart';
 
 /// El perfil y los grupos de quien ha entrado.
 class ResultadoAcceso {
@@ -141,7 +142,28 @@ Future<void> mandarRecuperacion(String correo) async {
   }
 }
 
-Future<void> salir() => FirebaseAuth.instance.signOut();
+/// Cierra la sesión y suelta antes los avisos de este dispositivo.
+///
+/// El orden no es opcional: `borrarTokenPush` necesita la sesión que
+/// estamos a punto de cerrar. Sin este paso el token seguía colgando de la
+/// cuenta anterior, así que quien usara el teléfono después recibía SUS
+/// avisos, y tocar uno abría la pantalla de alta de ese grupo — el código
+/// del grupo es la única llave que hay, y se la estábamos entregando a
+/// otra persona. Aparte, la cuenta nueva nunca llegaba a registrar el
+/// suyo.
+///
+/// `soltarTokenDeEsteDispositivo` nunca lanza Y LLEVA SU PROPIO TOPE que
+/// envuelve todas sus llamadas de red (ver `push.dart`), así que este
+/// `await` no puede colgar el cierre de sesión: pasados unos segundos se
+/// sigue adelante y la sesión se cierra igual, con token soltado o sin él.
+/// Hace falta el tope porque este botón no tiene ni indicador ni estado
+/// deshabilitado, y porque sin red —o con el service worker de web
+/// atascado— `getToken()` puede no volver nunca. No poder soltar el token
+/// no puede impedirle a nadie salir de su cuenta.
+Future<void> salir() async {
+  await soltarTokenDeEsteDispositivo();
+  await FirebaseAuth.instance.signOut();
+}
 
 /// Vuelve a demostrar la contraseña. Actualiza el claim `auth_time` del
 /// token, que es lo ÚNICO que el servidor mira para saber si la sesión es

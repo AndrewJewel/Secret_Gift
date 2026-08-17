@@ -150,6 +150,10 @@ class TextosEn extends Textos {
       'The draw already happened, so this group is closed to new people. Ask the organiser to take someone\'s place instead.';
 
   @override
+  String get errorNoPuedesSalirSorteado =>
+      'The draw already happened, so you can\'t leave on your own. Ask the organiser to have someone take your place.';
+
+  @override
   String get errorSorteoYaHecho =>
       'This group has already drawn. The draw can\'t be run twice.';
 
@@ -796,4 +800,28 @@ class TextosEn extends Textos {
   @override
   String get reglasNavidad =>
       'Christmas in the group! Nobody uses their real name.\n\n• Pick your Christmas character and upload their image.\n• Nobody knows who is who until the gift exchange.\n• Write your wish list: it is the only clue your gift giver will have.';
+
+  @override
+  String get avisosTitulo => 'Shall we let you know?';
+
+  @override
+  String get avisosTexto =>
+      'We\'ll tell you when your group draws names, when someone writes in the chat, and if your secret friend changes.';
+
+  @override
+  String get avisosSi => 'Yes, let me know';
+
+  @override
+  String get avisosAhoraNo => 'Not now';
+
+  @override
+  String get errorTokenInvalido =>
+      'We couldn\'t set up notifications. Nothing else is affected.';
+
+  @override
+  String get avisosInterruptor => 'Notifications';
+
+  @override
+  String get avisosBloqueados =>
+      'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.';
 }

@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'acceso_cuenta.dart';
 import 'almacen_roto.dart';
 import 'funciones.dart';
+import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'ocasion.dart';
 import 'recarga_pagina.dart';
+import 'tematica.dart';
 
 /// Pantalla de espera tras registrarse. Bloquea a propósito: un correo sin
 /// verificar es un camino de recuperación que quizá no existe, y la
@@ -105,45 +108,59 @@ class _PantallaVerificarCorreoState extends State<PantallaVerificarCorreo> {
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.mark_email_unread_outlined, size: 64),
-                const SizedBox(height: 16),
-                Text(
-                  t.verificarTitulo,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
+    // FondoNeutro es quien pinta el fondo (manchas de color sobre
+    // degradado); un Scaffold suelto, sin este envoltorio ni el Theme de
+    // temaGlass, sale con el gris por defecto de Material. En web no se
+    // notaba porque el fondo de web/index.html lo tapaba; en Android no
+    // hay nada debajo y se ve. Mismo envoltorio que el resto de pantallas
+    // (ver pantalla_crear_cuenta.dart).
+    return Theme(
+      data: temaGlass(colorNeutro),
+      child: FondoNeutro(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.mark_email_unread_outlined, size: 64),
+                    const SizedBox(height: 16),
+                    Text(
+                      t.verificarTitulo,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(t.verificarTexto, textAlign: TextAlign.center),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: _comprobando ? null : _comprobar,
+                      child: Text(
+                        _comprobando
+                            ? t.verificarComprobando
+                            : t.verificarComprobar,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _reenviando ? null : _reenviar,
+                      child: Text(
+                        _reenviando
+                            ? t.verificarReenviando
+                            : t.verificarReenviar,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _salir,
+                      child: Text(t.misGruposCerrarSesion),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                Text(t.verificarTexto, textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _comprobando ? null : _comprobar,
-                  child: Text(
-                    _comprobando
-                        ? t.verificarComprobando
-                        : t.verificarComprobar,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _reenviando ? null : _reenviar,
-                  child: Text(
-                    _reenviando ? t.verificarReenviando : t.verificarReenviar,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _salir,
-                  child: Text(t.misGruposCerrarSesion),
-                ),
-              ],
+              ),
             ),
           ),
         ),
