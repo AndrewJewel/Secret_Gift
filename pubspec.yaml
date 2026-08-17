@@ -54,6 +54,11 @@ dependencies:
   # pero se declara directa porque el código de la app la importa por su
   # cuenta.
   web: ^1.1.0
+  # Enlaces de invitación en Android (`?codigo=...`): entrega el Intent de
+  # arranque (app cerrada) y el flujo de enlaces mientras la app ya vive
+  # (app abierta). En web no se usa — ahí sigue sirviendo `Uri.base`, que
+  # ya funcionaba y no dependía de ningún paquete.
+  app_links: ^7.0.0
 
 dev_dependencies:
   flutter_test:
