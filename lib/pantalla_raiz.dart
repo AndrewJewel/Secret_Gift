@@ -22,6 +22,7 @@ import 'pantalla_mis_grupos.dart';
 import 'pantalla_registro.dart';
 import 'pantalla_verificar_correo.dart';
 import 'push.dart';
+import 'reconexion_firestore.dart';
 import 'tematica.dart';
 
 /// Lo que trae un enlace de invitación (`?codigo=XXXX-YYYY`, con o sin
@@ -177,6 +178,15 @@ class _PantallaRaizState extends State<PantallaRaiz> {
     // de inicio y la persona tiene que buscar el grupo a mano — que es
     // justo la fricción que el aviso venía a quitar.
     alTocarAviso((codigo) => _abrirGrupoDesdeAviso(navegador, codigo));
+
+    // Firestore no se entera solo de que su conexión murió al congelarse la
+    // app en segundo plano (ver el porqué, y por qué se engancha aquí y no
+    // en cada pantalla, en `reconexion_firestore.dart`). Se registra aquí,
+    // junto al resto de sucesos de toda la vida de la app, por la misma
+    // razón que `alTocarAviso`: aunque este State se destruya enseguida, es
+    // el único sitio que existe una única vez para engancharse a algo que
+    // tiene que vivir mientras viva la app.
+    observarReconexionFirestoreAlVolver();
 
     // Enlaces de invitación en Android con la app YA abierta (el caso
     // "app cerrada" se resuelve dentro de `_arrancar()`, más abajo, con

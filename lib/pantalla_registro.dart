@@ -46,6 +46,47 @@ class InfoGrupo {
   MaterialColor get color => tematica.colorDe(ocasion);
 }
 
+/// Deja constancia de un fallo en una de las dos escuchas en vivo de esta
+/// pantalla (el grupo o la lista de participantes) sin tocar la interfaz.
+///
+/// Antes, las dos escuchas tenían un `onError` que se limitaba a un
+/// comentario — "sin conexión, se conserva tal cual" — y tragaba CUALQUIER
+/// fallo con la misma mano: un corte de red pasajero, sí, pero también un
+/// permiso denegado, un índice que faltara por crear o la conexión que se
+/// quedó muerta al congelarse la app en segundo plano (ver
+/// `reconexion_firestore.dart`). Con eso la pantalla se quedaba con datos
+/// viejos para siempre y NADIE se enteraba: ni quien la estaba usando —que
+/// ya no veía ni un error, solo dejaba de ver cambios— ni quien mantiene la
+/// app, porque no quedaba ni rastro en ningún sitio.
+///
+/// No se muestra nada en pantalla a propósito, ni siquiera para separar los
+/// casos: intentar distinguir aquí "esto es solo un corte de red" de "esto
+/// es un fallo de verdad" inspeccionando el código del error es la misma
+/// trampa que ya se evitó en `esFalloDeAlmacenRoto` — los códigos y las
+/// clases de excepción de Firestore no están pensados para adivinar eso
+/// desde la interfaz, y equivocarse hacia "mostrar" sería justo el error
+/// feo por un corte pasajero que no se quiere enseñar a nadie. En vez de
+/// eso, TODO fallo se reporta por igual, por el mismo canal que usa Flutter
+/// para cualquier excepción no capturada en cualquier otro sitio de la app:
+/// `FlutterError.reportError`. En depuración se vuelca a la consola (y a la
+/// pantalla roja de Flutter DevTools); en producción no hace nada visible
+/// por sí solo, pero es EL MISMO enganche del que tiraría Crashlytics si
+/// algún día se añade — con `FlutterError.onError` apuntando allí, estos
+/// fallos empezarían a reportarse solos, sin tocar este archivo.
+///
+/// [fuente] identifica cuál de las dos escuchas fue, para poder distinguirlas
+/// en lo que sea que lea este reporte. Aparte de las dos, y pública, para
+/// poder probar que de verdad reporta sin necesitar una escucha de
+/// Firestore de verdad (ver `pantalla_registro_test.dart`).
+void reportarFalloDeEscucha(String fuente, Object error, StackTrace stack) {
+  FlutterError.reportError(FlutterErrorDetails(
+    exception: error,
+    stack: stack,
+    library: 'pantalla_registro',
+    context: ErrorDescription('escucha de $fuente'),
+  ));
+}
+
 class PantallaRegistro extends StatefulWidget {
   final String codigo;
   final Ocasion ocasion;
@@ -172,8 +213,20 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
         return;
       }
       setState(() => _info = InfoGrupo.desdeDoc(snap.data()!));
-    }, onError: (_) {
-      // Sin conexión: nos quedamos con la semilla, la pantalla sigue viva.
+    }, onError: (Object e, StackTrace st) {
+      // La pantalla se queda con la semilla y sigue viva a propósito: un
+      // corte de red pasajero no merece un error feo delante de quien solo
+      // quería ver su grupo. Pero "seguir viva" no es lo mismo que "callar
+      // del todo" — antes lo era, y ese era el problema: un permiso que
+      // faltara, un índice sin crear o la conexión ya muerta tras congelar
+      // la app se comían aquí sin dejar rastro, y la pantalla se quedaba
+      // con datos viejos para siempre sin que nadie —ni quien la usa, ni
+      // nosotros— llegara a enterarse nunca. Se reporta por el mismo canal
+      // que usa Flutter para una excepción no capturada, que en depuración
+      // se vuelca a la consola y es el mismo enganche del que tiraría
+      // Crashlytics si algún día se añade, sin tener que volver a tocar
+      // este archivo.
+      reportarFalloDeEscucha('grupo', e, st);
     });
     // La revisión de identidad va aquí y NO dentro de build(): antes se
     // llamaba en cada reconstrucción —al abrirse el teclado, al escribir
@@ -183,8 +236,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       if (!mounted) return;
       setState(() => _participantes = snap.docs);
       _revisarIdentidadContraLista(snap.docs);
-    }, onError: (_) {
-      // Sin conexión no se revisa nada: se conserva el vínculo.
+    }, onError: (Object e, StackTrace st) {
+      // Mismo trato que la escucha del grupo, de arriba: se conserva la
+      // lista tal como estaba —sin red no hay nada sensato que revisar
+      // contra ella— pero el fallo no desaparece sin dejar rastro.
+      reportarFalloDeEscucha('participantes', e, st);
     });
   }
 
