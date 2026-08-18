@@ -57,6 +57,61 @@ EnlaceInvitacion? leerEnlaceInvitacion(Uri uri) {
   return EnlaceInvitacion(codigo, reemplazo: reemplazo);
 }
 
+/// Ejecuta un trabajo asociado a una clave UNA SOLA VEZ CON ÉXITO.
+///
+/// Nace de un fallo real: en Android, el enlace de arranque puede llegar
+/// por DOS caminos casi a la vez —`getInitialLink()` y el primer evento
+/// de `uriLinkStream`, ver el comentario de `_capturarEnlaceNativoUnaVez`
+/// en `pantalla_raiz.dart` para la prueba en el código nativo del
+/// plugin— y los dos traen la MISMA clave (el mismo `Uri`). Sin
+/// serializarlos de verdad, el que llega segundo podía leer el disco
+/// ANTES de que el primero terminara de escribirlo (dejando "crear
+/// cuenta" sin el nombre del grupo), y marcar la clave como "hecha" antes
+/// de saber si el trabajo salió bien dejaba un fallo de red sin ninguna
+/// forma de reintentarse mientras la app siguiera viva.
+///
+/// Tres reglas, las tres puestas a propósito por esos dos fallos:
+/// - Si la clave YA se completó con éxito antes, no hace nada (devuelve
+///   `false`: no hizo falta ejecutar nada nuevo).
+/// - Si ya hay un intento EN CURSO para la MISMA clave, se espera a que
+///   termine ESE intento en vez de lanzar uno nuevo — así el que llega
+///   segundo ve el resultado real, no el disco a medio escribir.
+/// - Se marca como "hecha" SOLO si [trabajo] devuelve `true`. Un intento
+///   fallido (sin red, timeout) no se marca, para que la misma clave
+///   pueda reintentarse si vuelve a aparecer mientras la app siga viva.
+///
+/// Aparte de `_PantallaRaizState` y sin nada de `Uri` ni de Firestore a
+/// propósito, para poder probar la serialización y la marca-solo-tras-
+/// éxito con un [trabajo] de mentira — es la única parte de este
+/// mecanismo que se puede probar sin simular Firebase ni el canal de
+/// plataforma de `app_links`, que esta app no simula en los tests (ver
+/// el comentario de `pantalla_completar_perfil_test.dart` sobre por qué:
+/// dobles de FirebaseAuth son un refactor de producción aparte).
+class HacerUnaVezConExito<K> {
+  K? _ultimaClaveConExito;
+  (K, Future<bool>)? _enCurso;
+
+  Future<bool> ejecutar(K clave, Future<bool> Function() trabajo) async {
+    if (clave == _ultimaClaveConExito) return false;
+
+    final enCurso = _enCurso;
+    if (enCurso != null && enCurso.$1 == clave) return enCurso.$2;
+
+    final futuro = trabajo();
+    _enCurso = (clave, futuro);
+    try {
+      final exito = await futuro;
+      if (exito) _ultimaClaveConExito = clave;
+      return exito;
+    } finally {
+      // Solo se limpia si sigue siendo ESTE intento el que está anotado
+      // como "en curso": si mientras se esperaba llegó una clave DISTINTA
+      // y lo reemplazó, limpiar aquí borraría el suyo por error.
+      if (identical(_enCurso?.$2, futuro)) _enCurso = null;
+    }
+  }
+}
+
 /// Primera pantalla real de la app: decide a dónde va cada quien.
 ///
 /// Normalmente solo muestra un indicador mientras lee disco y valida la
@@ -65,7 +120,22 @@ EnlaceInvitacion? leerEnlaceInvitacion(Uri uri) {
 /// error y un botón de reintentar, porque borrar la sesión en ese caso
 /// sería irreversible.
 class PantallaRaiz extends StatefulWidget {
-  const PantallaRaiz({super.key});
+  const PantallaRaiz({
+    super.key,
+    this.enlaceInicialNativo,
+    this.enlacesNativosEntrantes,
+  });
+
+  /// Enlace de arranque nativo (Android), o `null` para usar el de
+  /// verdad (`AppLinks().getInitialLink()`). Solo para pruebas: permite
+  /// inyectar un `Future` ya resuelto sin depender del canal de
+  /// plataforma real, que no existe en `flutter test`.
+  final Future<Uri?>? enlaceInicialNativo;
+
+  /// Flujo de enlaces nativos mientras la app ya vive, o `null` para usar
+  /// el de verdad (`AppLinks().uriLinkStream`). Solo para pruebas, por la
+  /// misma razón que [enlaceInicialNativo].
+  final Stream<Uri>? enlacesNativosEntrantes;
 
   @override
   State<PantallaRaiz> createState() => _PantallaRaizState();
@@ -86,10 +156,10 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   /// dos pilas distintas.
   final Completer<void> _primerArranqueListo = Completer<void>();
 
-  /// Último URI de invitación nativo ya procesado en lo que va de esta
-  /// ejecución de la app, o null. Ver el comentario de
-  /// `_capturarEnlaceNativoSiCorresponde` sobre por qué hace falta.
-  Uri? _ultimoEnlaceNativoProcesado;
+  /// Serializa la captura de un enlace nativo (ver `HacerUnaVezConExito`
+  /// arriba) para que los dos caminos que pueden traer el enlace de
+  /// arranque —`getInitialLink()` y `uriLinkStream`— no se pisen.
+  final _capturaNativa = HacerUnaVezConExito<Uri>();
 
   @override
   void initState() {
@@ -120,7 +190,7 @@ class _PantallaRaizState extends State<PantallaRaiz> {
     // `alTocarAviso` tampoco cancela las suyas: tiene que seguir viva
     // después de que este State desaparezca.
     if (!kIsWeb) {
-      AppLinks().uriLinkStream.listen(
+      (widget.enlacesNativosEntrantes ?? AppLinks().uriLinkStream).listen(
           (uri) => _alRecibirEnlaceNativoConAppAbierta(navegador, uri));
     }
 
@@ -207,74 +277,101 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   /// de `decidirDestino` — si no, el arranque en frío mandaría a "Mis
   /// grupos" o "crear cuenta" sin la invitación, que es justo el fallo que
   /// esto viene a cerrar.
+  ///
+  /// AQUÍ SE ESPERA A `_capturarEnlaceNativoUnaVez`, no se lanza y se
+  /// olvida: si el mismo enlace llega TAMBIÉN por `uriLinkStream` (ver el
+  /// comentario de esa función sobre por qué eso pasa siempre en frío, no
+  /// "a veces"), `HacerUnaVezConExito` hace que los dos caminos esperen
+  /// al MISMO intento en vez de que este siga adelante con el disco a
+  /// medio escribir. Sin esto, `leerInvitacion()` en `_arrancar()` podía
+  /// leerse antes de que la escritura terminara, y una cuenta nueva sin
+  /// sesión llegaba a "crear cuenta" sin el «Te han invitado a X».
   Future<void> _capturarInvitacionDeLaUrlNativa() async {
     if (kIsWeb) return;
     Uri? uri;
     try {
-      uri = await AppLinks().getInitialLink();
+      uri = await (widget.enlaceInicialNativo ?? AppLinks().getInitialLink());
     } catch (_) {
       return; // sin Intent de arranque, o plugin no disponible: arranque normal
     }
-    await _capturarEnlaceNativoSiCorresponde(uri);
+    await _capturarEnlaceNativoUnaVez(uri);
   }
 
-  /// Valida y guarda un enlace nativo — pero solo la PRIMERA vez que se ve
-  /// ESTE `uri` exacto en lo que dure esta ejecución de la app.
+  /// Valida y guarda un enlace nativo, a través de `HacerUnaVezConExito`
+  /// (arriba): una sola vez con éxito por `Uri`, y compartiendo el mismo
+  /// intento en curso si el mismo `Uri` llega por los dos caminos casi a
+  /// la vez.
   ///
-  /// Hace falta porque el propio plugin `app_links` puede entregar el
-  /// enlace de arranque DOS veces: una por `getInitialLink()` (llamado
-  /// desde `_capturarInvitacionDeLaUrlNativa`) y otra por el primer evento
-  /// de `uriLinkStream` (comprobado en el código nativo del plugin:
-  /// `AppLinksPlugin.onListen`, en Android, reenvía el enlace de arranque
-  /// por el stream si nadie lo había recibido aún por ahí). Sin esta
-  /// guarda, un solo toque de invitación con la app recién arrancada
-  /// podría meter a la persona dos veces en el mismo grupo — es el mismo
-  /// problema, y la misma idea de solución, que `ultimoIdAbierto` en
-  /// `alTocarAviso` de `push.dart`: allí se compara por `messageId`, aquí
-  /// no hay un identificador propio del enlace y el URI entero hace ese
-  /// papel.
+  /// Hace falta porque el propio plugin `app_links` entrega el enlace de
+  /// arranque DOS veces EN FRÍO, siempre, no solo a veces: se comprobó en
+  /// el código nativo del plugin (`AppLinksPlugin.java`, en Android)
+  /// que `onAttachedToActivity` —que corre antes de que el motor de
+  /// Flutter siquiera arranque el código Dart— deja el Intent guardado
+  /// como `initialLink`, y que `onListen` —que es cuando `initState`
+  /// empieza a escuchar `uriLinkStream`, siempre DESPUÉS— lo reenvía por
+  /// el stream si nadie lo había recibido aún por ahí. O sea:
+  /// `getInitialLink()` Y el primer evento del stream traen el MISMO URI,
+  /// siempre que hay enlace de arranque.
   ///
-  /// Efecto secundario a sabiendas: si la MISMA persona toca el MISMO
-  /// enlace dos veces de verdad (no el plugin duplicando el aviso, sino
-  /// dos toques reales) dentro de una misma ejecución de la app, el
-  /// segundo toque no vuelve a validar ni a guardar nada — pero
-  /// `_alRecibirEnlaceNativoConAppAbierta` sigue llevando a la persona a
-  /// la app igualmente. Distinguir "el plugin duplicó el aviso" de "dos
-  /// toques reales" no es posible con lo que entrega el plugin (los dos
-  /// llegan como el mismo URI), y el coste de tratarlos igual es mínimo:
-  /// como mucho, una lectura de Firestore que no hacía falta repetir.
-  Future<void> _capturarEnlaceNativoSiCorresponde(Uri? uri) async {
-    if (uri == null) return;
-    if (uri == _ultimoEnlaceNativoProcesado) return;
-    _ultimoEnlaceNativoProcesado = uri;
-    final enlace = leerEnlaceInvitacion(uri);
-    if (enlace == null) return;
-    await _guardarInvitacionValidada(enlace.codigo, enlace.reemplazo);
+  /// Devuelve si LLEGÓ A GUARDAR algo, para que quien llama (el handler
+  /// del stream, más abajo) sepa si hay invitación nueva de verdad o si
+  /// no hizo falta hacer nada.
+  Future<bool> _capturarEnlaceNativoUnaVez(Uri? uri) async {
+    if (uri == null) return false;
+    return _capturaNativa.ejecutar(uri, () async {
+      final enlace = leerEnlaceInvitacion(uri);
+      if (enlace == null) return false;
+      return _guardarInvitacionValidada(enlace.codigo, enlace.reemplazo);
+    });
   }
 
-  /// Enlace nativo (Android) recibido con la app YA abierta: llega por
-  /// `uriLinkStream`, suscrito una sola vez en `initState`.
+  /// Enlace nativo (Android) recibido por `uriLinkStream`, suscrito una
+  /// sola vez en `initState`.
   ///
-  /// A diferencia de un aviso tocado (`_abrirGrupoDesdeAviso`, arriba),
-  /// aquí SÍ hay contabilidad de invitación que hacer: un enlace es de un
-  /// solo uso, no la notificación de un grupo al que la cuenta ya
-  /// pertenece. Por eso, tras guardarlo, se reutiliza el mismo camino que
-  /// sigue el arranque normal para consumir una invitación —
-  /// `cargarMisGrupos` + `irADondeToque`, la misma pareja que usan
-  /// `_entrarConLaSesionDeAuth` y `_trasVerificar`— en vez del camino
-  /// directo que usa `_abrirGrupoDesdeAviso`.
+  /// EN FRÍO, este mismo callback se dispara TAMBIÉN para el enlace de
+  /// arranque (ver el comentario de `_capturarEnlaceNativoUnaVez`: el
+  /// plugin lo entrega por los dos caminos siempre, no a veces). Ese caso
+  /// NO debe tocar la pila: `_arrancar()` —que corre en paralelo, disparado
+  /// desde `initState` justo después de suscribirse a este stream— es
+  /// quien navega para el enlace de arranque, con la invitación ya
+  /// entrelazada en `decidirDestino`. Si este handler navegara TAMBIÉN,
+  /// competirían dos `pushAndRemoveUntil`: el segundo en llegar ya no
+  /// encontraría invitación que mostrar (la primera pasada ya la había
+  /// consumido) y borraría de la pila el grupo recién apilado, dejando a
+  /// la persona en "Mis grupos" con la invitación ya gastada y sin forma
+  /// de recuperarla. Es justo lo que se detectó en la revisión: el grupo
+  /// aparecía y se esfumaba, y tocar el enlace otra vez ya no hacía nada.
   ///
-  /// Sin esto, tocar una invitación con la app abierta la dejaría guardada
-  /// en disco sin ningún efecto visible hasta el siguiente arranque —justo
-  /// el hueco que pedía cerrarse: "si solo haces [la app cerrada], tocar
-  /// una invitación con la app abierta no hará nada".
+  /// La señal para distinguir los dos casos es `_primerArranqueListo`: si
+  /// TODAVÍA no está completo cuando este callback se dispara, es porque
+  /// `_arrancar()` sigue en marcha — y un enlace nativo solo puede llegar
+  /// tan pronto si es el mismo que la despertó. Se lee ANTES de esperar
+  /// nada (síncrono, en la primera línea) para capturar el estado real en
+  /// el instante en que el enlace "llega", no el que haya después de
+  /// esperar la captura.
   Future<void> _alRecibirEnlaceNativoConAppAbierta(
       NavigatorState navegador, Uri uri) async {
-    await _capturarEnlaceNativoSiCorresponde(uri);
+    final esEnlaceDeArranque = !_primerArranqueListo.isCompleted;
 
-    // Mismo motivo y mismo tope que `_abrirGrupoDesdeAviso`: si el enlace
-    // llegara en el instante mismo del arranque, sin esperar competirían
-    // dos `pushAndRemoveUntil` sobre el mismo Navigator.
+    await _capturarEnlaceNativoUnaVez(uri);
+
+    if (esEnlaceDeArranque) {
+      // `_arrancar()` ya se encarga de esto (o está a punto): no se toca
+      // la pila desde aquí. Ver el comentario de arriba.
+      return;
+    }
+
+    // A diferencia de un aviso tocado (`_abrirGrupoDesdeAviso`, arriba),
+    // aquí SÍ hay contabilidad de invitación que hacer: un enlace es de
+    // un solo uso, no la notificación de un grupo al que la cuenta ya
+    // pertenece. Por eso se reutiliza el mismo camino que sigue el
+    // arranque normal para consumir una invitación — `cargarMisGrupos` +
+    // `irADondeToque`, la misma pareja que usan `_entrarConLaSesionDeAuth`
+    // y `_trasVerificar`— en vez del camino directo de los avisos.
+    //
+    // Sin esto, tocar una invitación con la app YA abierta (de verdad,
+    // no el eco del arranque) la dejaría guardada en disco sin ningún
+    // efecto visible hasta el siguiente arranque.
     await _primerArranqueListo.future
         .timeout(const Duration(seconds: 8), onTimeout: () {});
     if (usuarioActual == null) return; // sin sesión: queda guardada para cuando la haya
@@ -287,16 +384,10 @@ class _PantallaRaizState extends State<PantallaRaiz> {
       final contexto = navegador.context;
       if (!contexto.mounted) return;
 
-      // `irADondeToque` ya sabe leer la invitación de disco (la que
-      // acaba de guardar `_capturarEnlaceNativoSiCorresponde`, si el
-      // enlace traía una válida y no estaba ya consumida) y consumirla.
-      // Si no hubiera ninguna —enlace sin código, o ya gastado— igual
-      // deja a la persona en "Mis grupos", que es un sitio razonable
-      // para un toque sobre un enlace de la app que no abrió nada.
       await irADondeToque(contexto, resultado);
     } catch (_) {
       // Sin conexión: se deja como estaba, sin navegar. Si
-      // `_guardarInvitacionValidada` llegó a guardar la invitación, sigue
+      // `_capturarEnlaceNativoUnaVez` llegó a guardar la invitación, sigue
       // en disco y el siguiente arranque la retoma solo.
     }
   }
@@ -306,8 +397,16 @@ class _PantallaRaizState extends State<PantallaRaiz> {
   /// leen un enlace —web, Android con la app cerrada y Android con la app
   /// abierta— para que ninguno pueda divergir en cómo se valida un
   /// código.
-  Future<void> _guardarInvitacionValidada(
-      String codigo, String? reemplazo) async {
+  ///
+  /// Devuelve si LLEGÓ A GUARDAR la invitación (`true`) o no —código ya
+  /// consumido, grupo inexistente, o fallo de red (`false`)—. En Android
+  /// ese valor es lo que usa `HacerUnaVezConExito`, vía
+  /// `_capturarEnlaceNativoUnaVez`, para decidir si marca el enlace como
+  /// resuelto: un fallo de red NO se marca, así que el mismo enlace puede
+  /// reintentarse mientras la app siga viva. En web no hace falta ese
+  /// valor —`_capturarInvitacionDeLaUrl` lo ignora— porque ahí no hay
+  /// ninguna marca de sesión que actualizar.
+  Future<bool> _guardarInvitacionValidada(String codigo, String? reemplazo) async {
     // Esta guarda nació para web: la URL de la pestaña nunca cambia (es el
     // enlace compartido), así que sin ella cada recarga volvería a
     // capturar el mismo código y a meter a la persona en ese grupo para
@@ -323,19 +422,23 @@ class _PantallaRaizState extends State<PantallaRaiz> {
     // tampoco esa lectura. Con token de reemplazo se deja pasar
     // igualmente: es un enlace distinto y con otro propósito, así que "ya
     // consumido" no aplica.
-    if (reemplazo == null && await invitacionYaConsumida(codigo)) return;
+    if (reemplazo == null && await invitacionYaConsumida(codigo)) return false;
     try {
       final doc = await FirebaseFirestore.instance
           .collection('grupos')
           .doc(codigo)
           .get()
           .timeout(const Duration(seconds: 6));
-      if (!doc.exists) return;
+      if (!doc.exists) return false;
       await guardarInvitacion(
           codigo, doc.data()!['nombreGrupo'] as String? ?? '', reemplazo);
+      return true;
     } catch (_) {
       // Sin conexión o código inválido: se sigue el flujo normal. La
-      // próxima apertura con el mismo enlace volverá a intentarlo.
+      // próxima apertura con el mismo enlace volverá a intentarlo — en
+      // Android, mientras la app siga viva, porque no se marcó ningún
+      // éxito (ver el comentario de `HacerUnaVezConExito`).
+      return false;
     }
   }
 
