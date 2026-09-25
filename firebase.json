@@ -14,6 +14,18 @@
         "type": 302
       }
     ],
+    "headers": [
+      {
+        "comment": "Sin esto el navegador guarda el codigo de la app una hora (el valor por defecto de Hosting) y, tras cada despliegue, quien ya la habia abierto sigue viendo la version vieja. no-cache no es 'no guardar': es 'preguntar antes de usar'. Si no cambio, el servidor responde 304 y no se descarga nada.",
+        "source": "**/*.@(html|js|json)",
+        "headers": [{"key": "Cache-Control", "value": "no-cache"}]
+      },
+      {
+        "comment": "La raiz se sirve por la reescritura a index.html, y la regla de arriba no la cubre porque la ruta no termina en .html.",
+        "source": "/",
+        "headers": [{"key": "Cache-Control", "value": "no-cache"}]
+      }
+    ],
     "rewrites": [
       {
         "source": "**",
