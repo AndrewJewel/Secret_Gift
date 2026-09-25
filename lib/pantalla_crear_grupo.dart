@@ -20,12 +20,13 @@ class PantallaCrearGrupo extends StatefulWidget {
 class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   Ocasion _ocasion = Ocasion.amigoSecreto;
   Tematica _tematica = Tematica.ninguna;
+  Color? _colorPersonal;
   final TextEditingController _nombreGrupoController = TextEditingController();
   final TextEditingController _valorMinimoController = TextEditingController();
   bool _creando = false;
 
   /// El color y el fondo los manda la temática; sin temática, la ocasión.
-  MaterialColor get _color => _tematica.colorDe(_ocasion);
+  MaterialColor get _color => _tematica.colorDe(_ocasion, _colorPersonal);
 
   @override
   void dispose() {
@@ -56,6 +57,8 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
         'nombreGrupo': nombreGrupo,
         'valorMinimo': valorMinimo,
         'tematica': _tematica.id,
+        if (_tematica == Tematica.ninguna && _colorPersonal != null)
+          'color': hexDe(_colorPersonal!),
         // Arranca con las reglas propias de la temática; el organizador
         // las puede reescribir después desde "Editar grupo".
         'reglas': _tematica.reglasPorDefecto(t),
@@ -125,6 +128,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       child: FondoTematico(
         tematica: _tematica,
         ocasion: _ocasion,
+        colorPersonal: _colorPersonal,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           // Ver la nota en pantalla_registro.dart: el teclado encoge el
@@ -166,7 +170,10 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
                 SelectorTematica(
                   seleccionada: _tematica,
                   color: _color,
+                  ocasion: _ocasion,
+                  colorPersonal: _colorPersonal,
                   onCambio: (nueva) => setState(() => _tematica = nueva),
+                  onColor: (nuevo) => setState(() => _colorPersonal = nuevo),
                 ),
                 const SizedBox(height: 16),
                 GlassTextField(

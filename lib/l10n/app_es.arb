@@ -201,7 +201,7 @@
   "avatarNoGaleria": "No se pudo abrir la galería: {detalle}",
 
   "tematica": "Temática",
-  "tematicaAyuda": "Con temática, nadie usa su nombre real: cada quien se registra como el personaje que elija.",
+  "tematicaAyuda": "Con Caricaturas, Alfombra roja o Navidad, nadie usa su nombre real: cada quien se registra como el personaje que elija.",
   "tematicaNombreNinguna": "Sin temática",
   "tematicaNombreCaricaturas": "Caricaturas",
   "tematicaNombreAlfombraRoja": "Alfombra roja",
@@ -266,5 +266,19 @@
   "avisosAhoraNo": "Ahora no",
   "errorTokenInvalido": "No pudimos activar los avisos. Lo demás sigue funcionando.",
   "avisosInterruptor": "Avisos",
-  "avisosBloqueados": "Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos."
+  "avisosBloqueados": "Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos.",
+
+  "tematicaNombreEmpresarial": "Empresarial",
+  "tematicaDescEmpresarial": "Aspecto corporativo, cada quien con su nombre",
+  "reglasEmpresarial": "Intercambio de regalos de la oficina.\n\n• No le cuentes a nadie quién te tocó.\n• Respeta el valor mínimo acordado.\n• Escribe tu lista de deseos para que quien te regale tenga una pista.",
+  "colorGrupo": "Color del grupo",
+  "colorCambiar": "Cambiar",
+  "colorQuitar": "Usar el de la ocasión",
+  "colorTitulo": "Elige el color del grupo",
+  "colorSugeridos": "Sugeridos",
+  "colorPersonalizado": "Personalizado",
+  "colorTono": "Tono",
+  "colorLuz": "Luz",
+  "colorVistaPrevia": "Así se verá tu grupo",
+  "colorUsar": "Usar este color"
 }

@@ -8,6 +8,7 @@ import 'tematica.dart';
 class PantallaSecreta extends StatefulWidget {
   final Ocasion ocasion;
   final Tematica tematica;
+  final Color? colorPersonal;
   final String nombre;
   final String nombreAmigo;
   final String deseosAmigo;
@@ -19,6 +20,7 @@ class PantallaSecreta extends StatefulWidget {
     required this.nombreAmigo,
     required this.deseosAmigo,
     this.tematica = Tematica.ninguna,
+    this.colorPersonal,
   });
 
   @override
@@ -28,7 +30,7 @@ class PantallaSecreta extends StatefulWidget {
 class _PantallaSecretaState extends State<PantallaSecreta> {
   bool revelado = false;
 
-  MaterialColor get _color => widget.tematica.colorDe(widget.ocasion);
+  MaterialColor get _color => widget.tematica.colorDe(widget.ocasion, widget.colorPersonal);
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,7 @@ class _PantallaSecretaState extends State<PantallaSecreta> {
       child: FondoTematico(
         tematica: widget.tematica,
         ocasion: widget.ocasion,
+        colorPersonal: widget.colorPersonal,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: GlassAppBar(title: Text(widget.nombre), color: _color),

@@ -484,6 +484,13 @@ async function vincularComoParticipante(uid, codigo, participanteId) {
   await ref.set({grupos: {[codigo]: {rol, participanteId}}}, {merge: true});
 }
 
+// El color lo pinta el cliente tal cual: solo se acepta '#RRGGBB' o vacío.
+function exigirColorValido(color) {
+  if (color !== "" && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
+    throw new HttpsError("invalid-argument", "Color no válido.", {clave: "faltan_datos"});
+  }
+}
+
 exports.crearGrupo = onCall(async (request) => {
   const ocasion = (request.data?.ocasion || "").trim();
   const valorMinimo = (request.data?.valorMinimo || "").trim();
@@ -492,10 +499,14 @@ exports.crearGrupo = onCall(async (request) => {
   // foto. Con temática, se registra con un personaje y su imagen.
   const tematica = (request.data?.tematica || "").trim();
   const reglas = (request.data?.reglas || "").trim();
+  // Color propio del grupo sin temática, '#RRGGBB'. Vacío = el de la ocasión.
+  const color = (request.data?.color || "").trim();
 
   if (!ocasion || !nombreGrupo) {
     throw new HttpsError("invalid-argument", "Falta la ocasión o el nombre del grupo.", {clave: "faltan_datos_grupo"});
   }
+
+  exigirColorValido(color);
 
   // La cuenta ya no es opcional: sin ella el grupo quedaría huérfano, sin
   // organizador y sin aparecer en "Mis grupos" de nadie.
@@ -518,6 +529,7 @@ exports.crearGrupo = onCall(async (request) => {
           valorMinimo,
           nombreGrupo,
           tematica,
+          color,
           reglas,
           fecha: FieldValue.serverTimestamp(),
         });
@@ -1381,7 +1393,7 @@ exports.miMascara = onCall(async (request) => {
 // hay nada que memorizar entre acciones.
 
 // Campos del grupo que el organizador puede cambiar después de crearlo.
-const CAMPOS_EDITABLES = ["nombreGrupo", "valorMinimo", "tematica", "reglas"];
+const CAMPOS_EDITABLES = ["nombreGrupo", "valorMinimo", "tematica", "color", "reglas"];
 const MAX_REGLAS = 2000;
 
 exports.editarGrupo = onCall(async (request) => {
@@ -1406,6 +1418,7 @@ exports.editarGrupo = onCall(async (request) => {
   if (cambios.nombreGrupo === "") {
     throw new HttpsError("invalid-argument", "El nombre del grupo no puede quedar vacío.", {clave: "nombre_vacio"});
   }
+  exigirColorValido(cambios.color || "");
   if ((cambios.reglas || "").length > MAX_REGLAS) {
     throw new HttpsError(
         "invalid-argument",

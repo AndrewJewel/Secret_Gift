@@ -29,6 +29,36 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- App Links: sin este bloque, Android no tiene ningún motivo
+                 para ofrecer esta app al abrir un enlace de secretgift.app
+                 (por QR o compartido) — se lo entrega directamente al
+                 navegador, aunque la app esté instalada. `autoVerify`
+                 dispara la verificación de Digital Asset Links contra
+                 https://secretgift.app/.well-known/assetlinks.json (que
+                 genera Firebase Hosting solo, a partir de las huellas de
+                 firma registradas en el proyecto); sin verificar, Android
+                 trata el enlace como "ambiguo" y sigue preguntando qué app
+                 usar en vez de abrir esta directamente.
+
+                 Los enlaces de invitación son la RAÍZ del sitio con
+                 parámetros de consulta, p. ej.
+                 https://secretgift.app/?codigo=XXXX-YYYY[&reemplazo=...].
+                 Un intent-filter no puede filtrar por query string —solo
+                 por esquema, host y ruta—, así que el `<data>` de abajo
+                 fija `android:path="/"` para quedarse solo con la raíz
+                 exacta (que es donde vive `?codigo=`) y NO capturar el
+                 resto del dominio: en particular deja fuera `/apk`, el
+                 atajo de descarga directa del APK de prueba, que tiene que
+                 seguir yendo al navegador para poder descargarse. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="secretgift.app"
+                    android:path="/"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

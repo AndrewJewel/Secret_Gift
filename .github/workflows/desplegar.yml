@@ -1,0 +1,64 @@
+# Publica en producción (secretgift-app) cada push a main.
+#
+# Así producción es siempre lo que hay en main en GitHub, y no lo que
+# tuviera la carpeta de alguien en su computador ese día. Si el análisis
+# o las pruebas fallan, no se publica nada.
+#
+# Usa el secreto FIREBASE_SERVICE_ACCOUNT: la llave JSON de la cuenta de
+# servicio github-deploy@secretgift-app (roles: Administrador de Firebase,
+# de Cloud Functions, de Artifact Registry y Usuario de cuenta de servicio).
+name: Desplegar a producción
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Nunca dos despliegues a la vez: el segundo espera al primero.
+concurrency:
+  group: produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.10
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build web --release
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+        working-directory: functions
+
+      # La llave va por variable de entorno y no pegada en el comando: así
+      # ninguna comilla del JSON puede romper el shell.
+      - name: Llave de la cuenta de servicio
+        env:
+          LLAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$LLAVE" > "$RUNNER_TEMP/llave.json"
+
+      - name: firebase deploy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/llave.json
+        run: >
+          npx --yes firebase-tools@latest deploy
+          --project secretgift-app
+          --only hosting,functions,firestore:rules,storage
+          --non-interactive --force
