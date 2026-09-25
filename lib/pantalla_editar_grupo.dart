@@ -286,30 +286,36 @@ class SelectorTematica extends StatelessWidget {
             groupValue: seleccionada,
             onChanged: (nueva) => onCambio(nueva!),
             child: Column(
-              children: Tematica.values
-                  .map((tema) => RadioListTile<Tematica>(
-                        value: tema,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: color.shade700,
-                        secondary: Icon(tema.icono, color: color.shade700),
-                        title: Text(tema.titulo(t),
-                            style: const TextStyle(
-                                color: Colors.black87, fontWeight: FontWeight.w600)),
-                        subtitle: Text(tema.descripcion(t),
-                            style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                      ))
-                  .toList(),
+              children: [
+                for (final tema in Tematica.values) ...[
+                  RadioListTile<Tematica>(
+                    value: tema,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: color.shade700,
+                    secondary: Icon(tema.icono, color: color.shade700),
+                    title: Text(tema.titulo(t),
+                        style: const TextStyle(
+                            color: Colors.black87, fontWeight: FontWeight.w600)),
+                    subtitle: Text(tema.descripcion(t),
+                        style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                  ),
+                  // El color es cosa de "Sin temática": va pegado a esa
+                  // opción, no al final de la lista.
+                  if (tema == Tematica.ninguna && seleccionada == Tematica.ninguna)
+                    _filaColor(context, t),
+                ],
+              ],
             ),
           ),
-          if (seleccionada == Tematica.ninguna) _filaColor(context, t),
         ],
       ),
     );
   }
 
   Widget _filaColor(BuildContext context, Textos t) {
+    // Sangrado para alinearse con el título de la opción, no con el radio.
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(left: 56, bottom: 8),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 8,
