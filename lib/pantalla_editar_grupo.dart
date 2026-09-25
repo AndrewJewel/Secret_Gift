@@ -4,6 +4,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'ocasion.dart';
+import 'selector_color.dart';
 import 'tematica.dart';
 
 /// Pantalla de organizador: cambiar nombre, valor mínimo, temática y
@@ -19,6 +20,7 @@ class PantallaEditarGrupo extends StatefulWidget {
   final String nombreGrupo;
   final String valorMinimo;
   final Tematica tematica;
+  final Color? colorPersonal;
   final String reglas;
 
   const PantallaEditarGrupo({
@@ -28,6 +30,7 @@ class PantallaEditarGrupo extends StatefulWidget {
     required this.nombreGrupo,
     required this.valorMinimo,
     required this.tematica,
+    this.colorPersonal,
     required this.reglas,
   });
 
@@ -43,6 +46,7 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
   late final TextEditingController _valorMinimo = TextEditingController(text: widget.valorMinimo);
   late final TextEditingController _reglas = TextEditingController(text: widget.reglas);
   late Tematica _tematica = widget.tematica;
+  late Color? _colorPersonal = widget.colorPersonal;
   bool _guardando = false;
 
   @override
@@ -53,7 +57,7 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
     super.dispose();
   }
 
-  MaterialColor get _color => _tematica.colorDe(widget.ocasion);
+  MaterialColor get _color => _tematica.colorDe(widget.ocasion, _colorPersonal);
 
   void _avisar(String mensaje) {
     if (!mounted) return;
@@ -96,6 +100,8 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
         'nombreGrupo': nombre,
         'valorMinimo': _valorMinimo.text.trim(),
         'tematica': _tematica.id,
+        // Vacío = vuelve al color de la ocasión.
+        'color': _colorPersonal == null ? '' : hexDe(_colorPersonal!),
         'reglas': _reglas.text.trim(),
       });
       if (!mounted) return;
@@ -141,6 +147,7 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
       child: FondoTematico(
         tematica: _tematica,
         ocasion: widget.ocasion,
+        colorPersonal: _colorPersonal,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           // Ver la nota en pantalla_registro.dart: el teclado encoge el
@@ -169,7 +176,10 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
                 SelectorTematica(
                   seleccionada: _tematica,
                   color: _color,
+                  ocasion: widget.ocasion,
+                  colorPersonal: _colorPersonal,
                   onCambio: (nueva) => _cambiarTematica(nueva, t),
+                  onColor: (nuevo) => setState(() => _colorPersonal = nuevo),
                 ),
                 const SizedBox(height: 16),
                 GlassTextField(
@@ -237,16 +247,25 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
 }
 
 /// Selector de temática, compartido entre crear grupo y editar grupo.
+///
+/// Sin temática ofrece además elegir el color del grupo; [onColor] recibe
+/// null cuando se vuelve al color de la ocasión.
 class SelectorTematica extends StatelessWidget {
   final Tematica seleccionada;
   final MaterialColor color;
+  final Ocasion ocasion;
+  final Color? colorPersonal;
   final ValueChanged<Tematica> onCambio;
+  final ValueChanged<Color?> onColor;
 
   const SelectorTematica({
     super.key,
     required this.seleccionada,
     required this.color,
+    required this.ocasion,
+    required this.colorPersonal,
     required this.onCambio,
+    required this.onColor,
   });
 
   @override
@@ -282,6 +301,42 @@ class SelectorTematica extends StatelessWidget {
                   .toList(),
             ),
           ),
+          if (seleccionada == Tematica.ninguna) _filaColor(context, t),
+        ],
+      ),
+    );
+  }
+
+  Widget _filaColor(BuildContext context, Textos t) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+            ),
+          ),
+          Text(t.colorGrupo,
+              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+          TextButton.icon(
+            onPressed: () async {
+              final elegido =
+                  await elegirColorGrupo(context, ocasion: ocasion, inicial: color);
+              if (elegido != null) onColor(elegido);
+            },
+            icon: const Icon(Icons.palette_outlined),
+            label: Text(t.colorCambiar),
+          ),
+          if (colorPersonal != null)
+            TextButton(onPressed: () => onColor(null), child: Text(t.colorQuitar)),
         ],
       ),
     );

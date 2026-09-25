@@ -627,7 +627,7 @@ class TextosEn extends Textos {
 
   @override
   String get tematicaAyuda =>
-      'With a theme, nobody uses their real name: everyone signs up as the character they pick.';
+      'With Cartoons, Red carpet or Christmas, nobody uses their real name: everyone signs up as the character they pick.';
 
   @override
   String get tematicaNombreNinguna => 'No theme';
@@ -824,4 +824,45 @@ class TextosEn extends Textos {
   @override
   String get avisosBloqueados =>
       'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.';
+
+  @override
+  String get tematicaNombreEmpresarial => 'Corporate';
+
+  @override
+  String get tematicaDescEmpresarial =>
+      'Business look, everyone with their own name';
+
+  @override
+  String get reglasEmpresarial =>
+      'Office gift exchange.\n\n• Don\'t tell anyone who you got.\n• Stick to the agreed minimum value.\n• Write your wish list so whoever gives you a gift has a clue.';
+
+  @override
+  String get colorGrupo => 'Group color';
+
+  @override
+  String get colorCambiar => 'Change';
+
+  @override
+  String get colorQuitar => 'Use the occasion\'s color';
+
+  @override
+  String get colorTitulo => 'Pick the group color';
+
+  @override
+  String get colorSugeridos => 'Suggested';
+
+  @override
+  String get colorPersonalizado => 'Custom';
+
+  @override
+  String get colorTono => 'Hue';
+
+  @override
+  String get colorLuz => 'Lightness';
+
+  @override
+  String get colorVistaPrevia => 'This is how your group will look';
+
+  @override
+  String get colorUsar => 'Use this color';
 }

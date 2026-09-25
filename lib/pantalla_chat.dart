@@ -21,6 +21,7 @@ class PantallaChat extends StatefulWidget {
   final String codigo;
   final Ocasion ocasion;
   final Tematica tematica;
+  final Color? colorPersonal;
 
   /// Tu vínculo con el grupo: dice si eres organizador (para moderar) y
   /// qué participante eres (para resaltar tus mensajes).
@@ -31,6 +32,7 @@ class PantallaChat extends StatefulWidget {
     required this.codigo,
     required this.ocasion,
     required this.tematica,
+    this.colorPersonal,
     this.vinculo,
   });
 
@@ -52,7 +54,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
       .orderBy('fecha', descending: true)
       .limit(200);
 
-  MaterialColor get _color => widget.tematica.colorDe(widget.ocasion);
+  MaterialColor get _color => widget.tematica.colorDe(widget.ocasion, widget.colorPersonal);
 
   // Mientras esta pantalla esté a la vista no se enseñan avisos de
   // mensajes de ESTE grupo: ya los estás leyendo. El ciclo completo
@@ -164,6 +166,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
       child: FondoTematico(
         tematica: widget.tematica,
         ocasion: widget.ocasion,
+        colorPersonal: widget.colorPersonal,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           // Ver la nota en pantalla_registro.dart. Aquí el redactor no se

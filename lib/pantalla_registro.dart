@@ -25,6 +25,9 @@ class InfoGrupo {
   final String nombreGrupo;
   final String valorMinimo;
   final Tematica tematica;
+
+  /// Color propio del grupo (solo cuenta sin temática), o null.
+  final Color? colorPersonal;
   final String reglas;
 
   const InfoGrupo({
@@ -32,6 +35,7 @@ class InfoGrupo {
     required this.nombreGrupo,
     required this.valorMinimo,
     required this.tematica,
+    this.colorPersonal,
     required this.reglas,
   });
 
@@ -40,10 +44,11 @@ class InfoGrupo {
         nombreGrupo: d['nombreGrupo'] as String? ?? '',
         valorMinimo: d['valorMinimo'] as String? ?? '',
         tematica: Tematica.desdeId(d['tematica'] as String?),
+        colorPersonal: colorDesdeHex(d['color'] as String?),
         reglas: d['reglas'] as String? ?? '',
       );
 
-  MaterialColor get color => tematica.colorDe(ocasion);
+  MaterialColor get color => tematica.colorDe(ocasion, colorPersonal);
 }
 
 /// Deja constancia de un fallo en una de las dos escuchas en vivo de esta
@@ -452,6 +457,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           builder: (_) => PantallaSecreta(
             ocasion: _info.ocasion,
             tematica: _info.tematica,
+            colorPersonal: _info.colorPersonal,
             nombre: data['nombre'] as String? ?? '',
             nombreAmigo: data['nombreAmigo'] as String? ?? '',
             deseosAmigo: deseos.isEmpty ? t.secretaSinSugerencias : deseos,
@@ -477,6 +483,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           nombreGrupo: _info.nombreGrupo,
           valorMinimo: _info.valorMinimo,
           tematica: _info.tematica,
+          colorPersonal: _info.colorPersonal,
           reglas: _info.reglas,
         ),
       ),
@@ -716,6 +723,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       child: FondoTematico(
         tematica: _info.tematica,
         ocasion: _info.ocasion,
+        colorPersonal: _info.colorPersonal,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           // El teclado SÍ encoge el Scaffold (comportamiento por defecto).
@@ -814,6 +822,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                               codigo: widget.codigo,
                               ocasion: _info.ocasion,
                               tematica: _info.tematica,
+                              colorPersonal: _info.colorPersonal,
                               vinculo: _vinculo,
                             ),
                           ),

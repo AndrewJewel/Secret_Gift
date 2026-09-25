@@ -282,7 +282,7 @@
   "@avatarNoGaleria": { "placeholders": { "detalle": { "type": "String" } } },
 
   "tematica": "Theme",
-  "tematicaAyuda": "With a theme, nobody uses their real name: everyone signs up as the character they pick.",
+  "tematicaAyuda": "With Cartoons, Red carpet or Christmas, nobody uses their real name: everyone signs up as the character they pick.",
   "tematicaNombreNinguna": "No theme",
   "tematicaNombreCaricaturas": "Cartoons",
   "tematicaNombreAlfombraRoja": "Red carpet",
@@ -370,5 +370,19 @@
   "avisosBloqueados": "Your browser or phone is blocking notifications for this app. You'll need to allow them in its settings — we can't do it from here.",
   "@avisosBloqueados": {
     "description": "Shown when turning the switch on fails because the OS/browser already denied the permission. The app cannot re-request it, only explain where to fix it."
-  }
+  },
+
+  "tematicaNombreEmpresarial": "Corporate",
+  "tematicaDescEmpresarial": "Business look, everyone with their own name",
+  "reglasEmpresarial": "Office gift exchange.\n\n• Don't tell anyone who you got.\n• Stick to the agreed minimum value.\n• Write your wish list so whoever gives you a gift has a clue.",
+  "colorGrupo": "Group color",
+  "colorCambiar": "Change",
+  "colorQuitar": "Use the occasion's color",
+  "colorTitulo": "Pick the group color",
+  "colorSugeridos": "Suggested",
+  "colorPersonalizado": "Custom",
+  "colorTono": "Hue",
+  "colorLuz": "Lightness",
+  "colorVistaPrevia": "This is how your group will look",
+  "colorUsar": "Use this color"
 }

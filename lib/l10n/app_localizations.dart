@@ -1191,7 +1191,7 @@ abstract class Textos {
   /// No description provided for @tematicaAyuda.
   ///
   /// In en, this message translates to:
-  /// **'With a theme, nobody uses their real name: everyone signs up as the character they pick.'**
+  /// **'With Cartoons, Red carpet or Christmas, nobody uses their real name: everyone signs up as the character they pick.'**
   String get tematicaAyuda;
 
   /// No description provided for @tematicaNombreNinguna.
@@ -1553,6 +1553,84 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.'**
   String get avisosBloqueados;
+
+  /// No description provided for @tematicaNombreEmpresarial.
+  ///
+  /// In en, this message translates to:
+  /// **'Corporate'**
+  String get tematicaNombreEmpresarial;
+
+  /// No description provided for @tematicaDescEmpresarial.
+  ///
+  /// In en, this message translates to:
+  /// **'Business look, everyone with their own name'**
+  String get tematicaDescEmpresarial;
+
+  /// No description provided for @reglasEmpresarial.
+  ///
+  /// In en, this message translates to:
+  /// **'Office gift exchange.\n\n• Don\'t tell anyone who you got.\n• Stick to the agreed minimum value.\n• Write your wish list so whoever gives you a gift has a clue.'**
+  String get reglasEmpresarial;
+
+  /// No description provided for @colorGrupo.
+  ///
+  /// In en, this message translates to:
+  /// **'Group color'**
+  String get colorGrupo;
+
+  /// No description provided for @colorCambiar.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get colorCambiar;
+
+  /// No description provided for @colorQuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the occasion\'s color'**
+  String get colorQuitar;
+
+  /// No description provided for @colorTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the group color'**
+  String get colorTitulo;
+
+  /// No description provided for @colorSugeridos.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get colorSugeridos;
+
+  /// No description provided for @colorPersonalizado.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get colorPersonalizado;
+
+  /// No description provided for @colorTono.
+  ///
+  /// In en, this message translates to:
+  /// **'Hue'**
+  String get colorTono;
+
+  /// No description provided for @colorLuz.
+  ///
+  /// In en, this message translates to:
+  /// **'Lightness'**
+  String get colorLuz;
+
+  /// No description provided for @colorVistaPrevia.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how your group will look'**
+  String get colorVistaPrevia;
+
+  /// No description provided for @colorUsar.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this color'**
+  String get colorUsar;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

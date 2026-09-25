@@ -627,7 +627,7 @@ class TextosEs extends Textos {
 
   @override
   String get tematicaAyuda =>
-      'Con temática, nadie usa su nombre real: cada quien se registra como el personaje que elija.';
+      'Con Caricaturas, Alfombra roja o Navidad, nadie usa su nombre real: cada quien se registra como el personaje que elija.';
 
   @override
   String get tematicaNombreNinguna => 'Sin temática';
@@ -823,4 +823,45 @@ class TextosEs extends Textos {
   @override
   String get avisosBloqueados =>
       'Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos.';
+
+  @override
+  String get tematicaNombreEmpresarial => 'Empresarial';
+
+  @override
+  String get tematicaDescEmpresarial =>
+      'Aspecto corporativo, cada quien con su nombre';
+
+  @override
+  String get reglasEmpresarial =>
+      'Intercambio de regalos de la oficina.\n\n• No le cuentes a nadie quién te tocó.\n• Respeta el valor mínimo acordado.\n• Escribe tu lista de deseos para que quien te regale tenga una pista.';
+
+  @override
+  String get colorGrupo => 'Color del grupo';
+
+  @override
+  String get colorCambiar => 'Cambiar';
+
+  @override
+  String get colorQuitar => 'Usar el de la ocasión';
+
+  @override
+  String get colorTitulo => 'Elige el color del grupo';
+
+  @override
+  String get colorSugeridos => 'Sugeridos';
+
+  @override
+  String get colorPersonalizado => 'Personalizado';
+
+  @override
+  String get colorTono => 'Tono';
+
+  @override
+  String get colorLuz => 'Luz';
+
+  @override
+  String get colorVistaPrevia => 'Así se verá tu grupo';
+
+  @override
+  String get colorUsar => 'Usar este color';
 }
