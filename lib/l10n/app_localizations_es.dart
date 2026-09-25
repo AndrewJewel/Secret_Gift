@@ -210,9 +210,6 @@ class TextosEs extends Textos {
   String get crearTitulo => 'Crear grupo';
 
   @override
-  String get crearOcasion => 'Ocasión';
-
-  @override
   String get crearNombreGrupo => 'Nombre del grupo';
 
   @override
@@ -842,7 +839,7 @@ class TextosEs extends Textos {
   String get colorCambiar => 'Cambiar';
 
   @override
-  String get colorQuitar => 'Usar el de la ocasión';
+  String get colorQuitar => 'Usar el color por defecto';
 
   @override
   String get colorTitulo => 'Elige el color del grupo';

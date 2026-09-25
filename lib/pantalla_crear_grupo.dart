@@ -18,14 +18,18 @@ class PantallaCrearGrupo extends StatefulWidget {
 }
 
 class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
-  Ocasion _ocasion = Ocasion.amigoSecreto;
+  /// Ya no se elige: el color lo pone el selector de color y el ambiente
+  /// navideño la temática Navidad. Se sigue guardando para que el modelo
+  /// y los grupos viejos de Santa Secreto no cambien.
+  static const _ocasion = Ocasion.amigoSecreto;
   Tematica _tematica = Tematica.ninguna;
   Color? _colorPersonal;
   final TextEditingController _nombreGrupoController = TextEditingController();
   final TextEditingController _valorMinimoController = TextEditingController();
   bool _creando = false;
 
-  /// El color y el fondo los manda la temática; sin temática, la ocasión.
+  /// El color y el fondo los manda la temática; sin temática, el color
+  /// elegido o, si no hay, el de la ocasión.
   MaterialColor get _color => _tematica.colorDe(_ocasion, _colorPersonal);
 
   @override
@@ -140,33 +144,6 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
             child: ListView(
               padding: const EdgeInsets.only(top: 20, bottom: 20),
               children: [
-                GlassCard(
-                  color: _color,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(t.crearOcasion,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, color: _color.shade800)),
-                      RadioGroup<Ocasion>(
-                        groupValue: _ocasion,
-                        onChanged: (v) => setState(() => _ocasion = v!),
-                        child: Column(
-                          children: Ocasion.values
-                              .map((o) => RadioListTile<Ocasion>(
-                                    title: Text('${o.emoji} ${o.titulo(t)}',
-                                        style: const TextStyle(color: Colors.black87)),
-                                    value: o,
-                                    contentPadding: EdgeInsets.zero,
-                                    activeColor: _color.shade700,
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
                 SelectorTematica(
                   seleccionada: _tematica,
                   color: _color,
