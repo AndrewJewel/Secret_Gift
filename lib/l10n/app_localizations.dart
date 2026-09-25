@@ -451,12 +451,6 @@ abstract class Textos {
   /// **'Create group'**
   String get crearTitulo;
 
-  /// No description provided for @crearOcasion.
-  ///
-  /// In en, this message translates to:
-  /// **'Occasion'**
-  String get crearOcasion;
-
   /// No description provided for @crearNombreGrupo.
   ///
   /// In en, this message translates to:
@@ -1587,7 +1581,7 @@ abstract class Textos {
   /// No description provided for @colorQuitar.
   ///
   /// In en, this message translates to:
-  /// **'Use the occasion\'s color'**
+  /// **'Use the default color'**
   String get colorQuitar;
 
   /// No description provided for @colorTitulo.

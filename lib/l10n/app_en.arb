@@ -86,7 +86,6 @@
   "@errorGrupoSinSortear": {"description": "Tried to generate a replacement link before the draw, where removing works"},
 
   "crearTitulo": "Create group",
-  "crearOcasion": "Occasion",
   "crearNombreGrupo": "Group name",
   "crearNombreGrupoPista": "e.g. The Smiths, Office 2026",
   "crearValorMinimo": "Minimum gift value (optional)",
@@ -377,7 +376,7 @@
   "reglasEmpresarial": "Office gift exchange.\n\n• Don't tell anyone who you got.\n• Stick to the agreed minimum value.\n• Write your wish list so whoever gives you a gift has a clue.",
   "colorGrupo": "Group color",
   "colorCambiar": "Change",
-  "colorQuitar": "Use the occasion's color",
+  "colorQuitar": "Use the default color",
   "colorTitulo": "Pick the group color",
   "colorSugeridos": "Suggested",
   "colorPersonalizado": "Custom",

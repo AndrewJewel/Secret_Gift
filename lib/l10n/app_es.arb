@@ -64,7 +64,6 @@
   "errorGrupoSinSortear": "Este grupo todavía no ha sorteado. Saca a esta persona y que se apunte otra.",
 
   "crearTitulo": "Crear grupo",
-  "crearOcasion": "Ocasión",
   "crearNombreGrupo": "Nombre del grupo",
   "crearNombreGrupoPista": "Ej: Familia Pérez, Oficina 2026",
   "crearValorMinimo": "Valor mínimo del regalo (opcional)",
@@ -273,7 +272,7 @@
   "reglasEmpresarial": "Intercambio de regalos de la oficina.\n\n• No le cuentes a nadie quién te tocó.\n• Respeta el valor mínimo acordado.\n• Escribe tu lista de deseos para que quien te regale tenga una pista.",
   "colorGrupo": "Color del grupo",
   "colorCambiar": "Cambiar",
-  "colorQuitar": "Usar el de la ocasión",
+  "colorQuitar": "Usar el color por defecto",
   "colorTitulo": "Elige el color del grupo",
   "colorSugeridos": "Sugeridos",
   "colorPersonalizado": "Personalizado",
