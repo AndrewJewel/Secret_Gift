@@ -75,3 +75,11 @@ secretgift-app-*.json
 
 # La memoria del proyecto vive en su propio repo privado (Secret_Gift-locker).
 locker/
+
+# Críticas y estado local de Impeccable: son decisiones de diseño, no código.
+.impeccable/
+
+# Contexto de Impeccable (decisiones de producto y diseño): copia canónica en
+# locker/docs/impeccable/. La herramienta los exige en la raíz.
+/PRODUCT.md
+/DESIGN.md
