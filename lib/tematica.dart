@@ -212,7 +212,7 @@ class FondoTematico extends StatelessWidget {
                 return Image.asset(imagen, fit: BoxFit.cover, gaplessPlayback: true);
               }),
             ),
-            child,
+            _columnaCentral(child),
           ],
         ),
       ),
@@ -250,7 +250,7 @@ class FondoNeutro extends StatelessWidget {
                   CustomPaint(painter: _FondoBlobs(colorNeutro, restricciones.biggest)),
             ),
           ),
-          child,
+          _columnaCentral(child),
         ],
       ),
     );
@@ -299,3 +299,10 @@ class _FondoBlobs extends CustomPainter {
   bool shouldRepaint(covariant _FondoBlobs old) =>
       old.color != color || old.tamano != tamano;
 }
+
+/// En PC la pantalla no se estira de lado a lado: el contenido va en una
+/// columna de 640 y el fondo sigue a sangre. Las ilustraciones tienen el
+/// detalle en los bordes, justo lo que queda a la vista.
+Widget _columnaCentral(Widget child) => Center(
+      child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 640), child: child),
+    );

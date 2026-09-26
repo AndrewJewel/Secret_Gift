@@ -412,5 +412,6 @@
   "secretaParaTi": "For you",
 
   "secretaPersonas": "{n, plural, =1{1 person} other{{n} people}}",
-  "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}}
+  "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}},
+  "registroEsperaSorteo": "Once the draw is done, you'll see here who you're giving a gift to."
 }

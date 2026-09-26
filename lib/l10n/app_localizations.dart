@@ -1727,6 +1727,12 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'{n, plural, =1{1 person} other{{n} people}}'**
   String secretaPersonas(int n);
+
+  /// No description provided for @registroEsperaSorteo.
+  ///
+  /// In en, this message translates to:
+  /// **'Once the draw is done, you\'ll see here who you\'re giving a gift to.'**
+  String get registroEsperaSorteo;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

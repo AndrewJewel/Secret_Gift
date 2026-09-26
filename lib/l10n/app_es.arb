@@ -309,5 +309,6 @@
   "secretaParaTi": "Para ti",
 
   "secretaPersonas": "{n, plural, =1{1 persona} other{{n} personas}}",
-  "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}}
+  "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}},
+  "registroEsperaSorteo": "Cuando se haga el sorteo, aquí verás a quién le regalas."
 }

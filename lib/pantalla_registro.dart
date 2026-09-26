@@ -898,7 +898,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      if (_esOrganizador) ...[
+                      if (_esOrganizador && !yaSorteado) ...[
                         if (_gestionaExclusiones && _exclusionesVigentes.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
@@ -914,29 +914,51 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                                       : Colors.red.shade700),
                             ),
                           ),
-                        // Ya sorteado: el sorteo no se repite (el servidor lo
-                        // rechaza), así que el botón se queda apagado y lo dice.
+                        // Antes del sorteo es LA acción del organizador. Después
+                        // se queda, apagada y diciéndolo (el servidor no deja
+                        // repetirlo), pero cede el sitio principal a «Ver mi
+                        // amigo secreto».
                         GlassButton(
                           color: _color.shade600,
-                          onPressed: yaSorteado || !sorteoPosible ? null : _sortear,
-                          icon: yaSorteado ? Icons.check_circle_outline : Icons.casino,
-                          label: yaSorteado ? t.sorteoBotonYaSorteado : t.sorteoBoton,
+                          onPressed: sorteoPosible ? _sortear : null,
+                          icon: Icons.casino,
+                          label: t.sorteoBoton,
                         ),
                         const SizedBox(height: 10),
                       ],
-                      GlassOutlineButton(
-                        color: _color,
-                        // Solo tiene sentido si estás dentro: sin plaza no
-                        // hay amigo asignado.
-                        // Antes del sorteo no hay nada que ver: pedir el PIN
-                        // para luego decir «todavía no» castigaba la curiosidad.
-                        onPressed: _vinculo?.estoyDentro == true && yaSorteado
-                            ? _verAmigoSecreto
-                            : null,
-                        icon: Icons.visibility,
-                        label: t.registroVerAmigo,
-                      ),
-                      const SizedBox(height: 10),
+                      // Un solo botón lleno por estado. Antes del sorteo no hay
+                      // nada que ver: en vez de un botón muerto, se dice qué
+                      // pasará y dónde.
+                      if (_vinculo?.estoyDentro == true) ...[
+                        if (yaSorteado)
+                          GlassButton(
+                            color: _color.shade600,
+                            onPressed: _verAmigoSecreto,
+                            icon: Icons.visibility,
+                            label: t.registroVerAmigo,
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(
+                              t.registroEsperaSorteo,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: _info.tematica.fondoOscuro ? Colors.white70 : Colors.black54),
+                            ),
+                          ),
+                        const SizedBox(height: 10),
+                      ],
+                      if (_esOrganizador && yaSorteado) ...[
+                        GlassOutlineButton(
+                          color: _color,
+                          onPressed: null,
+                          icon: Icons.check_circle_outline,
+                          label: t.sorteoBotonYaSorteado,
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       GlassOutlineButton(
                         color: _color,
                         onPressed: () => Navigator.push(

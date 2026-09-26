@@ -341,6 +341,11 @@ class GlassOutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Apagado se tiene que notar: el color explícito del texto taparía el
+    // gris que Material pone solo a los botones desactivados.
+    final tinta = onPressed == null
+        ? (EstiloFondo.esOscuro(context) ? Colors.white54 : Colors.black45)
+        : legibleSobreBlanco(color.shade700);
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -355,9 +360,8 @@ class GlassOutlineButton extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: _desenfoqueVidrio, sigmaY: _desenfoqueVidrio),
             child: OutlinedButton.icon(
               onPressed: onPressed,
-              icon: icon != null ? Icon(icon, color: legibleSobreBlanco(color.shade700)) : const SizedBox.shrink(),
-              label: Text(label,
-                  style: TextStyle(color: legibleSobreBlanco(color.shade700), fontWeight: FontWeight.w600)),
+              icon: icon != null ? Icon(icon, color: tinta) : const SizedBox.shrink(),
+              label: Text(label, style: TextStyle(color: tinta, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 backgroundColor: _rellenoVidrio(color, EstiloFondo.esOscuro(context)),
                 side: _ladoVidrio(color, EstiloFondo.esOscuro(context)),

@@ -936,4 +936,8 @@ class TextosEn extends Textos {
     );
     return '$_temp0';
   }
+
+  @override
+  String get registroEsperaSorteo =>
+      'Once the draw is done, you\'ll see here who you\'re giving a gift to.';
 }

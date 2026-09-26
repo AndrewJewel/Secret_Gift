@@ -935,4 +935,8 @@ class TextosEs extends Textos {
     );
     return '$_temp0';
   }
+
+  @override
+  String get registroEsperaSorteo =>
+      'Cuando se haga el sorteo, aquí verás a quién le regalas.';
 }
