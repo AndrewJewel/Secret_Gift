@@ -72,3 +72,6 @@ web/descargas/*.apk
 
 # Llaves de cuentas de servicio de Google Cloud: nunca al repositorio.
 secretgift-app-*.json
+
+# La memoria del proyecto vive en su propio repo privado (Secret_Gift-locker).
+locker/
