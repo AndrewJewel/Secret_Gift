@@ -1037,17 +1037,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
               icon: Icon(Icons.share, color: _color.shade800, size: 20),
               tooltip: t.grupoCompartir,
               onPressed: _compartir,
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.only(left: 8),
-              visualDensity: VisualDensity.compact,
             ),
             IconButton(
               icon: Icon(Icons.qr_code, color: _color.shade800, size: 20),
               tooltip: t.grupoQR,
               onPressed: _invitar,
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.only(left: 4),
-              visualDensity: VisualDensity.compact,
             ),
           ]),
           if (_info.valorMinimo.isNotEmpty)

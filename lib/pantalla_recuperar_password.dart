@@ -58,7 +58,8 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
       child: FondoNeutro(
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: AppBar(title: Text(t.recuperarTitulo)),
+          // Misma barra, campos y botones que «Entrar», de donde se llega.
+          appBar: GlassAppBar(title: Text(t.recuperarTitulo), color: colorNeutro),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -66,13 +67,15 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.mark_email_read_outlined, size: 64),
+                        Icon(Icons.mark_email_read_outlined, size: 64, color: colorNeutro.shade700),
                         const SizedBox(height: 16),
                         Text(t.recuperarEnviado, textAlign: TextAlign.center),
                         const SizedBox(height: 24),
-                        FilledButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(t.cerrar)),
+                        GlassButton(
+                          color: colorNeutro.shade600,
+                          onPressed: () => Navigator.pop(context),
+                          label: t.cerrar,
+                        ),
                       ],
                     )
                   : Column(
@@ -81,17 +84,20 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
                       children: [
                         Text(t.recuperarTexto),
                         const SizedBox(height: 16),
-                        TextField(
+                        GlassTextField(
                           controller: _correo,
+                          labelText: t.cuentaCorreo,
+                          icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.email],
-                          decoration:
-                              InputDecoration(labelText: t.cuentaCorreo),
                         ),
                         const SizedBox(height: 16),
-                        FilledButton(
-                            onPressed: _mandando ? null : _mandar,
-                            child: Text(t.recuperarBoton)),
+                        GlassButton(
+                          color: colorNeutro.shade600,
+                          onPressed: _mandando ? null : _mandar,
+                          icon: Icons.send_outlined,
+                          label: t.recuperarBoton,
+                        ),
                       ],
                     ),
             ),
