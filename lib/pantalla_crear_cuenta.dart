@@ -81,23 +81,23 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
     final password = _password.text;
 
     if (correo.isEmpty || nombre.isEmpty || apellido.isEmpty || password.isEmpty) {
-      _avisar('⚠️ ${t.cuentaFaltanDatos}');
+      _avisar(t.cuentaFaltanDatos);
       return;
     }
     if (!_regexPassword.hasMatch(password)) {
-      _avisar('⚠️ ${t.errorPasswordDebil}');
+      _avisar(t.errorPasswordDebil);
       return;
     }
     if (password != _confirmar.text) {
-      _avisar('⚠️ ${t.cuentaNoCoinciden}');
+      _avisar(t.cuentaNoCoinciden);
       return;
     }
     if (!_regexPin.hasMatch(_pin.text.trim())) {
-      _avisar('⚠️ ${t.errorPinFormato}');
+      _avisar(t.errorPinFormato);
       return;
     }
     if (_pin.text.trim() != _confirmarPin.text.trim()) {
-      _avisar('⚠️ ${t.cuentaPinNoCoinciden}');
+      _avisar(t.cuentaPinNoCoinciden);
       return;
     }
 
@@ -118,9 +118,9 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
         ),
       );
     } on FuncionError catch (e) {
-      _avisar('⚠️ ${e.texto(t)}');
+      _avisar(e.texto(t));
     } catch (e) {
-      _avisar('⚠️ ${t.errorInesperado(e.toString())}');
+      _avisar(t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _cargando = false);
     }

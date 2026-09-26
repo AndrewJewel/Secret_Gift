@@ -220,7 +220,7 @@ abstract class Textos {
   /// No description provided for @errorInesperado.
   ///
   /// In en, this message translates to:
-  /// **'Unexpected error: {detalle}'**
+  /// **'Something went wrong. Check your connection and try again.'**
   String errorInesperado(String detalle);
 
   /// No description provided for @errorSinConexion.
@@ -346,7 +346,7 @@ abstract class Textos {
   /// No description provided for @errorGrupoYaSorteado.
   ///
   /// In en, this message translates to:
-  /// **'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.'**
+  /// **'The draw already happened. This person cannot be removed: they have to be replaced so the chain stays intact.'**
   String get errorGrupoYaSorteado;
 
   /// Someone tried to join a group whose draw already ran
@@ -418,7 +418,7 @@ abstract class Textos {
   /// Fallback for an Auth error code this version doesn't know
   ///
   /// In en, this message translates to:
-  /// **'Something went wrong signing you in. Try again. (code: {codigo} — {mensaje})'**
+  /// **'Something went wrong signing you in. Try again. (code: {codigo}, {mensaje})'**
   String errorAuthDesconocido(String codigo, String mensaje);
 
   /// Firebase Auth rejected the request because the site's domain is not in the project's authorized domains list — a project configuration problem, not something this person did
@@ -724,7 +724,7 @@ abstract class Textos {
   /// Shown when the person taps 'I've confirmed it' but the email is still unverified
   ///
   /// In en, this message translates to:
-  /// **'Not confirmed yet. Check your inbox — it may be in spam.'**
+  /// **'Not confirmed yet. Check your inbox, it may be in spam.'**
   String get verificarTodaviaNo;
 
   /// Title of the screen that completes a profile left unfinished after signing up
@@ -837,7 +837,7 @@ abstract class Textos {
   /// No description provided for @registroTituloNormal.
   ///
   /// In en, this message translates to:
-  /// **'New member'**
+  /// **'Join the group'**
   String get registroTituloNormal;
 
   /// No description provided for @registroTituloPersonaje.
@@ -867,7 +867,7 @@ abstract class Textos {
   /// No description provided for @registroBoton.
   ///
   /// In en, this message translates to:
-  /// **'ADD TO THE LIST'**
+  /// **'JOIN'**
   String get registroBoton;
 
   /// No description provided for @registroFaltaNombre.
@@ -1263,7 +1263,7 @@ abstract class Textos {
   /// No description provided for @grupoYaDentroAyuda.
   ///
   /// In en, this message translates to:
-  /// **'Your entry is saved. Nobody has to sign up twice.'**
+  /// **'Use the pencil to change your photo or wish list.'**
   String get grupoYaDentroAyuda;
 
   /// No description provided for @grupoTuEtiqueta.
@@ -1287,7 +1287,7 @@ abstract class Textos {
   /// No description provided for @chatVacio.
   ///
   /// In en, this message translates to:
-  /// **'No messages yet.\nBe the first to write — nobody will know it was you.'**
+  /// **'No messages yet.\nBe the first to write: nobody will know it was you.'**
   String get chatVacio;
 
   /// No description provided for @chatEscribe.
@@ -1305,7 +1305,7 @@ abstract class Textos {
   /// No description provided for @chatTuMascara.
   ///
   /// In en, this message translates to:
-  /// **'In the chat you are {mascara}. Nobody can see who is behind it — not even the organizer.'**
+  /// **'In the chat you are {mascara}. Nobody can see who is behind it, not even the organizer.'**
   String chatTuMascara(String mascara);
 
   /// No description provided for @chatTu.
@@ -1515,7 +1515,7 @@ abstract class Textos {
   /// Shown when turning the switch on fails because the OS/browser already denied the permission. The app cannot re-request it, only explain where to fix it.
   ///
   /// In en, this message translates to:
-  /// **'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.'**
+  /// **'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings; we can\'t do it from here.'**
   String get avisosBloqueados;
 
   /// No description provided for @tematicaNombreEmpresarial.

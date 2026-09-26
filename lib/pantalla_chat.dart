@@ -121,7 +121,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
     } catch (e) {
       if (!mounted) return;
       final t = Textos.of(context);
-      _avisar('⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
+      _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -153,7 +153,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
       });
     } catch (e) {
       if (!mounted) return;
-      _avisar('⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
+      _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
     }
   }
 

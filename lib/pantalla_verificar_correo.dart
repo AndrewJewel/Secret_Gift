@@ -41,7 +41,7 @@ class _PantallaVerificarCorreoState extends State<PantallaVerificarCorreo> {
         await widget.alVerificar(context);
         return;
       }
-      _avisar('⚠️ ${t.verificarTodaviaNo}');
+      _avisar(t.verificarTodaviaNo);
     } catch (e) {
       // Probado hoy en un móvil Android con Chrome: la persona verifica el
       // correo, tarda unos minutos fuera de la app y al volver el navegador
@@ -77,7 +77,7 @@ class _PantallaVerificarCorreoState extends State<PantallaVerificarCorreo> {
         return;
       }
       _avisar(
-        '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}',
+        e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()),
       );
     } finally {
       if (mounted) setState(() => _comprobando = false);
@@ -92,7 +92,7 @@ class _PantallaVerificarCorreoState extends State<PantallaVerificarCorreo> {
       _avisar('✅ ${t.verificarReenviado}');
     } catch (e) {
       _avisar(
-        '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}',
+        e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()),
       );
     } finally {
       if (mounted) setState(() => _reenviando = false);

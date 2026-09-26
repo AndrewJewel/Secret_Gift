@@ -50,7 +50,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     final valorMinimo = _valorMinimoController.text.trim();
 
     if (nombreGrupo.isEmpty) {
-      _avisar('⚠️ ${t.crearFaltanDatos}');
+      _avisar(t.crearFaltanDatos);
       return;
     }
 
@@ -71,9 +71,9 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       if (!mounted) return;
       await _mostrarCodigoYContinuar(codigo);
     } on FuncionError catch (e) {
-      _avisar('⚠️ ${e.texto(t)}');
+      _avisar(e.texto(t));
     } catch (e) {
-      _avisar('⚠️ ${t.errorInesperado(e.toString())}');
+      _avisar(t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _creando = false);
     }

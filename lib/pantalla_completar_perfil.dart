@@ -39,7 +39,7 @@ class _PantallaCompletarPerfilState extends State<PantallaCompletarPerfil> {
         _apellido.text.trim().isEmpty ||
         _pin.text.trim().length != 4) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('⚠️ ${t.cuentaFaltanDatos}')));
+          .showSnackBar(SnackBar(content: Text(t.cuentaFaltanDatos)));
       return;
     }
     setState(() => _guardando = true);
@@ -53,7 +53,7 @@ class _PantallaCompletarPerfilState extends State<PantallaCompletarPerfil> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}')));
+              e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()))));
       setState(() => _guardando = false);
     }
   }

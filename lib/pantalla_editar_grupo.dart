@@ -89,7 +89,7 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
     final t = Textos.of(context);
     final nombre = _nombre.text.trim();
     if (nombre.isEmpty) {
-      _avisar('⚠️ ${t.errorNombreVacio}');
+      _avisar(t.errorNombreVacio);
       return;
     }
 
@@ -107,9 +107,9 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.guardado);
     } on FuncionError catch (e) {
-      _avisar('⚠️ ${e.texto(t)}');
+      _avisar(e.texto(t));
     } catch (e) {
-      _avisar('⚠️ ${t.errorInesperado(e.toString())}');
+      _avisar(t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -131,10 +131,10 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.eliminado);
     } on FuncionError catch (e) {
-      _avisar('⚠️ ${e.texto(t)}');
+      _avisar(e.texto(t));
       if (mounted) setState(() => _guardando = false);
     } catch (e) {
-      _avisar('⚠️ ${t.errorInesperado(e.toString())}');
+      _avisar(t.errorInesperado(e.toString()));
       if (mounted) setState(() => _guardando = false);
     }
   }

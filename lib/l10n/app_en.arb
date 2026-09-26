@@ -24,7 +24,7 @@
   "cambiarPinGuardar": "Save the new PIN",
   "cambiarPinGuardado": "PIN changed",
 
-  "errorInesperado": "Unexpected error: {detalle}",
+  "errorInesperado": "Something went wrong. Check your connection and try again.",
   "@errorInesperado": { "placeholders": { "detalle": { "type": "String" } } },
   "errorSinConexion": "Could not connect. Check your internet.",
   "errorPinIncorrecto": "Wrong PIN.",
@@ -46,7 +46,7 @@
   "errorNoEresOrganizador": "Only the group organizer can do this",
   "errorNoEstasEnElGrupo": "You are not signed up in this group yet",
   "errorYaEstasEnElGrupo": "You already have a spot in this group",
-  "errorGrupoYaSorteado": "The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.",
+  "errorGrupoYaSorteado": "The draw already happened. This person cannot be removed: they have to be replaced so the chain stays intact.",
   "errorGrupoCerrado": "The draw already happened, so this group is closed to new people. Ask the organiser to take someone's place instead.",
   "@errorGrupoCerrado": {"description": "Someone tried to join a group whose draw already ran"},
   "errorNoPuedesSalirSorteado": "The draw already happened, so you can't leave on your own. Ask the organiser to have someone take your place.",
@@ -68,7 +68,7 @@
   "@errorDemasiadosIntentos": {"description": "Firebase Auth rate limit hit"},
   "errorCuentaDeshabilitada": "This account has been disabled.",
   "@errorCuentaDeshabilitada": {"description": "Account disabled from the Firebase console"},
-  "errorAuthDesconocido": "Something went wrong signing you in. Try again. (code: {codigo} — {mensaje})",
+  "errorAuthDesconocido": "Something went wrong signing you in. Try again. (code: {codigo}, {mensaje})",
   "@errorAuthDesconocido": {
     "description": "Fallback for an Auth error code this version doesn't know",
     "placeholders": {
@@ -153,7 +153,7 @@
   "@verificarReenviando": {"description": "Loading label for the button that resends the verification email"},
   "verificarReenviado": "Link sent",
   "@verificarReenviado": {"description": "Confirmation shown after resending the verification email"},
-  "verificarTodaviaNo": "Not confirmed yet. Check your inbox — it may be in spam.",
+  "verificarTodaviaNo": "Not confirmed yet. Check your inbox, it may be in spam.",
   "@verificarTodaviaNo": {"description": "Shown when the person taps 'I've confirmed it' but the email is still unverified"},
   "completarPerfilTitulo": "One last step",
   "@completarPerfilTitulo": {"description": "Title of the screen that completes a profile left unfinished after signing up"},
@@ -181,12 +181,12 @@
   "grupoReglas": "Game rules",
   "grupoEliminadoAviso": "This group was deleted by its organizer.",
 
-  "registroTituloNormal": "New member",
+  "registroTituloNormal": "Join the group",
   "registroTituloPersonaje": "Join with your character",
   "registroDeseos": "Wish list",
   "registroDeseosAyudaNormal": "Only the person giving you a gift will see it.",
   "registroDeseosAyudaPersonaje": "Nobody knows who you are, so this is the only clue your gift giver will have.",
-  "registroBoton": "ADD TO THE LIST",
+  "registroBoton": "JOIN",
   "registroFaltaNombre": "The name is missing",
   "registroFaltaPersonaje": "The character is missing",
   "registroVacioNormal": "No members yet.",
@@ -295,15 +295,15 @@
 
   "grupoYaDentro": "You are in this group as {nombre}",
   "@grupoYaDentro": { "placeholders": { "nombre": { "type": "String" } } },
-  "grupoYaDentroAyuda": "Your entry is saved. Nobody has to sign up twice.",
+  "grupoYaDentroAyuda": "Use the pencil to change your photo or wish list.",
   "grupoTuEtiqueta": "you",
 
   "chatTitulo": "Anonymous chat",
   "chatAbrir": "GROUP CHAT",
-  "chatVacio": "No messages yet.\nBe the first to write — nobody will know it was you.",
+  "chatVacio": "No messages yet.\nBe the first to write: nobody will know it was you.",
   "chatEscribe": "Write a message...",
   "chatEnviar": "Send",
-  "chatTuMascara": "In the chat you are {mascara}. Nobody can see who is behind it — not even the organizer.",
+  "chatTuMascara": "In the chat you are {mascara}. Nobody can see who is behind it, not even the organizer.",
   "@chatTuMascara": { "placeholders": { "mascara": { "type": "String" } } },
   "chatTu": "you",
   "chatBorrarMensaje": "Delete message",
@@ -360,7 +360,7 @@
   "@avisosInterruptor": {
     "description": "Label of the notifications on/off switch in Settings."
   },
-  "avisosBloqueados": "Your browser or phone is blocking notifications for this app. You'll need to allow them in its settings — we can't do it from here.",
+  "avisosBloqueados": "Your browser or phone is blocking notifications for this app. You'll need to allow them in its settings; we can't do it from here.",
   "@avisosBloqueados": {
     "description": "Shown when turning the switch on fails because the OS/browser already denied the permission. The app cannot re-request it, only explain where to fix it."
   },

@@ -71,7 +71,7 @@ class TextosEn extends Textos {
 
   @override
   String errorInesperado(String detalle) {
-    return 'Unexpected error: $detalle';
+    return 'Something went wrong. Check your connection and try again.';
   }
 
   @override
@@ -143,7 +143,7 @@ class TextosEn extends Textos {
 
   @override
   String get errorGrupoYaSorteado =>
-      'The draw already happened. This person cannot be removed — they have to be replaced so the chain stays intact.';
+      'The draw already happened. This person cannot be removed: they have to be replaced so the chain stays intact.';
 
   @override
   String get errorGrupoCerrado =>
@@ -188,7 +188,7 @@ class TextosEn extends Textos {
 
   @override
   String errorAuthDesconocido(String codigo, String mensaje) {
-    return 'Something went wrong signing you in. Try again. (code: $codigo — $mensaje)';
+    return 'Something went wrong signing you in. Try again. (code: $codigo, $mensaje)';
   }
 
   @override
@@ -355,7 +355,7 @@ class TextosEn extends Textos {
 
   @override
   String get verificarTodaviaNo =>
-      'Not confirmed yet. Check your inbox — it may be in spam.';
+      'Not confirmed yet. Check your inbox, it may be in spam.';
 
   @override
   String get completarPerfilTitulo => 'One last step';
@@ -424,7 +424,7 @@ class TextosEn extends Textos {
   String get grupoEliminadoAviso => 'This group was deleted by its organizer.';
 
   @override
-  String get registroTituloNormal => 'New member';
+  String get registroTituloNormal => 'Join the group';
 
   @override
   String get registroTituloPersonaje => 'Join with your character';
@@ -441,7 +441,7 @@ class TextosEn extends Textos {
       'Nobody knows who you are, so this is the only clue your gift giver will have.';
 
   @override
-  String get registroBoton => 'ADD TO THE LIST';
+  String get registroBoton => 'JOIN';
 
   @override
   String get registroFaltaNombre => 'The name is missing';
@@ -665,7 +665,7 @@ class TextosEn extends Textos {
 
   @override
   String get grupoYaDentroAyuda =>
-      'Your entry is saved. Nobody has to sign up twice.';
+      'Use the pencil to change your photo or wish list.';
 
   @override
   String get grupoTuEtiqueta => 'you';
@@ -678,7 +678,7 @@ class TextosEn extends Textos {
 
   @override
   String get chatVacio =>
-      'No messages yet.\nBe the first to write — nobody will know it was you.';
+      'No messages yet.\nBe the first to write: nobody will know it was you.';
 
   @override
   String get chatEscribe => 'Write a message...';
@@ -688,7 +688,7 @@ class TextosEn extends Textos {
 
   @override
   String chatTuMascara(String mascara) {
-    return 'In the chat you are $mascara. Nobody can see who is behind it — not even the organizer.';
+    return 'In the chat you are $mascara. Nobody can see who is behind it, not even the organizer.';
   }
 
   @override
@@ -803,7 +803,7 @@ class TextosEn extends Textos {
 
   @override
   String get avisosBloqueados =>
-      'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings — we can\'t do it from here.';
+      'Your browser or phone is blocking notifications for this app. You\'ll need to allow them in its settings; we can\'t do it from here.';
 
   @override
   String get tematicaNombreEmpresarial => 'Corporate';

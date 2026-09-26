@@ -50,7 +50,7 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
     final correo = _correo.text.trim();
     final password = _password.text;
     if (correo.isEmpty || password.isEmpty) {
-      _avisar('⚠️ ${t.cuentaFaltanDatos}');
+      _avisar(t.cuentaFaltanDatos);
       return;
     }
     setState(() => _cargando = true);
@@ -70,9 +70,9 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
       if (!mounted) return;
       await _trasVerificar(context);
     } on FuncionError catch (e) {
-      _avisar('⚠️ ${e.texto(t)}');
+      _avisar(e.texto(t));
     } catch (e) {
-      _avisar('⚠️ ${t.errorInesperado(e.toString())}');
+      _avisar(t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _cargando = false);
     }

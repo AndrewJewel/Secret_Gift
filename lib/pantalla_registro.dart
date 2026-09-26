@@ -342,7 +342,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   void _avisarError(Object e) {
     if (!mounted) return;
     final t = Textos.of(context);
-    _avisar('⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
+    _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
   }
 
   // --- Registro de participantes --------------------------------------
@@ -383,7 +383,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       });
     } on FuncionError catch (e) {
       if (!mounted) return;
-      _avisar('⚠️ ${e.texto(Textos.of(context))}');
+      _avisar(e.texto(Textos.of(context)));
     }
   }
 
@@ -393,7 +393,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     final deseosLimpios = _deseosController.text.trim();
 
     if (nombreLimpio.isEmpty) {
-      _avisar('⚠️ ${_info.tematica.usaPersonajes ? t.registroFaltaPersonaje : t.registroFaltaNombre}');
+      _avisar(_info.tematica.usaPersonajes ? t.registroFaltaPersonaje : t.registroFaltaNombre);
       return;
     }
 
@@ -436,7 +436,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       setState(() => _avatarBase64 = base64);
     } catch (e) {
       if (!mounted) return;
-      _avisar('⚠️ ${Textos.of(context).avatarNoGaleria(e.toString())}');
+      _avisar(Textos.of(context).avatarNoGaleria(e.toString()));
     }
   }
 

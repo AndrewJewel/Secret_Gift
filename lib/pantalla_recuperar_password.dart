@@ -38,7 +38,7 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}')));
+              e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()))));
     } finally {
       if (mounted) setState(() => _mandando = false);
     }

@@ -148,7 +148,7 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
       } catch (e) {
         if (mounted) {
           _avisar(
-              '⚠️ ${e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString())}');
+              e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
         }
       } finally {
         if (mounted) setState(() => _cambiandoPin = false);

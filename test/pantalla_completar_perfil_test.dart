@@ -41,7 +41,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    expect(find.text('⚠️ Some required information is missing'), findsOneWidget);
+    expect(find.text('Some required information is missing'), findsOneWidget);
     expect(llamada, isFalse);
   });
 }

@@ -39,7 +39,7 @@ class _PantallaUnirseGrupoState extends State<PantallaUnirseGrupo> {
       if (!mounted) return;
       if (!doc.exists) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('⚠️ ${t.unirseNoExiste}')));
+            .showSnackBar(SnackBar(content: Text(t.unirseNoExiste)));
         return;
       }
       final data = doc.data()!;
@@ -55,7 +55,7 @@ class _PantallaUnirseGrupoState extends State<PantallaUnirseGrupo> {
       if (!mounted) return;
       if (acceso == null) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('⚠️ ${t.errorPerfilIncompleto}')));
+            .showSnackBar(SnackBar(content: Text(t.errorPerfilIncompleto)));
         return;
       }
       // Con un bucle y no con `firstOrNull`, por la misma razón que en
@@ -87,11 +87,11 @@ class _PantallaUnirseGrupoState extends State<PantallaUnirseGrupo> {
     } on FuncionError catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('⚠️ ${e.texto(t)}')));
+          .showSnackBar(SnackBar(content: Text(e.texto(t))));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('⚠️ ${t.errorInesperado(e.toString())}')));
+          .showSnackBar(SnackBar(content: Text(t.errorInesperado(e.toString()))));
     } finally {
       if (mounted) setState(() => _buscando = false);
     }

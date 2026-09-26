@@ -71,7 +71,7 @@ class TextosEs extends Textos {
 
   @override
   String errorInesperado(String detalle) {
-    return 'Error inesperado: $detalle';
+    return 'Algo salió mal. Revisa tu conexión y vuelve a intentarlo.';
   }
 
   @override
@@ -187,7 +187,7 @@ class TextosEs extends Textos {
 
   @override
   String errorAuthDesconocido(String codigo, String mensaje) {
-    return 'Algo salió mal al entrar. Vuelve a intentarlo. (código: $codigo — $mensaje)';
+    return 'Algo salió mal al entrar. Vuelve a intentarlo. (código: $codigo, $mensaje)';
   }
 
   @override
@@ -200,11 +200,11 @@ class TextosEs extends Textos {
 
   @override
   String get errorReemplazoInvalido =>
-      'Este enlace ya no vale. Pídele otro al organizador.';
+      'Este enlace ya no sirve. Pídele otro al organizador.';
 
   @override
   String get errorGrupoSinSortear =>
-      'Este grupo todavía no ha sorteado. Saca a esta persona y que se apunte otra.';
+      'Este grupo todavía no ha sorteado. Saca a esta persona y que se inscriba otra.';
 
   @override
   String get crearTitulo => 'Crear grupo';
@@ -425,7 +425,7 @@ class TextosEs extends Textos {
       'Este grupo fue eliminado por su organizador.';
 
   @override
-  String get registroTituloNormal => 'Nuevo participante';
+  String get registroTituloNormal => 'Inscríbete en el grupo';
 
   @override
   String get registroTituloPersonaje => 'Únete con tu personaje';
@@ -441,7 +441,7 @@ class TextosEs extends Textos {
       'Nadie sabe quién eres, así que esta es la única pista que tendrá quien te regale.';
 
   @override
-  String get registroBoton => 'AGREGAR A LA LISTA';
+  String get registroBoton => 'INSCRIBIRME';
 
   @override
   String get registroFaltaNombre => 'Falta el nombre';
@@ -664,7 +664,7 @@ class TextosEs extends Textos {
 
   @override
   String get grupoYaDentroAyuda =>
-      'Tu entrada quedó guardada. Nadie tiene que registrarse dos veces.';
+      'Con el lápiz cambias tu foto o tu lista de deseos.';
 
   @override
   String get grupoTuEtiqueta => 'tú';
@@ -677,7 +677,7 @@ class TextosEs extends Textos {
 
   @override
   String get chatVacio =>
-      'Todavía no hay mensajes.\nEscribe el primero — nadie va a saber que fuiste tú.';
+      'Todavía no hay mensajes.\nEscribe el primero: nadie va a saber que fuiste tú.';
 
   @override
   String get chatEscribe => 'Escribe un mensaje...';
@@ -687,7 +687,7 @@ class TextosEs extends Textos {
 
   @override
   String chatTuMascara(String mascara) {
-    return 'En el chat eres $mascara. Nadie puede ver quién hay detrás — ni siquiera el organizador.';
+    return 'En el chat eres $mascara. Nadie puede ver quién hay detrás, ni siquiera el organizador.';
   }
 
   @override
@@ -802,7 +802,7 @@ class TextosEs extends Textos {
 
   @override
   String get avisosBloqueados =>
-      'Tu navegador o tu móvil tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes — desde aquí no podemos.';
+      'Tu navegador o tu teléfono tiene bloqueados los avisos de esta app. Hay que permitirlos en sus ajustes; desde aquí no podemos.';
 
   @override
   String get tematicaNombreEmpresarial => 'Empresarial';
