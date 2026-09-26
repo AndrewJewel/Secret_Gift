@@ -7,6 +7,7 @@
 # Usa el secreto FIREBASE_SERVICE_ACCOUNT: la llave JSON de la cuenta de
 # servicio github-deploy@secretgift-app (roles: Administrador de Firebase,
 # de Cloud Functions, de Artifact Registry y Usuario de cuenta de servicio).
+# Y, para el APK, ANDROID_KEYSTORE_BASE64 y ANDROID_KEYSTORE_PASSWORD.
 name: Desplegar a producción
 
 on:
@@ -25,6 +26,9 @@ permissions:
 jobs:
   desplegar:
     runs-on: ubuntu-latest
+    env:
+      # Los secretos no se pueden usar directamente en un `if`.
+      TIENE_FIRMA: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +42,43 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release
+
+      # El APK viaja con la web: queda en build/web/secretgift.apk y
+      # secretgift.app/apk redirige ahí. Antes se copiaba a mano y cada
+      # despliegue lo borraba.
+      #
+      # Se firma con la clave de la app (secretos ANDROID_KEYSTORE_BASE64 y
+      # ANDROID_KEYSTORE_PASSWORD). Sin ellos no se compila APK: uno firmado
+      # con otra clave no deja actualizar la app instalada y rompe los
+      # enlaces de invitación, que Android ata a la huella de la firma.
+      - uses: actions/setup-java@v4
+        if: env.TIENE_FIRMA == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Clave de firma Android
+        if: env.TIENE_FIRMA == 'true'
+        env:
+          CLAVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$CLAVE" | base64 -d > "$RUNNER_TEMP/firma.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/firma.jks" >> "$GITHUB_ENV"
+
+      # El número de compilación sube con cada ejecución: Android no instala
+      # encima una versión con versionCode menor que la instalada.
+      - name: APK
+        if: env.TIENE_FIRMA == 'true'
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          flutter build apk --release --build-number=${{ github.run_number }}
+          cp build/app/outputs/flutter-apk/app-release.apk build/web/secretgift.apk
+
+      - name: Aviso si no hay APK
+        if: env.TIENE_FIRMA != 'true'
+        run: |
+          echo "::warning::Sin secretos de firma Android. Esta publicación no lleva APK y /apk no descargará nada."
 
       - uses: actions/setup-node@v4
         with:
