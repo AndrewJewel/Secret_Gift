@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart'
     show AuthorizationStatus;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart' show Locale;
+import 'package:santa_secreto/idioma.dart';
 import 'package:santa_secreto/push.dart';
 
 /// Pruebas de las dos decisiones PURAS de `push.dart`:
@@ -106,6 +108,19 @@ void main() {
       expect(permisoConcedido(AuthorizationStatus.provisional), isTrue);
       expect(permisoConcedido(AuthorizationStatus.denied), isFalse);
       expect(permisoConcedido(AuthorizationStatus.notDetermined), isFalse);
+    });
+  });
+
+  group('datosDelToken', () {
+    // El servidor manda cada aviso en el idioma que diga aquí
+    // (functions/avisos.js). Sin él, llegaría siempre en español.
+    tearDown(() => Idioma.actual.value = const Locale('en'));
+
+    test('lleva el idioma actual de la app', () {
+      Idioma.actual.value = const Locale('es');
+      expect(datosDelToken('tok'), {'token': 'tok', 'idioma': 'es'});
+      Idioma.actual.value = const Locale('en');
+      expect(datosDelToken('tok'), {'token': 'tok', 'idioma': 'en'});
     });
   });
 }

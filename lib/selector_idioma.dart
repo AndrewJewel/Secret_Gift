@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'glass.dart';
 import 'idioma.dart';
 import 'l10n/app_localizations.dart';
+import 'push.dart';
 
 String _nombre(Textos t, Locale l) =>
     l.languageCode == 'en' ? t.idiomaIngles : t.idiomaEspanol;
@@ -32,7 +33,10 @@ class CampoIdioma extends StatelessWidget {
           DropdownMenuItem<Locale>(value: locale, child: Text(_nombre(t, locale))),
       ],
       onChanged: (locale) {
-        if (locale != null) Idioma.cambiar(locale);
+        if (locale == null) return;
+        // Y los avisos push pasan a llegar en el idioma nuevo: se vuelve a
+        // dejar el token con él. No hace nada si aquí no se activaron.
+        Idioma.cambiar(locale).then((_) => reconciliarAvisos());
       },
     );
   }

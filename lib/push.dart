@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
 import 'almacen_local.dart';
 import 'funciones.dart';
+import 'idioma.dart';
 
 /// Sacada de la consola: Configuración del proyecto → Cloud Messaging →
 /// Web Push certificates. Es del proyecto `secretgift-app`; una del
@@ -157,11 +158,18 @@ Future<bool> _registrarToken(FirebaseMessaging messaging) async {
   // identificado por google-services.json.
   final token = await messaging.getToken(vapidKey: kIsWeb ? _vapid : null);
   if (token == null) return false;
-  await llamarFuncion('guardarTokenPush', {'token': token});
+  await llamarFuncion('guardarTokenPush', datosDelToken(token));
   await marcarTokenPushEnServidor(true);
   _escucharRenovaciones(messaging);
   return true;
 }
+
+/// El token va con el idioma de la app en ESTE dispositivo: el servidor
+/// manda cada aviso en el idioma de quien lo recibe (functions/avisos.js).
+/// Al cambiar de idioma se vuelve a mandar (ver `SelectorIdioma`).
+@visibleForTesting
+Map<String, String> datosDelToken(String token) =>
+    {'token': token, 'idioma': Idioma.actual.value.languageCode};
 
 /// La escucha de renovaciones del token, o null si no hay ninguna viva.
 ///
@@ -187,7 +195,7 @@ void _escucharRenovaciones(FirebaseMessaging messaging) {
   if (_escuchaDeRenovaciones != null) return;
   _escuchaDeRenovaciones = messaging.onTokenRefresh.listen((nuevo) async {
     try {
-      await llamarFuncion('guardarTokenPush', {'token': nuevo});
+      await llamarFuncion('guardarTokenPush', datosDelToken(nuevo));
       await marcarTokenPushEnServidor(true);
     } catch (_) {
       // Renovar en segundo plano no puede molestar a nadie con un error.

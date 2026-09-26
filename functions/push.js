@@ -1,5 +1,6 @@
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
+const {IDIOMA_POR_DEFECTO, idiomaValido} = require("./avisos");
 
 /**
  * De una respuesta de `sendEachForMulticast`, qué tokens hay que borrar.
@@ -28,7 +29,9 @@ function tokensMuertos(respuesta, tokens) {
 }
 
 /**
- * Manda un aviso a todos los dispositivos de una cuenta.
+ * Manda un aviso a todos los dispositivos de una cuenta, a cada uno en su
+ * idioma. `textos` es `{es: {titulo, cuerpo}, en: {titulo, cuerpo}}` (ver
+ * avisos.js); el idioma de cada token está en `idiomasPush`.
  *
  * NUNCA lanza. Quien la llama ya escribió en Firestore: un reemplazo que
  * funcionó no puede deshacerse porque una notificación no saliera. Todos
@@ -38,26 +41,39 @@ function tokensMuertos(respuesta, tokens) {
  * Así el mapa no crece para siempre y no hace falta ningún trabajo
  * programado.
  */
-async function avisar(uid, {titulo, cuerpo, datos} = {}) {
-  if (!uid) return;
+async function avisar(uid, {textos, datos} = {}) {
+  if (!uid || !textos) return;
   try {
     const db = getFirestore();
     const ref = db.collection("usuarios").doc(uid);
     const snap = await ref.get();
     const tokens = Object.keys(snap.data()?.tokensPush || {});
     if (tokens.length === 0) return;
+    const idiomas = snap.data()?.idiomasPush || {};
 
-    const respuesta = await getMessaging().sendEachForMulticast({
-      tokens,
-      notification: {title: titulo, body: cuerpo},
-      data: datos || {},
-    });
+    // Un envío por idioma: FCM manda el mismo texto a todos los tokens de
+    // una llamada.
+    const porIdioma = {};
+    for (const token of tokens) {
+      const idioma = idiomaValido(idiomas[token]) ? idiomas[token] : IDIOMA_POR_DEFECTO;
+      (porIdioma[idioma] ||= []).push(token);
+    }
+    const muertos = [];
+    for (const [idioma, grupo] of Object.entries(porIdioma)) {
+      const {titulo, cuerpo} = textos[idioma] || textos[IDIOMA_POR_DEFECTO];
+      const respuesta = await getMessaging().sendEachForMulticast({
+        tokens: grupo,
+        notification: {title: titulo, body: cuerpo},
+        data: datos || {},
+      });
+      muertos.push(...tokensMuertos(respuesta, grupo));
+    }
 
-    const muertos = tokensMuertos(respuesta, tokens);
     if (muertos.length > 0) {
       const borrado = {};
       for (const t of muertos) borrado[t] = FieldValue.delete();
-      await ref.set({tokensPush: borrado}, {merge: true});
+      // El idioma de un token muerto tampoco sirve ya.
+      await ref.set({tokensPush: borrado, idiomasPush: borrado}, {merge: true});
     }
   } catch (e) {
     // A propósito: registrar y seguir.

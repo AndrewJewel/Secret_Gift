@@ -6,6 +6,7 @@ const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore");
 const {getStorage} = require("firebase-admin/storage");
 const {avisar, avisarAVarios} = require("./push");
+const {AVISOS, idiomaValido} = require("./avisos");
 const {
   claveDePareja, parejasVigentes, idsOrdenados, aIndices, hayCadena, sortearCadena,
 } = require("./sorteo");
@@ -316,8 +317,13 @@ exports.guardarTokenPush = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "Tu cuenta no tiene perfil. Vuelve a entrar.", {clave: "perfil_incompleto"});
   }
 
+  // El idioma de ESTE dispositivo, para mandarle los avisos en el suyo
+  // (ver avisos.js). Aparte de `tokensPush` para no cambiar su formato. Si
+  // no llega o no es válido, no se toca: el aviso sale en el de siempre.
+  const idioma = request.data?.idioma;
   await usuarioRef(uid).set({
     tokensPush: {[tokenLimpio]: Date.now()},
+    ...(idiomaValido(idioma) ? {idiomasPush: {[tokenLimpio]: idioma}} : {}),
   }, {merge: true});
 
   return {ok: true};
@@ -344,6 +350,7 @@ exports.borrarTokenPush = onCall(async (request) => {
   if (!snap.exists) return {ok: true};
   await usuarioRef(uid).set({
     tokensPush: {[token.trim()]: FieldValue.delete()},
+    idiomasPush: {[token.trim()]: FieldValue.delete()},
   }, {merge: true});
   return {ok: true};
 });
@@ -1009,8 +1016,7 @@ exports.canjearReemplazo = onCall(async (request) => {
       // todo el grupo, así que leerlo no añade nada. Quién es ahora el
       // amigo secreto se ve dentro, tras el PIN.
       await avisar(uidRegala, {
-        titulo: "Novedades en tu grupo",
-        cuerpo: `Algo cambió en «${nombreGrupo}». Ábrelo para verlo.`,
+        textos: AVISOS.novedades(nombreGrupo),
         datos: {codigo},
       });
     }
@@ -1342,8 +1348,7 @@ exports.ejecutarSorteo = onCall(async (request) => {
   await avisarAVarios(
       privSnaps.map((p) => p.data()?.cuenta),
       {
-        titulo: "¡Ya hay amigo secreto!",
-        cuerpo: `En «${grupoSnap.data()?.nombreGrupo || codigo}». Entra a ver a quién te toca.`,
+        textos: AVISOS.sorteo(grupoSnap.data()?.nombreGrupo || codigo),
         datos: {codigo},
       });
   return {ok: true};
@@ -1450,8 +1455,7 @@ exports.enviarMensaje = onCall(async (request) => {
     // bloqueo, con el teléfono en la mano de cualquiera. Decir el texto
     // filtraría la conversación del grupo, y decir la máscara ayudaría a
     // deducir quién es.
-    titulo: "Nuevo mensaje",
-    cuerpo: `En «${nombreGrupo}».`,
+    textos: AVISOS.mensaje(nombreGrupo),
     datos: {codigo},
   });
 
