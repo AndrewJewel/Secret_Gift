@@ -6,6 +6,9 @@ const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore");
 const {getStorage} = require("firebase-admin/storage");
 const {avisar, avisarAVarios} = require("./push");
+const {
+  claveDePareja, parejasVigentes, aIndices, hayCadena, sortearCadena,
+} = require("./sorteo");
 const bcrypt = require("bcryptjs");
 // `Math.random` no sirve para nada de esto. V8 lo implementa con
 // xorshift128+, que no es un generador criptográfico: a partir de unas
@@ -1165,6 +1168,84 @@ exports.verAmigoSecreto = onCall(async (request) => {
   };
 });
 
+// --- Exclusiones ------------------------------------------------------
+// Parejas que el organizador no quiere que se toquen (siempre mutuas). Viven
+// en grupos/{codigo}/privado/data.exclusiones como "idA|idB" ordenados: ese
+// documento está cerrado a todo cliente, así que solo el organizador las ve,
+// y a través de estas funciones. Solo cuentan antes del sorteo.
+
+function exclusionesComoPares(claves) {
+  return claves.map((clave) => clave.split("|"));
+}
+
+exports.verExclusiones = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  if (!codigo) {
+    throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
+  }
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+
+  const [priv, participantes] = await Promise.all([
+    grupoPrivadoRef(codigo).get(),
+    grupoRef(codigo).collection("participantes").get(),
+  ]);
+  const ids = participantes.docs.map((d) => d.id);
+  return {
+    exclusiones: exclusionesComoPares(parejasVigentes(priv.data()?.exclusiones || [], ids)),
+  };
+});
+
+// Deja las exclusiones DE ESA PERSONA exactamente como vienen: añade las
+// nuevas y quita las que ya no están. Es lo que hace la hoja de casillas.
+exports.guardarExclusiones = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const participanteId = (request.data?.participanteId || "").trim();
+  const excluidos = request.data?.excluidos;
+  if (!codigo || !participanteId || !Array.isArray(excluidos) ||
+      !excluidos.every((id) => typeof id === "string" && id.trim() !== "")) {
+    throw new HttpsError("invalid-argument", "Faltan datos.", {clave: "faltan_datos"});
+  }
+  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  if (excluidos.includes(participanteId)) {
+    throw new HttpsError("invalid-argument", "Nadie se excluye a sí mismo.",
+        {clave: "excluirse_a_si_mismo"});
+  }
+
+  const vigentes = await db.runTransaction(async (tx) => {
+    const grupo = await tx.get(grupoRef(codigo));
+    if (!grupo.exists) {
+      throw new HttpsError("not-found", "Ese grupo ya no existe.", {clave: "grupo_no_existe"});
+    }
+    // Tras el sorteo la cadena ya está hecha: cambiarlas no haría nada y
+    // haría creer que sí.
+    if (grupo.data().sorteado === true) {
+      throw new HttpsError("failed-precondition", "El sorteo ya se hizo.",
+          {clave: "exclusiones_tras_sorteo"});
+    }
+    const participantes = await tx.get(grupoRef(codigo).collection("participantes"));
+    const ids = participantes.docs.map((d) => d.id);
+    const presentes = new Set(ids);
+    if (![participanteId, ...excluidos].every((id) => presentes.has(id))) {
+      throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
+    }
+    const priv = await tx.get(grupoPrivadoRef(codigo));
+    const deOtros = parejasVigentes(priv.data()?.exclusiones || [], ids)
+        .filter((clave) => !clave.split("|").includes(participanteId));
+    const nuevas = [...new Set([
+      ...deOtros,
+      ...excluidos.map((id) => claveDePareja(participanteId, id)),
+    ])];
+    // La app ya bloquea la casilla; esto cubre a quien se la salte.
+    if (nuevas.length > 0 && !hayCadena(ids.length, aIndices(nuevas, ids))) {
+      throw new HttpsError("failed-precondition", "Con estas exclusiones no hay sorteo posible.",
+          {clave: "exclusiones_imposibles"});
+    }
+    tx.set(grupoPrivadoRef(codigo), {exclusiones: nuevas}, {merge: true});
+    return nuevas;
+  });
+  return {exclusiones: exclusionesComoPares(vigentes)};
+});
+
 exports.ejecutarSorteo = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   if (!codigo) {
@@ -1204,11 +1285,17 @@ exports.ejecutarSorteo = onCall(async (request) => {
       docs.map((d) => participantePrivadoRef(codigo, d.id).get()),
   );
 
-  // Derangement por ciclo aleatorio: nadie se regala a sí mismo.
-  const indices = docs.map((_, i) => i);
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = randomInt(i + 1);
-    [indices[i], indices[j]] = [indices[j], indices[i]];
+  // Una sola cadena circular al azar (nadie se regala a sí mismo) que no use
+  // ninguna pareja excluida. Las exclusiones se comprobaron al guardarlas,
+  // pero el grupo pudo cambiar después (alguien se salió), así que se
+  // vuelve a mirar aquí y, si ya no hay cadena, no se sortea.
+  const ids = docs.map((d) => d.id);
+  const privGrupo = await grupoPrivadoRef(codigo).get();
+  const prohibidas = aIndices(parejasVigentes(privGrupo.data()?.exclusiones || [], ids), ids);
+  const indices = sortearCadena(docs.length, prohibidas, randomInt);
+  if (!indices) {
+    throw new HttpsError("failed-precondition", "Con estas exclusiones no hay sorteo posible.",
+        {clave: "exclusiones_imposibles"});
   }
 
   const batch = db.batch();

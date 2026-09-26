@@ -1625,6 +1625,24 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Use this color'**
   String get colorUsar;
+
+  /// No description provided for @errorExclusionesImposibles.
+  ///
+  /// In en, this message translates to:
+  /// **'With these exclusions no draw is possible. Remove one and try again.'**
+  String get errorExclusionesImposibles;
+
+  /// No description provided for @errorExcluirseASiMismo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody can exclude themselves.'**
+  String get errorExcluirseASiMismo;
+
+  /// No description provided for @errorExclusionesTrasSorteo.
+  ///
+  /// In en, this message translates to:
+  /// **'The draw already happened: exclusions can no longer be changed.'**
+  String get errorExclusionesTrasSorteo;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

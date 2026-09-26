@@ -861,4 +861,15 @@ class TextosEs extends Textos {
 
   @override
   String get colorUsar => 'Usar este color';
+
+  @override
+  String get errorExclusionesImposibles =>
+      'Con estas exclusiones no hay sorteo posible. Quita alguna y vuelve a intentarlo.';
+
+  @override
+  String get errorExcluirseASiMismo => 'Nadie puede excluirse a sí mismo.';
+
+  @override
+  String get errorExclusionesTrasSorteo =>
+      'El sorteo ya se hizo: las exclusiones ya no se pueden cambiar.';
 }

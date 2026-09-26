@@ -279,5 +279,9 @@
   "colorTono": "Tono",
   "colorLuz": "Luz",
   "colorVistaPrevia": "Así se verá tu grupo",
-  "colorUsar": "Usar este color"
+  "colorUsar": "Usar este color",
+
+  "errorExclusionesImposibles": "Con estas exclusiones no hay sorteo posible. Quita alguna y vuelve a intentarlo.",
+  "errorExcluirseASiMismo": "Nadie puede excluirse a sí mismo.",
+  "errorExclusionesTrasSorteo": "El sorteo ya se hizo: las exclusiones ya no se pueden cambiar."
 }

@@ -383,5 +383,9 @@
   "colorTono": "Hue",
   "colorLuz": "Lightness",
   "colorVistaPrevia": "This is how your group will look",
-  "colorUsar": "Use this color"
+  "colorUsar": "Use this color",
+
+  "errorExclusionesImposibles": "With these exclusions no draw is possible. Remove one and try again.",
+  "errorExcluirseASiMismo": "Nobody can exclude themselves.",
+  "errorExclusionesTrasSorteo": "The draw already happened: exclusions can no longer be changed."
 }

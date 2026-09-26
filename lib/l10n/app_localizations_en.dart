@@ -862,4 +862,15 @@ class TextosEn extends Textos {
 
   @override
   String get colorUsar => 'Use this color';
+
+  @override
+  String get errorExclusionesImposibles =>
+      'With these exclusions no draw is possible. Remove one and try again.';
+
+  @override
+  String get errorExcluirseASiMismo => 'Nobody can exclude themselves.';
+
+  @override
+  String get errorExclusionesTrasSorteo =>
+      'The draw already happened: exclusions can no longer be changed.';
 }
