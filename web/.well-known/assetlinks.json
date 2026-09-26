@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.secretgift",
+      "sha256_cert_fingerprints": [
+        "34:F8:5F:C0:C4:7A:46:06:53:7E:4F:B1:C6:CF:AF:46:5B:64:C9:29:2B:79:59:D4:F1:E5:F8:3E:C5:CF:BE:A7",
+        "A0:E9:EA:5C:DA:05:DC:53:E5:16:95:30:77:E9:87:47:63:95:F5:C2:0A:F3:09:57:92:F7:54:6A:4F:69:00:72"
+      ]
+    }
+  }
+]

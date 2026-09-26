@@ -3,7 +3,8 @@
     "public": "build/web",
     "ignore": [
       "firebase.json",
-      "**/.*",
+      "**/.!(well-known)",
+      "**/.!(well-known)/**",
       "**/node_modules/**"
     ],
     "redirects": [
