@@ -395,5 +395,7 @@
   "@exclusionesNoLeToca": {"placeholders": {"nombres": {"type": "String"}}},
   "exclusionesSeRespetaran": "{n, plural, =1{1 exclusion will be respected} other{{n} exclusions will be respected}}",
   "@exclusionesSeRespetaran": {"placeholders": {"n": {"type": "int"}}},
-  "exclusionesSinSorteoPosible": "With the current exclusions no draw is possible. Remove one."
+  "exclusionesSinSorteoPosible": "With the current exclusions no draw is possible. Remove one.",
+
+  "sorteoBotonYaSorteado": "ALREADY DRAWN"
 }

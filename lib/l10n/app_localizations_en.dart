@@ -899,4 +899,7 @@ class TextosEn extends Textos {
   @override
   String get exclusionesSinSorteoPosible =>
       'With the current exclusions no draw is possible. Remove one.';
+
+  @override
+  String get sorteoBotonYaSorteado => 'ALREADY DRAWN';
 }

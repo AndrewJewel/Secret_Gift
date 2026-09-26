@@ -801,6 +801,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     final t = Textos.of(context);
     // Una sola vez por pintado: con muchas exclusiones no es gratis.
     final sorteoPosible = _sorteoPosible;
+    final yaSorteado = _vinculo?.sorteado ?? false;
     return Theme(
       data: temaGlass(_color),
       child: FondoTematico(
@@ -893,11 +894,13 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                                       : Colors.red.shade700),
                             ),
                           ),
+                        // Ya sorteado: el sorteo no se repite (el servidor lo
+                        // rechaza), así que el botón se queda apagado y lo dice.
                         GlassButton(
                           color: Colors.orange.shade800,
-                          onPressed: sorteoPosible ? _sortear : null,
-                          icon: Icons.casino,
-                          label: t.sorteoBoton,
+                          onPressed: yaSorteado || !sorteoPosible ? null : _sortear,
+                          icon: yaSorteado ? Icons.check_circle_outline : Icons.casino,
+                          label: yaSorteado ? t.sorteoBotonYaSorteado : t.sorteoBoton,
                         ),
                         const SizedBox(height: 10),
                       ],

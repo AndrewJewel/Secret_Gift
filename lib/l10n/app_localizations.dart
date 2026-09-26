@@ -1673,6 +1673,12 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'With the current exclusions no draw is possible. Remove one.'**
   String get exclusionesSinSorteoPosible;
+
+  /// No description provided for @sorteoBotonYaSorteado.
+  ///
+  /// In en, this message translates to:
+  /// **'ALREADY DRAWN'**
+  String get sorteoBotonYaSorteado;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

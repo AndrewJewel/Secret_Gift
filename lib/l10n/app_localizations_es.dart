@@ -898,4 +898,7 @@ class TextosEs extends Textos {
   @override
   String get exclusionesSinSorteoPosible =>
       'Con las exclusiones actuales no hay sorteo posible. Quita alguna.';
+
+  @override
+  String get sorteoBotonYaSorteado => 'YA FUE SORTEADO';
 }
