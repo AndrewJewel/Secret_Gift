@@ -941,4 +941,10 @@ class TextosEn extends Textos {
   @override
   String get registroEsperaSorteo =>
       'Once the draw is done, you\'ll see here who you\'re giving a gift to.';
+
+  @override
+  String get mostrarPassword => 'Show password';
+
+  @override
+  String get ocultarPassword => 'Hide password';
 }

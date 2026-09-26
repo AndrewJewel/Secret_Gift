@@ -939,4 +939,10 @@ class TextosEs extends Textos {
   @override
   String get registroEsperaSorteo =>
       'Cuando se haga el sorteo, aquí verás a quién le regalas.';
+
+  @override
+  String get mostrarPassword => 'Mostrar contraseña';
+
+  @override
+  String get ocultarPassword => 'Ocultar contraseña';
 }

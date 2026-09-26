@@ -84,6 +84,7 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
                         TextField(
                           controller: _correo,
                           keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
                           decoration:
                               InputDecoration(labelText: t.cuentaCorreo),
                         ),

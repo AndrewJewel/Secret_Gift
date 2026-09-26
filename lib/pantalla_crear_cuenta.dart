@@ -18,8 +18,7 @@ import 'tematica.dart';
 /// caracteres exigidos) se configura en la consola de Firebase; este regex
 /// es un adelanto para no gastar una llamada con algo que se va a rechazar
 /// igual, no la fuente de verdad.
-final RegExp _regexPassword =
-    RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
+final RegExp _regexPassword = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
 
 /// Misma exigencia que valida el servidor: 4 dígitos exactos.
 final RegExp _regexPin = RegExp(r'^\d{4}$');
@@ -38,8 +37,7 @@ class PantallaCrearCuenta extends StatefulWidget {
   /// leer un eslogan.
   final String? nombreGrupoInvitacion;
 
-  const PantallaCrearCuenta(
-      {super.key, required this.alEntrar, this.nombreGrupoInvitacion});
+  const PantallaCrearCuenta({super.key, required this.alEntrar, this.nombreGrupoInvitacion});
 
   @override
   State<PantallaCrearCuenta> createState() => _PantallaCrearCuentaState();
@@ -113,9 +111,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar),
-        ),
+        MaterialPageRoute(builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar)),
       );
     } on FuncionError catch (e) {
       _avisar(e.texto(t));
@@ -134,9 +130,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
     if (r == null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar),
-        ),
+        MaterialPageRoute(builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar)),
       );
       return;
     }
@@ -156,98 +150,111 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
       child: FondoNeutro(
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-              children: [
-                Image.asset('assets/logo.png', height: 120),
-                const SizedBox(height: 8),
-                Text(t.appTitle,
-                    textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
-                const SizedBox(height: 16),
-                GlassCard(
-                  color: colorNeutro,
-                  child: Text(
-                    invitacion != null && invitacion.isNotEmpty
-                        ? t.cuentaInvitadoA(invitacion)
-                        : t.cuentaFraseGancho,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.black87, fontSize: 16),
+          body: AutofillGroup(
+            child: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                children: [
+                  Image.asset('assets/logo.png', height: 120),
+                  const SizedBox(height: 8),
+                  Text(t.appTitle, textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
+                  const SizedBox(height: 16),
+                  GlassCard(
+                    color: colorNeutro,
+                    child: Text(
+                      invitacion != null && invitacion.isNotEmpty
+                          ? t.cuentaInvitadoA(invitacion)
+                          : t.cuentaFraseGancho,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.black87, fontSize: 16),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                const CampoIdioma(),
-                const SizedBox(height: 16),
-                GlassTextField(
-                  controller: _correo,
-                  labelText: t.cuentaCorreo,
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                GlassTextField(
+                  const SizedBox(height: 24),
+                  const CampoIdioma(),
+                  const SizedBox(height: 16),
+                  GlassTextField(
+                    controller: _correo,
+                    labelText: t.cuentaCorreo,
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                  ),
+                  const SizedBox(height: 16),
+                  GlassTextField(
                     controller: _nombre,
                     labelText: t.cuentaNombre,
-                    icon: Icons.badge_outlined),
-                const SizedBox(height: 16),
-                GlassTextField(
+                    icon: Icons.badge_outlined,
+                    textCapitalization: TextCapitalization.words,
+                    autofillHints: const [AutofillHints.givenName],
+                  ),
+                  const SizedBox(height: 16),
+                  GlassTextField(
                     controller: _apellido,
                     labelText: t.cuentaApellido,
-                    icon: Icons.badge_outlined),
-                const SizedBox(height: 16),
-                GlassTextField(
-                  controller: _password,
-                  labelText: t.cuentaPassword,
-                  helperText: t.cuentaPasswordAyuda,
-                  icon: Icons.lock_outline,
-                  obscureText: !_verPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(_verPassword ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _verPassword = !_verPassword),
+                    icon: Icons.badge_outlined,
+                    textCapitalization: TextCapitalization.words,
+                    autofillHints: const [AutofillHints.familyName],
                   ),
-                ),
-                const SizedBox(height: 16),
-                GlassTextField(
+                  const SizedBox(height: 16),
+                  GlassTextField(
+                    controller: _password,
+                    labelText: t.cuentaPassword,
+                    helperText: t.cuentaPasswordAyuda,
+                    icon: Icons.lock_outline,
+                    obscureText: !_verPassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    suffixIcon: IconButton(
+                      tooltip: _verPassword ? t.ocultarPassword : t.mostrarPassword,
+                      icon: Icon(_verPassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _verPassword = !_verPassword),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GlassTextField(
                     controller: _confirmar,
                     labelText: t.cuentaConfirmar,
                     icon: Icons.lock_outline,
-                    obscureText: !_verPassword),
-                const SizedBox(height: 16),
-                GlassTextField(
-                  controller: _pin,
-                  labelText: t.cuentaPin,
-                  helperText: t.cuentaPinAyuda,
-                  icon: Icons.pin_outlined,
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
-                ),
-                const SizedBox(height: 16),
-                GlassTextField(
+                    obscureText: !_verPassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                  ),
+                  const SizedBox(height: 16),
+                  GlassTextField(
+                    controller: _pin,
+                    labelText: t.cuentaPin,
+                    helperText: t.cuentaPinAyuda,
+                    icon: Icons.pin_outlined,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 16),
+                  GlassTextField(
                     controller: _confirmarPin,
                     labelText: t.cuentaPinConfirmar,
                     icon: Icons.pin_outlined,
                     keyboardType: TextInputType.number,
-                    obscureText: true),
-                const SizedBox(height: 24),
-                GlassButton(
-                  color: colorNeutro.shade600,
-                  icon: Icons.person_add_alt,
-                  label: t.cuentaCrearTitulo,
-                  onPressed: _cargando ? null : _enviar,
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _cargando
-                      ? null
-                      : () => Navigator.push(
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 24),
+                  GlassButton(
+                    color: colorNeutro.shade600,
+                    icon: Icons.person_add_alt,
+                    label: t.cuentaCrearTitulo,
+                    onPressed: _cargando ? null : _enviar,
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _cargando
+                        ? null
+                        : () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) =>
-                                    PantallaIniciarSesion(alEntrar: widget.alEntrar)),
+                              builder: (_) => PantallaIniciarSesion(alEntrar: widget.alEntrar),
+                            ),
                           ),
-                  child: Text(t.cuentaYaTengoCuenta, textAlign: TextAlign.center),
-                ),
-              ],
+                    child: Text(t.cuentaYaTengoCuenta, textAlign: TextAlign.center),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart'; // Para detectar si es Web
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -75,6 +76,9 @@ void main() async {
   Idioma.cargar();
 
   runApp(const SantaApp());
+  // En web Flutter no arma el árbol de accesibilidad hasta que alguien pulsa
+  // un botón invisible: un lector de pantalla llegaba a una página muda.
+  if (kIsWeb) SemanticsBinding.instance.ensureSemantics();
 }
 
 class SantaApp extends StatelessWidget {

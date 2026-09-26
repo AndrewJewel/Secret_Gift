@@ -61,9 +61,7 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar),
-          ),
+          MaterialPageRoute(builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar)),
         );
         return;
       }
@@ -86,9 +84,7 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
     if (r == null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar),
-        ),
+        MaterialPageRoute(builder: (_) => PantallaCompletarPerfil(alCompletar: _trasVerificar)),
       );
       return;
     }
@@ -108,50 +104,54 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: GlassAppBar(title: Text(t.cuentaEntrarTitulo), color: colorNeutro),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              children: [
-                Image.asset('assets/logo.png', height: 96),
-                const SizedBox(height: 24),
-                GlassTextField(
-                  controller: _correo,
-                  labelText: t.cuentaCorreo,
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                GlassTextField(
-                  controller: _password,
-                  labelText: t.cuentaPassword,
-                  icon: Icons.lock_outline,
-                  obscureText: !_verPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(_verPassword ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _verPassword = !_verPassword),
+          body: AutofillGroup(
+            child: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                children: [
+                  Image.asset('assets/logo.png', height: 96),
+                  const SizedBox(height: 24),
+                  GlassTextField(
+                    controller: _correo,
+                    labelText: t.cuentaCorreo,
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email, AutofillHints.username],
                   ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PantallaRecuperarPassword()),
+                  const SizedBox(height: 16),
+                  GlassTextField(
+                    controller: _password,
+                    labelText: t.cuentaPassword,
+                    icon: Icons.lock_outline,
+                    obscureText: !_verPassword,
+                    autofillHints: const [AutofillHints.password],
+                    suffixIcon: IconButton(
+                      tooltip: _verPassword ? t.ocultarPassword : t.mostrarPassword,
+                      icon: Icon(_verPassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _verPassword = !_verPassword),
+                    ),
                   ),
-                  child: Text(t.recuperarEnlace),
-                ),
-                const SizedBox(height: 24),
-                GlassButton(
-                  color: colorNeutro.shade600,
-                  icon: Icons.login,
-                  label: t.cuentaEntrarTitulo,
-                  onPressed: _cargando ? null : _enviar,
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _cargando ? null : () => Navigator.pop(context),
-                  child: Text(t.cuentaNoTengoCuenta, textAlign: TextAlign.center),
-                ),
-              ],
+                  TextButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PantallaRecuperarPassword()),
+                    ),
+                    child: Text(t.recuperarEnlace),
+                  ),
+                  const SizedBox(height: 24),
+                  GlassButton(
+                    color: colorNeutro.shade600,
+                    icon: Icons.login,
+                    label: t.cuentaEntrarTitulo,
+                    onPressed: _cargando ? null : _enviar,
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _cargando ? null : () => Navigator.pop(context),
+                    child: Text(t.cuentaNoTengoCuenta, textAlign: TextAlign.center),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

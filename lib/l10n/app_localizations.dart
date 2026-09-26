@@ -1733,6 +1733,18 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Once the draw is done, you\'ll see here who you\'re giving a gift to.'**
   String get registroEsperaSorteo;
+
+  /// No description provided for @mostrarPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get mostrarPassword;
+
+  /// No description provided for @ocultarPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get ocultarPassword;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

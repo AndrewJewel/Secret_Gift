@@ -199,6 +199,9 @@ class GlassTextField extends StatelessWidget {
   /// con 4 líneas de alto en vez de crecer a medida que se escribe.
   final int minLines;
 
+  /// Para que el navegador y el gestor de contraseñas rellenen el campo.
+  final Iterable<String>? autofillHints;
+
   const GlassTextField({
     super.key,
     required this.controller,
@@ -213,6 +216,7 @@ class GlassTextField extends StatelessWidget {
     this.color = colorNeutro,
     this.maxLines = 1,
     this.minLines = 1,
+    this.autofillHints,
   });
 
   @override
@@ -246,6 +250,7 @@ class GlassTextField extends StatelessWidget {
             child: TextField(
               controller: controller,
               obscureText: obscureText,
+              autofillHints: autofillHints,
               // Un campo de varias líneas necesita teclado multilínea para
               // que el Enter salte de renglón en vez de cerrar el teclado.
               keyboardType: maxLines > 1 ? TextInputType.multiline : keyboardType,
