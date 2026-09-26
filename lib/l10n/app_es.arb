@@ -149,8 +149,6 @@
   "registroVerAmigo": "VER MI AMIGO SECRETO",
 
   "organizadorEditarGrupo": "Editar el grupo",
-  "organizadorCorregirNombre": "Corregir el nombre",
-  "organizadorCorregirPersonaje": "Corregir el personaje",
   "organizadorSacar": "Sacar del grupo",
   "organizadorSacarPregunta": "¿Sacar a {nombre} del grupo?",
   "organizadorSacarTexto": "Se borra con su lista de deseos y su asignación.",
@@ -293,5 +291,11 @@
   "@exclusionesSeRespetaran": {"placeholders": {"n": {"type": "int"}}},
   "exclusionesSinSorteoPosible": "Con las exclusiones actuales no hay sorteo posible. Quita alguna.",
 
-  "sorteoBotonYaSorteado": "YA FUE SORTEADO"
+  "sorteoBotonYaSorteado": "YA FUE SORTEADO",
+
+  "editarParticipanteTitulo": "Editar participante",
+
+  "errorDeseosMuyLargos": "La lista de deseos no puede pasar de 1000 caracteres.",
+
+  "errorDeseosTrasSorteo": "El sorteo ya se hizo: la lista de deseos ya no se puede cambiar."
 }

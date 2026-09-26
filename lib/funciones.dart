@@ -85,6 +85,8 @@ extension MensajeLocalizado on FuncionError {
         'exclusiones_imposibles' => t.errorExclusionesImposibles,
         'excluirse_a_si_mismo' => t.errorExcluirseASiMismo,
         'exclusiones_tras_sorteo' => t.errorExclusionesTrasSorteo,
+        'deseos_muy_largos' => t.errorDeseosMuyLargos,
+        'deseos_tras_sorteo' => t.errorDeseosTrasSorteo,
         'grupo_cerrado' => t.errorGrupoCerrado,
         'no_puedes_salir_sorteado' => t.errorNoPuedesSalirSorteado,
         'sorteo_ya_hecho' => t.errorSorteoYaHecho,

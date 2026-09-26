@@ -468,12 +468,6 @@ class TextosEs extends Textos {
   String get organizadorEditarGrupo => 'Editar el grupo';
 
   @override
-  String get organizadorCorregirNombre => 'Corregir el nombre';
-
-  @override
-  String get organizadorCorregirPersonaje => 'Corregir el personaje';
-
-  @override
   String get organizadorSacar => 'Sacar del grupo';
 
   @override
@@ -901,4 +895,15 @@ class TextosEs extends Textos {
 
   @override
   String get sorteoBotonYaSorteado => 'YA FUE SORTEADO';
+
+  @override
+  String get editarParticipanteTitulo => 'Editar participante';
+
+  @override
+  String get errorDeseosMuyLargos =>
+      'La lista de deseos no puede pasar de 1000 caracteres.';
+
+  @override
+  String get errorDeseosTrasSorteo =>
+      'El sorteo ya se hizo: la lista de deseos ya no se puede cambiar.';
 }

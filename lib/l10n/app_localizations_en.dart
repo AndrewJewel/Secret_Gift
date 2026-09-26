@@ -468,12 +468,6 @@ class TextosEn extends Textos {
   String get organizadorEditarGrupo => 'Edit the group';
 
   @override
-  String get organizadorCorregirNombre => 'Fix the name';
-
-  @override
-  String get organizadorCorregirPersonaje => 'Fix the character';
-
-  @override
   String get organizadorSacar => 'Remove from the group';
 
   @override
@@ -902,4 +896,15 @@ class TextosEn extends Textos {
 
   @override
   String get sorteoBotonYaSorteado => 'ALREADY DRAWN';
+
+  @override
+  String get editarParticipanteTitulo => 'Edit participant';
+
+  @override
+  String get errorDeseosMuyLargos =>
+      'The wish list can\'t be longer than 1000 characters.';
+
+  @override
+  String get errorDeseosTrasSorteo =>
+      'The draw already happened: the wish list can no longer be changed.';
 }

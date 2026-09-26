@@ -131,7 +131,13 @@ class SelectorAvatar extends StatelessWidget {
                 : (urlActual != null && urlActual!.isNotEmpty)
                     ? ClipOval(
                         child: Image.network(urlActual!,
-                            width: 88, height: 88, fit: BoxFit.cover))
+                            width: 88,
+                            height: 88,
+                            fit: BoxFit.cover,
+                            // Si la URL falla, el icono de siempre, como en
+                            // AvatarParticipante.
+                            errorBuilder: (_, _, _) => Icon(Icons.add_a_photo_outlined,
+                                color: color.shade700, size: 30)))
                     : Icon(Icons.add_a_photo_outlined, color: color.shade700, size: 30),
           ),
         ),

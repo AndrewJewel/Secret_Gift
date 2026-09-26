@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'avatar.dart';
+import 'dialogo_editar_participante.dart';
 import 'exclusiones.dart';
 import 'funciones.dart';
 import 'glass.dart';
@@ -756,39 +757,58 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     }
   }
 
-  Future<void> _editarNombre(String participanteId, String nombreActual) async {
-    final t = Textos.of(context);
-    final usaPersonajes = _info.tematica.usaPersonajes;
-    final controller = TextEditingController(text: nombreActual);
-    final nuevo = await showDialog<String>(
+  /// El lápiz de una fila: la foto (el organizador la de cualquiera, cada
+  /// quien la suya), el nombre (solo el organizador) y, en tu propia fila y
+  /// antes del sorteo, tu lista de deseos. Solo se guarda lo que cambió.
+  Future<void> _editarParticipante(
+      String participanteId, String nombreActual, String? avatarUrl) async {
+    final esPropia = participanteId == _vinculo?.participanteId;
+    final antesDelSorteo = !(_vinculo?.sorteado ?? false);
+    // Los deseos son privados: no están en la lista, se piden al servidor.
+    String? deseos;
+    if (esPropia && antesDelSorteo) {
+      try {
+        final datos = await llamarFuncion('verMisDeseos', {'codigo': widget.codigo});
+        deseos = datos['deseos'] as String? ?? '';
+      } catch (e) {
+        _avisarError(e);
+        return;
+      }
+    }
+    if (!mounted) return;
+    final cambios = await showDialog<CambiosParticipante>(
       context: context,
-      builder: (c) => AlertDialog(
-        title: Text(
-            usaPersonajes ? t.organizadorCorregirPersonaje : t.organizadorCorregirNombre),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(labelText: _info.tematica.etiquetaNombre(t)),
-          onSubmitted: (v) => Navigator.pop(c, v.trim()),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: Text(t.cancelar)),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, controller.text.trim()),
-            child: Text(t.guardar),
-          ),
-        ],
+      builder: (_) => DialogoEditarParticipante(
+        nombre: nombreActual,
+        avatarUrl: avatarUrl,
+        puedeEditarNombre: _esOrganizador,
+        deseos: deseos,
+        tematica: _info.tematica,
+        color: _color,
       ),
     );
-    if (nuevo == null || nuevo.isEmpty || nuevo == nombreActual) return;
-
+    if (cambios == null || !mounted) return;
     try {
-      await llamarFuncion('editarParticipante', {
-        'codigo': widget.codigo,
-        'participanteId': participanteId,
-        'nuevoNombre': nuevo,
-      });
+      if (cambios.nombre != null) {
+        await llamarFuncion('editarParticipante', {
+          'codigo': widget.codigo,
+          'participanteId': participanteId,
+          'nuevoNombre': cambios.nombre,
+        });
+      }
+      if (cambios.avatarBase64 != null) {
+        await llamarFuncion('cambiarAvatar', {
+          'codigo': widget.codigo,
+          'participanteId': participanteId,
+          'avatarBase64': cambios.avatarBase64,
+        });
+      }
+      if (cambios.deseos != null) {
+        await llamarFuncion('guardarMisDeseos', {
+          'codigo': widget.codigo,
+          'deseos': cambios.deseos,
+        });
+      }
     } catch (e) {
       _avisarError(e);
     }
@@ -1189,8 +1209,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                       children: [
                         IconButton(
                           icon: Icon(Icons.edit_outlined, color: _color.shade700),
-                          tooltip: t.organizadorCorregirNombre,
-                          onPressed: () => _editarNombre(id, nombre),
+                          tooltip: t.editarParticipanteTitulo,
+                          onPressed: () =>
+                              _editarParticipante(id, nombre, data['avatarUrl'] as String?),
                         ),
                         // Solo tras el sorteo: antes, la salida correcta es
                         // sacar a esa persona y que se apunte otra, que ya
@@ -1224,10 +1245,22 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                   // fila de otro abría una confirmación seria delante
                   // de una llamada que el servidor siempre rechaza.
                   : id == _vinculo?.participanteId
-                      ? IconButton(
-                          icon: Icon(Icons.logout, color: _color.shade700),
-                          tooltip: t.registroSalirGrupo,
-                          onPressed: () => _salirDelGrupo(id),
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Tu foto y, antes del sorteo, tu lista de deseos.
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined, color: _color.shade700),
+                              tooltip: t.editarParticipanteTitulo,
+                              onPressed: () =>
+                                  _editarParticipante(id, nombre, data['avatarUrl'] as String?),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.logout, color: _color.shade700),
+                              tooltip: t.registroSalirGrupo,
+                              onPressed: () => _salirDelGrupo(id),
+                            ),
+                          ],
                         )
                       : null,
             ),

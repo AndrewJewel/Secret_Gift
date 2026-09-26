@@ -918,18 +918,6 @@ abstract class Textos {
   /// **'Edit the group'**
   String get organizadorEditarGrupo;
 
-  /// No description provided for @organizadorCorregirNombre.
-  ///
-  /// In en, this message translates to:
-  /// **'Fix the name'**
-  String get organizadorCorregirNombre;
-
-  /// No description provided for @organizadorCorregirPersonaje.
-  ///
-  /// In en, this message translates to:
-  /// **'Fix the character'**
-  String get organizadorCorregirPersonaje;
-
   /// No description provided for @organizadorSacar.
   ///
   /// In en, this message translates to:
@@ -1679,6 +1667,24 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'ALREADY DRAWN'**
   String get sorteoBotonYaSorteado;
+
+  /// No description provided for @editarParticipanteTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit participant'**
+  String get editarParticipanteTitulo;
+
+  /// No description provided for @errorDeseosMuyLargos.
+  ///
+  /// In en, this message translates to:
+  /// **'The wish list can\'t be longer than 1000 characters.'**
+  String get errorDeseosMuyLargos;
+
+  /// No description provided for @errorDeseosTrasSorteo.
+  ///
+  /// In en, this message translates to:
+  /// **'The draw already happened: the wish list can no longer be changed.'**
+  String get errorDeseosTrasSorteo;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

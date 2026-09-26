@@ -196,8 +196,6 @@
   "registroVerAmigo": "SEE MY SECRET FRIEND",
 
   "organizadorEditarGrupo": "Edit the group",
-  "organizadorCorregirNombre": "Fix the name",
-  "organizadorCorregirPersonaje": "Fix the character",
   "organizadorSacar": "Remove from the group",
   "organizadorSacarPregunta": "Remove {nombre} from the group?",
   "@organizadorSacarPregunta": { "placeholders": { "nombre": { "type": "String" } } },
@@ -397,5 +395,11 @@
   "@exclusionesSeRespetaran": {"placeholders": {"n": {"type": "int"}}},
   "exclusionesSinSorteoPosible": "With the current exclusions no draw is possible. Remove one.",
 
-  "sorteoBotonYaSorteado": "ALREADY DRAWN"
+  "sorteoBotonYaSorteado": "ALREADY DRAWN",
+
+  "editarParticipanteTitulo": "Edit participant",
+
+  "errorDeseosMuyLargos": "The wish list can't be longer than 1000 characters.",
+
+  "errorDeseosTrasSorteo": "The draw already happened: the wish list can no longer be changed."
 }

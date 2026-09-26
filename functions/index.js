@@ -635,7 +635,7 @@ exports.agregarParticipante = onCall(async (request) => {
     // un participante que ya no existe. Este documento está cerrado a
     // cero para el cliente (ver firestore.rules).
     cuenta: sesion.uid,
-    deseos: deseos || "¡Sorpréndeme!",
+    deseos,
     asignado_a: "",
     nombre_asignado: "",
     deseos_asignado: "",
@@ -947,7 +947,7 @@ exports.canjearReemplazo = onCall(async (request) => {
   // normal: si falla, no queda una plaza a medias apuntando a un avatar
   // que no existe.
   const avatarUrl = await guardarAvatar(codigo, participanteId, request.data?.avatarBase64);
-  const deseosNuevos = deseos || "¡Sorpréndeme!";
+  const deseosNuevos = deseos;
 
   const batch = db.batch();
 
@@ -969,14 +969,7 @@ exports.canjearReemplazo = onCall(async (request) => {
   // `recibe_de` lo dice directamente; si no estuviera —grupo sorteado antes
   // de que ese campo existiera— se barren los privados buscando quién
   // apunta aquí.
-  let quienRegala = datosPlaza.recibe_de;
-  if (!quienRegala) {
-    const todos = await grupoRef(codigo).collection("participantes").get();
-    const privados = await Promise.all(
-        todos.docs.map((d) => participantePrivadoRef(codigo, d.id).get()));
-    const i = privados.findIndex((p) => p.data()?.asignado_a === participanteId);
-    if (i >= 0) quienRegala = todos.docs[i].id;
-  }
+  const quienRegala = await quienLeRegalaA(codigo, participanteId, datosPlaza.recibe_de);
   if (quienRegala) {
     batch.set(participantePrivadoRef(codigo, quienRegala), {
       nombre_asignado: nombre,
@@ -1044,6 +1037,67 @@ exports.canjearReemplazo = onCall(async (request) => {
   await borrarAvatarPorUrl(avatarAnterior);
 
   return {id: participanteId};
+});
+
+// Deseos guardados antes del 25-sep llevaban "¡Sorpréndeme!" cuando la
+// persona no escribía nada. Se tratan como vacíos: la app pone el texto en el
+// idioma de quien los lee.
+function deseosLimpios(deseos) {
+  const texto = (deseos || "").trim();
+  return texto === "¡Sorpréndeme!" ? "" : texto;
+}
+
+// La plaza que le regala a `participanteId`, o null (antes del sorteo).
+// `recibe_de` lo dice directamente; si no estuviera —grupo sorteado antes de
+// que ese campo existiera— se barren los privados buscando quién apunta aquí.
+async function quienLeRegalaA(codigo, participanteId, recibeDe) {
+  if (recibeDe) return recibeDe;
+  const todos = await grupoRef(codigo).collection("participantes").get();
+  const privados = await Promise.all(
+      todos.docs.map((d) => participantePrivadoRef(codigo, d.id).get()));
+  const i = privados.findIndex((p) => p.data()?.asignado_a === participanteId);
+  return i >= 0 ? todos.docs[i].id : null;
+}
+
+const MAX_DESEOS = 1000;
+
+// Tus propios deseos, para poder editarlos. Son privados: solo los ve quien
+// te regala, y por eso solo los lee y los cambia su dueño (ni el organizador).
+exports.verMisDeseos = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  if (!codigo) {
+    throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
+  }
+  const sesion = await autorizar(codigo, uidDe(request));
+  exigirParticipante(sesion);
+  const priv = await participantePrivadoRef(codigo, sesion.participanteId).get();
+  return {deseos: deseosLimpios(priv.data()?.deseos)};
+});
+
+// Cambiar tus deseos. Solo ANTES del sorteo: después, quien te regala ya vio
+// la lista (su copia en `deseos_asignado`) y quizá ya compró con ella.
+exports.guardarMisDeseos = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const deseos = request.data?.deseos;
+  if (!codigo || typeof deseos !== "string") {
+    throw new HttpsError("invalid-argument", "Faltan datos.", {clave: "faltan_datos"});
+  }
+  const limpios = deseos.trim();
+  if (limpios.length > MAX_DESEOS) {
+    throw new HttpsError("invalid-argument",
+        `Los deseos no pueden pasar de ${MAX_DESEOS} caracteres.`, {clave: "deseos_muy_largos"});
+  }
+  const sesion = await autorizar(codigo, uidDe(request));
+  exigirParticipante(sesion);
+
+  const grupo = await grupoRef(codigo).get();
+  if (grupo.data()?.sorteado === true) {
+    throw new HttpsError("failed-precondition", "El sorteo ya se hizo.",
+        {clave: "deseos_tras_sorteo"});
+  }
+  await participantePrivadoRef(codigo, sesion.participanteId)
+      .set({deseos: limpios}, {merge: true});
+  return {ok: true};
 });
 
 // Cambiar la propia imagen, o quitarle una inapropiada a alguien si eres
@@ -1170,7 +1224,7 @@ exports.verAmigoSecreto = onCall(async (request) => {
     nombreAmigo: privado.nombre_asignado || "",
     // Vacío y no "Sin sugerencias": el texto por defecto lo pone el
     // cliente traducido, y aquí saldría siempre en español.
-    deseosAmigo: privado.deseos_asignado || "",
+    deseosAmigo: deseosLimpios(privado.deseos_asignado),
   };
 });
 
@@ -1317,7 +1371,7 @@ exports.ejecutarSorteo = onCall(async (request) => {
     const iRegala = indices[i];
     const iRecibe = indices[(i + 1) % indices.length];
     const docRecibe = docs[iRecibe];
-    const deseosRecibe = privSnaps[iRecibe].data()?.deseos || "¡Sorpréndeme!";
+    const deseosRecibe = deseosLimpios(privSnaps[iRecibe].data()?.deseos);
     batch.set(participantePrivadoRef(codigo, docs[iRegala].id), {
       asignado_a: docRecibe.id,
       nombre_asignado: docRecibe.data().nombre,
