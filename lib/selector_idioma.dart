@@ -18,13 +18,20 @@ class CampoIdioma extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Textos.of(context);
     final actual = Localizations.localeOf(context);
+    final borde = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: colorNeutro.shade100),
+    );
     return DropdownButtonFormField<Locale>(
       initialValue: Idioma.soportados
           .firstWhere((l) => l.languageCode == actual.languageCode),
       decoration: InputDecoration(
         labelText: t.idioma,
         prefixIcon: Icon(Icons.language, color: colorNeutro.shade700),
-        border: const OutlineInputBorder(),
+        // Mismo borde redondeado y suave que los campos de vidrio de al
+        // lado; el negro recto de Material desentonaba.
+        border: borde,
+        enabledBorder: borde,
         filled: true,
         fillColor: Colors.white70,
       ),

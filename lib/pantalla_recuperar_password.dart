@@ -82,7 +82,8 @@ class _PantallaRecuperarPasswordState extends State<PantallaRecuperarPassword> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(t.recuperarTexto),
+                        Text(t.recuperarTexto,
+                            style: const TextStyle(color: Colors.black87, fontSize: 15)),
                         const SizedBox(height: 16),
                         GlassTextField(
                           controller: _correo,
