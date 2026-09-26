@@ -492,12 +492,12 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
         context,
         MaterialPageRoute(
           builder: (_) => PantallaSecreta(
-            ocasion: _info.ocasion,
-            tematica: _info.tematica,
-            colorPersonal: _info.colorPersonal,
-            nombre: data['nombre'] as String? ?? '',
+            nombreGrupo: _info.nombreGrupo,
+            personas: _participantes?.length,
             nombreAmigo: data['nombreAmigo'] as String? ?? '',
-            deseosAmigo: deseos.isEmpty ? t.secretaSinSugerencias : deseos,
+            // Vacío se queda vacío: la pantalla pone «Sin sugerencias» en el
+            // idioma de quien la lee.
+            deseosAmigo: deseos,
           ),
         ),
       );
@@ -928,8 +928,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                         color: _color,
                         // Solo tiene sentido si estás dentro: sin plaza no
                         // hay amigo asignado.
-                        onPressed:
-                            _vinculo?.estoyDentro == true ? _verAmigoSecreto : null,
+                        // Antes del sorteo no hay nada que ver: pedir el PIN
+                        // para luego decir «todavía no» castigaba la curiosidad.
+                        onPressed: _vinculo?.estoyDentro == true && yaSorteado
+                            ? _verAmigoSecreto
+                            : null,
                         icon: Icons.visibility,
                         label: t.registroVerAmigo,
                       ),

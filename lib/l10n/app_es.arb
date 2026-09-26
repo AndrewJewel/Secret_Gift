@@ -184,10 +184,7 @@
 
   "verAmigoPinTitulo": "Escribe tu PIN",
   "verAmigoPinTexto": "Nadie más debería ver esto. El PIN se pide cada vez.",
-  "secretaTitulo": "Tu amigo secreto es...",
   "secretaSinSorteo": "Todavía no se ha hecho el sorteo",
-  "secretaRevelar": "REVELAR",
-  "secretaDesea": "Desea: {deseos}",
   "secretaSinSugerencias": "Sin sugerencias",
 
   "ocasionAmigoSecreto": "Amigo Secreto",
@@ -297,5 +294,20 @@
 
   "errorDeseosMuyLargos": "La lista de deseos no puede pasar de 1000 caracteres.",
 
-  "errorDeseosTrasSorteo": "El sorteo ya se hizo: la lista de deseos ya no se puede cambiar."
+  "errorDeseosTrasSorteo": "El sorteo ya se hizo: la lista de deseos ya no se puede cambiar.",
+
+  "secretaBarra": "Tu amigo secreto",
+  "secretaTeToco": "Te tocó",
+  "secretaTocaLaCaja": "Toca la caja para abrirla",
+  "secretaAbrirCaja": "Abrir mi caja",
+  "secretaListo": "Listo",
+  "secretaListaDeseos": "Lista de deseos",
+  "secretaAnuncio": "Te tocó {nombre}",
+  "@secretaAnuncio": {"placeholders": {"nombre": {"type": "String"}}},
+
+  "secretaSorteoHecho": "sorteo hecho",
+  "secretaParaTi": "Para ti",
+
+  "secretaPersonas": "{n, plural, =1{1 persona} other{{n} personas}}",
+  "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}}
 }

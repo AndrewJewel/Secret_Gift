@@ -580,18 +580,7 @@ class TextosEs extends Textos {
       'Nadie más debería ver esto. El PIN se pide cada vez.';
 
   @override
-  String get secretaTitulo => 'Tu amigo secreto es...';
-
-  @override
   String get secretaSinSorteo => 'Todavía no se ha hecho el sorteo';
-
-  @override
-  String get secretaRevelar => 'REVELAR';
-
-  @override
-  String secretaDesea(String deseos) {
-    return 'Desea: $deseos';
-  }
 
   @override
   String get secretaSinSugerencias => 'Sin sugerencias';
@@ -906,4 +895,44 @@ class TextosEs extends Textos {
   @override
   String get errorDeseosTrasSorteo =>
       'El sorteo ya se hizo: la lista de deseos ya no se puede cambiar.';
+
+  @override
+  String get secretaBarra => 'Tu amigo secreto';
+
+  @override
+  String get secretaTeToco => 'Te tocó';
+
+  @override
+  String get secretaTocaLaCaja => 'Toca la caja para abrirla';
+
+  @override
+  String get secretaAbrirCaja => 'Abrir mi caja';
+
+  @override
+  String get secretaListo => 'Listo';
+
+  @override
+  String get secretaListaDeseos => 'Lista de deseos';
+
+  @override
+  String secretaAnuncio(String nombre) {
+    return 'Te tocó $nombre';
+  }
+
+  @override
+  String get secretaSorteoHecho => 'sorteo hecho';
+
+  @override
+  String get secretaParaTi => 'Para ti';
+
+  @override
+  String secretaPersonas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n personas',
+      one: '1 persona',
+    );
+    return '$_temp0';
+  }
 }

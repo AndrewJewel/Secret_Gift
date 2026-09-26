@@ -1104,29 +1104,11 @@ abstract class Textos {
   /// **'Nobody else should see this. Your PIN is asked every time.'**
   String get verAmigoPinTexto;
 
-  /// No description provided for @secretaTitulo.
-  ///
-  /// In en, this message translates to:
-  /// **'Your secret friend is...'**
-  String get secretaTitulo;
-
   /// No description provided for @secretaSinSorteo.
   ///
   /// In en, this message translates to:
   /// **'The draw has not happened yet'**
   String get secretaSinSorteo;
-
-  /// No description provided for @secretaRevelar.
-  ///
-  /// In en, this message translates to:
-  /// **'REVEAL'**
-  String get secretaRevelar;
-
-  /// No description provided for @secretaDesea.
-  ///
-  /// In en, this message translates to:
-  /// **'Wishes: {deseos}'**
-  String secretaDesea(String deseos);
 
   /// No description provided for @secretaSinSugerencias.
   ///
@@ -1685,6 +1667,66 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The draw already happened: the wish list can no longer be changed.'**
   String get errorDeseosTrasSorteo;
+
+  /// No description provided for @secretaBarra.
+  ///
+  /// In en, this message translates to:
+  /// **'Your secret friend'**
+  String get secretaBarra;
+
+  /// No description provided for @secretaTeToco.
+  ///
+  /// In en, this message translates to:
+  /// **'You got'**
+  String get secretaTeToco;
+
+  /// No description provided for @secretaTocaLaCaja.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the box to open it'**
+  String get secretaTocaLaCaja;
+
+  /// No description provided for @secretaAbrirCaja.
+  ///
+  /// In en, this message translates to:
+  /// **'Open my box'**
+  String get secretaAbrirCaja;
+
+  /// No description provided for @secretaListo.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get secretaListo;
+
+  /// No description provided for @secretaListaDeseos.
+  ///
+  /// In en, this message translates to:
+  /// **'Wish list'**
+  String get secretaListaDeseos;
+
+  /// No description provided for @secretaAnuncio.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {nombre}'**
+  String secretaAnuncio(String nombre);
+
+  /// No description provided for @secretaSorteoHecho.
+  ///
+  /// In en, this message translates to:
+  /// **'draw done'**
+  String get secretaSorteoHecho;
+
+  /// No description provided for @secretaParaTi.
+  ///
+  /// In en, this message translates to:
+  /// **'For you'**
+  String get secretaParaTi;
+
+  /// No description provided for @secretaPersonas.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 person} other{{n} people}}'**
+  String secretaPersonas(int n);
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

@@ -580,18 +580,7 @@ class TextosEn extends Textos {
       'Nobody else should see this. Your PIN is asked every time.';
 
   @override
-  String get secretaTitulo => 'Your secret friend is...';
-
-  @override
   String get secretaSinSorteo => 'The draw has not happened yet';
-
-  @override
-  String get secretaRevelar => 'REVEAL';
-
-  @override
-  String secretaDesea(String deseos) {
-    return 'Wishes: $deseos';
-  }
 
   @override
   String get secretaSinSugerencias => 'No suggestions';
@@ -907,4 +896,44 @@ class TextosEn extends Textos {
   @override
   String get errorDeseosTrasSorteo =>
       'The draw already happened: the wish list can no longer be changed.';
+
+  @override
+  String get secretaBarra => 'Your secret friend';
+
+  @override
+  String get secretaTeToco => 'You got';
+
+  @override
+  String get secretaTocaLaCaja => 'Tap the box to open it';
+
+  @override
+  String get secretaAbrirCaja => 'Open my box';
+
+  @override
+  String get secretaListo => 'Done';
+
+  @override
+  String get secretaListaDeseos => 'Wish list';
+
+  @override
+  String secretaAnuncio(String nombre) {
+    return 'You got $nombre';
+  }
+
+  @override
+  String get secretaSorteoHecho => 'draw done';
+
+  @override
+  String get secretaParaTi => 'For you';
+
+  @override
+  String secretaPersonas(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n people',
+      one: '1 person',
+    );
+    return '$_temp0';
+  }
 }

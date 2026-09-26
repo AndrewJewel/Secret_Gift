@@ -263,11 +263,7 @@
 
   "verAmigoPinTitulo": "Type your PIN",
   "verAmigoPinTexto": "Nobody else should see this. Your PIN is asked every time.",
-  "secretaTitulo": "Your secret friend is...",
   "secretaSinSorteo": "The draw has not happened yet",
-  "secretaRevelar": "REVEAL",
-  "secretaDesea": "Wishes: {deseos}",
-  "@secretaDesea": { "placeholders": { "deseos": { "type": "String" } } },
   "secretaSinSugerencias": "No suggestions",
 
   "ocasionAmigoSecreto": "Secret Friend",
@@ -401,5 +397,20 @@
 
   "errorDeseosMuyLargos": "The wish list can't be longer than 1000 characters.",
 
-  "errorDeseosTrasSorteo": "The draw already happened: the wish list can no longer be changed."
+  "errorDeseosTrasSorteo": "The draw already happened: the wish list can no longer be changed.",
+
+  "secretaBarra": "Your secret friend",
+  "secretaTeToco": "You got",
+  "secretaTocaLaCaja": "Tap the box to open it",
+  "secretaAbrirCaja": "Open my box",
+  "secretaListo": "Done",
+  "secretaListaDeseos": "Wish list",
+  "secretaAnuncio": "You got {nombre}",
+  "@secretaAnuncio": {"placeholders": {"nombre": {"type": "String"}}},
+
+  "secretaSorteoHecho": "draw done",
+  "secretaParaTi": "For you",
+
+  "secretaPersonas": "{n, plural, =1{1 person} other{{n} people}}",
+  "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}}
 }
