@@ -7,7 +7,7 @@ const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore"
 const {getStorage} = require("firebase-admin/storage");
 const {avisar, avisarAVarios} = require("./push");
 const {
-  claveDePareja, parejasVigentes, aIndices, hayCadena, sortearCadena,
+  claveDePareja, parejasVigentes, idsOrdenados, aIndices, hayCadena, sortearCadena,
 } = require("./sorteo");
 const bcrypt = require("bcryptjs");
 // `Math.random` no sirve para nada de esto. V8 lo implementa con
@@ -1223,20 +1223,25 @@ exports.guardarExclusiones = onCall(async (request) => {
           {clave: "exclusiones_tras_sorteo"});
     }
     const participantes = await tx.get(grupoRef(codigo).collection("participantes"));
-    const ids = participantes.docs.map((d) => d.id);
+    // Ordenados como en la app: las dos tienen que contestar igual.
+    const ids = idsOrdenados(participantes.docs.map((d) => d.id));
     const presentes = new Set(ids);
     if (![participanteId, ...excluidos].every((id) => presentes.has(id))) {
       throw new HttpsError("not-found", "Esa plaza ya no existe.", {clave: "participante_no_existe"});
     }
     const priv = await tx.get(grupoPrivadoRef(codigo));
-    const deOtros = parejasVigentes(priv.data()?.exclusiones || [], ids)
-        .filter((clave) => !clave.split("|").includes(participanteId));
+    const antes = parejasVigentes(priv.data()?.exclusiones || [], ids);
+    const deOtros = antes.filter((clave) => !clave.split("|").includes(participanteId));
     const nuevas = [...new Set([
       ...deOtros,
       ...excluidos.map((id) => claveDePareja(participanteId, id)),
     ])];
-    // La app ya bloquea la casilla; esto cubre a quien se la salte.
-    if (nuevas.length > 0 && !hayCadena(ids.length, aIndices(nuevas, ids))) {
+    // La app ya bloquea la casilla; esto cubre a quien se la salte. Solo se
+    // mira si se AÑADE alguna: quitar exclusiones siempre se deja, aunque el
+    // grupo siga sin sorteo posible (p. ej. alguien se salió), o no habría
+    // forma de ir arreglándolo de a una.
+    const agrega = nuevas.some((clave) => !antes.includes(clave));
+    if (agrega && !hayCadena(ids.length, aIndices(nuevas, ids))) {
       throw new HttpsError("failed-precondition", "Con estas exclusiones no hay sorteo posible.",
           {clave: "exclusiones_imposibles"});
     }
@@ -1276,7 +1281,10 @@ exports.ejecutarSorteo = onCall(async (request) => {
   }
 
   const snap = await grupoRef(codigo).collection("participantes").get();
-  const docs = snap.docs;
+  // Ordenados por id, como en la app y en `guardarExclusiones`: la
+  // comprobación de exclusiones tiene que numerar a la gente igual en los
+  // tres sitios. El azar del sorteo no depende de este orden.
+  const docs = [...snap.docs].sort((a, b) => (a.id < b.id ? -1 : 1));
   if (docs.length < 2) {
     throw new HttpsError("failed-precondition", "Se necesitan mínimo 2 personas.", {clave: "minimo_dos_personas"});
   }

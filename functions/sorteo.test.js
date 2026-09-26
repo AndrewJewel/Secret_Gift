@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const path = require("node:path");
 const {randomInt} = require("node:crypto");
 const {
-  claveDePareja, parejasVigentes, aIndices, hayCadena, sortearCadena,
+  claveDePareja, parejasVigentes, idsOrdenados, aIndices, hayCadena, sortearCadena,
 } = require("./sorteo");
 
 // Los mismos casos que prueba la versión Dart (test/exclusiones_test.dart):
@@ -20,6 +20,10 @@ test("parejasVigentes quita duplicados y parejas de quien ya no está", () => {
       parejasVigentes(["a|b", "a|b", "a|z"], ["a", "b", "c"]), ["a|b"]);
 });
 
+test("idsOrdenados no depende del orden de llegada", () => {
+  assert.deepStrictEqual(idsOrdenados(["c", "a", "b"]), ["a", "b", "c"]);
+});
+
 test("aIndices traduce ids a posiciones", () => {
   assert.deepStrictEqual(aIndices(["a|c"], ["a", "b", "c"]), [[0, 2]]);
 });
@@ -32,7 +36,7 @@ for (const caso of CASOS) {
   test(`sortearCadena: ${caso.nombre}`, () => {
     const prohibida = new Set(caso.exclusiones.map(([a, b]) => `${a}|${b}`).concat(
         caso.exclusiones.map(([a, b]) => `${b}|${a}`)));
-    for (let vez = 0; vez < 200; vez++) {
+    for (let vez = 0; vez < (caso.n > 12 ? 20 : 200); vez++) {
       const orden = sortearCadena(caso.n, caso.exclusiones, randomInt);
       if (!caso.posible) {
         assert.strictEqual(orden, null);

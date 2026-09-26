@@ -799,6 +799,8 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
+    // Una sola vez por pintado: con muchas exclusiones no es gratis.
+    final sorteoPosible = _sorteoPosible;
     return Theme(
       data: temaGlass(_color),
       child: FondoTematico(
@@ -880,20 +882,20 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
-                              _sorteoPosible
+                              sorteoPosible
                                   ? t.exclusionesSeRespetaran(_exclusionesVigentes.length)
                                   : t.exclusionesSinSorteoPosible,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 13,
-                                  color: _sorteoPosible
+                                  color: sorteoPosible
                                       ? (_info.tematica.fondoOscuro ? Colors.white70 : Colors.black54)
                                       : Colors.red.shade700),
                             ),
                           ),
                         GlassButton(
                           color: Colors.orange.shade800,
-                          onPressed: _sorteoPosible ? _sortear : null,
+                          onPressed: sorteoPosible ? _sortear : null,
                           icon: Icons.casino,
                           label: t.sorteoBoton,
                         ),
