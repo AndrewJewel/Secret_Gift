@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'exclusiones.dart';
 import 'l10n/app_localizations.dart';
+import 'marca.dart';
 
 typedef Persona = ({String id, String nombre});
 
@@ -102,7 +103,7 @@ class _HojaExclusionesState extends State<HojaExclusiones> {
                 TextButton(onPressed: () => Navigator.pop(context), child: Text(t.cancelar)),
                 const SizedBox(width: 8),
                 FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: widget.color.shade600),
+                  style: FilledButton.styleFrom(backgroundColor: legibleSobreBlanco(widget.color.shade600)),
                   onPressed: () => Navigator.pop(context, _marcados.toList()),
                   child: Text(t.guardar),
                 ),

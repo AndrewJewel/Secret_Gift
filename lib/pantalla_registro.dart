@@ -917,7 +917,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                         // Ya sorteado: el sorteo no se repite (el servidor lo
                         // rechaza), así que el botón se queda apagado y lo dice.
                         GlassButton(
-                          color: Colors.orange.shade800,
+                          color: _color.shade600,
                           onPressed: yaSorteado || !sorteoPosible ? null : _sortear,
                           icon: yaSorteado ? Icons.check_circle_outline : Icons.casino,
                           label: yaSorteado ? t.sorteoBotonYaSorteado : t.sorteoBoton,
@@ -1137,7 +1137,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           ),
           const SizedBox(height: 12),
           GlassButton(
-            color: Colors.green.shade700,
+            color: _color.shade600,
             onPressed: _agregar,
             icon: Icons.save,
             label: t.registroBoton,

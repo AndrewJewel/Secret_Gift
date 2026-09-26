@@ -5,6 +5,7 @@ import 'funciones.dart';
 import 'glass.dart';
 import 'grupo_a_la_vista.dart';
 import 'l10n/app_localizations.dart';
+import 'marca.dart';
 import 'mascara.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
@@ -287,7 +288,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
                   ? null
                   : _enviar,
               style: FilledButton.styleFrom(
-                backgroundColor: _color.shade600,
+                backgroundColor: legibleSobreBlanco(_color.shade600),
                 padding: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),

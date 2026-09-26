@@ -318,7 +318,7 @@ class GlassButton extends StatelessWidget {
         icon: trailing ?? (icon != null ? Icon(icon) : const SizedBox.shrink()),
         label: Text(label),
         style: ElevatedButton.styleFrom(
-          backgroundColor: color,
+          backgroundColor: legibleSobreBlanco(color),
           foregroundColor: Colors.white,
           elevation: 4,
           shadowColor: color.withValues(alpha: 0.5),
@@ -355,9 +355,9 @@ class GlassOutlineButton extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: _desenfoqueVidrio, sigmaY: _desenfoqueVidrio),
             child: OutlinedButton.icon(
               onPressed: onPressed,
-              icon: icon != null ? Icon(icon, color: color.shade700) : const SizedBox.shrink(),
-              label:
-                  Text(label, style: TextStyle(color: color.shade700, fontWeight: FontWeight.w600)),
+              icon: icon != null ? Icon(icon, color: legibleSobreBlanco(color.shade700)) : const SizedBox.shrink(),
+              label: Text(label,
+                  style: TextStyle(color: legibleSobreBlanco(color.shade700), fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 backgroundColor: _rellenoVidrio(color, EstiloFondo.esOscuro(context)),
                 side: _ladoVidrio(color, EstiloFondo.esOscuro(context)),

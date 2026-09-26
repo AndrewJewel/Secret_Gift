@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'marca.dart';
 import 'ocasion.dart';
 import 'tematica.dart';
 
@@ -116,7 +117,7 @@ class _DialogoColorGrupoState extends State<DialogoColorGrupo> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(t.cancelar)),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: escala.shade600),
+            style: FilledButton.styleFrom(backgroundColor: legibleSobreBlanco(escala.shade600)),
             onPressed: () => Navigator.pop(context, _color),
             child: Text(t.colorUsar),
           ),

@@ -40,3 +40,15 @@ const MaterialColor oroMarca = MaterialColor(0xFFC08A2E, <int, Color>{
   800: Color(0xFF7B581D),
   900: Color(0xFF604517),
 });
+
+/// Oscurece [color] lo justo para que el texto blanco encima (o él como
+/// texto sobre blanco) llegue a 4.5:1, el mínimo AA. Los colores propios
+/// del grupo pueden ser cualquiera, y el oro y los tonos claros no llegan.
+Color legibleSobreBlanco(Color color) {
+  // 4.5:1 contra blanco (luminancia 1) = luminancia ≤ 1.05 / 4.5 - 0.05.
+  for (var t = 0.0; t < 1; t += 0.04) {
+    final c = Color.lerp(color, Colors.black, t)!;
+    if (c.computeLuminance() <= 1.05 / 4.5 - 0.05) return c;
+  }
+  return Colors.black;
+}
