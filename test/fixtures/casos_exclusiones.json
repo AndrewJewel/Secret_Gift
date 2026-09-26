@@ -1,0 +1,16 @@
+[
+  {"nombre": "2 sin exclusión", "n": 2, "exclusiones": [], "posible": true},
+  {"nombre": "2 excluidos entre sí", "n": 2, "exclusiones": [[0, 1]], "posible": false},
+  {"nombre": "3 sin exclusión", "n": 3, "exclusiones": [], "posible": true},
+  {"nombre": "3 con una: la única cadena usa las tres parejas", "n": 3, "exclusiones": [[0, 1]], "posible": false},
+  {"nombre": "4 con dos parejas distintas", "n": 4, "exclusiones": [[0, 1], [2, 3]], "posible": true},
+  {"nombre": "4 con dos que comparten persona", "n": 4, "exclusiones": [[0, 1], [0, 2]], "posible": false},
+  {"nombre": "5 con dos que comparten persona", "n": 5, "exclusiones": [[0, 1], [0, 2]], "posible": true},
+  {"nombre": "5 con alguien excluido de todos", "n": 5, "exclusiones": [[0, 1], [0, 2], [0, 3], [0, 4]], "posible": false},
+  {"nombre": "6 con una familia de 3", "n": 6, "exclusiones": [[0, 1], [0, 2], [1, 2]], "posible": true},
+  {"nombre": "6 con una familia de 4", "n": 6, "exclusiones": [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]], "posible": false},
+  {"nombre": "7 sin Dirac pero posible", "n": 7, "exclusiones": [[0, 3], [0, 4], [0, 5], [0, 6]], "posible": true},
+  {"nombre": "7 dos personas con los mismos dos únicos vecinos", "n": 7, "exclusiones": [[0, 3], [0, 4], [0, 5], [0, 6], [3, 4], [3, 5], [3, 6]], "posible": false},
+  {"nombre": "8 con cuatro parejas", "n": 8, "exclusiones": [[0, 1], [2, 3], [4, 5], [6, 7]], "posible": true},
+  {"nombre": "20 con pocas exclusiones", "n": 20, "exclusiones": [[0, 1], [2, 3], [4, 5]], "posible": true}
+]
