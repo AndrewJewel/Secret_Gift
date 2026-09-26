@@ -231,11 +231,11 @@ class TextosEs extends Textos {
   String get crearCreando => 'Creando...';
 
   @override
-  String get crearListoTitulo => '¡Grupo creado!';
+  String get crearListoTitulo => 'Tu grupo está listo';
 
   @override
   String get crearListoTexto =>
-      'Comparte este código con tu grupo para que se unan:';
+      'Invita a los demás: comparte el enlace o que escaneen este código.';
 
   @override
   String get unirseTitulo => 'Unirme a un grupo';

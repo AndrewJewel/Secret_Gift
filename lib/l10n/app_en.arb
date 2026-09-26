@@ -93,8 +93,8 @@
   "crearFaltanDatos": "The group name is missing",
   "crearBoton": "Create group",
   "crearCreando": "Creating...",
-  "crearListoTitulo": "Group created!",
-  "crearListoTexto": "Share this code so your group can join:",
+  "crearListoTitulo": "Your group is ready",
+  "crearListoTexto": "Invite everyone: share the link or let them scan this code.",
 
   "unirseTitulo": "Join a group",
   "unirseCodigo": "Group code",

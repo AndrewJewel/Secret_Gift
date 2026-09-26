@@ -496,13 +496,13 @@ abstract class Textos {
   /// No description provided for @crearListoTitulo.
   ///
   /// In en, this message translates to:
-  /// **'Group created!'**
+  /// **'Your group is ready'**
   String get crearListoTitulo;
 
   /// No description provided for @crearListoTexto.
   ///
   /// In en, this message translates to:
-  /// **'Share this code so your group can join:'**
+  /// **'Invite everyone: share the link or let them scan this code.'**
   String get crearListoTexto;
 
   /// No description provided for @unirseTitulo.

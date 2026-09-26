@@ -69,7 +69,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       });
       final codigo = datos['codigo'] as String;
       if (!mounted) return;
-      await _mostrarCodigoYContinuar(codigo);
+      await _continuar(codigo);
     } on FuncionError catch (e) {
       _avisar(e.texto(t));
     } catch (e) {
@@ -79,30 +79,9 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     }
   }
 
-  Future<void> _mostrarCodigoYContinuar(String codigo) async {
-    final t = Textos.of(context);
+  Future<void> _continuar(String codigo) async {
     await guardarUltimoGrupo(
         codigo, _ocasion.id, _valorMinimoController.text.trim(), _nombreGrupoController.text.trim());
-    if (!mounted) return;
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (c) => AlertDialog(
-        title: Text('🎉 ${t.crearListoTitulo}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(t.crearListoTexto),
-            const SizedBox(height: 16),
-            SelectableText(codigo,
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        actions: [
-          FilledButton(onPressed: () => Navigator.pop(c), child: Text(t.continuar)),
-        ],
-      ),
-    );
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
@@ -119,6 +98,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
           // enseñaba ni el lápiz de editar ni el botón de sortear en tu
           // propio grupo recién creado.
           vinculo: const MiVinculo(rol: 'organizador'),
+          recienCreado: true,
         ),
       ),
     );

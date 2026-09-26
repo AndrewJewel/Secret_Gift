@@ -71,8 +71,8 @@
   "crearFaltanDatos": "Falta el nombre del grupo",
   "crearBoton": "Crear grupo",
   "crearCreando": "Creando...",
-  "crearListoTitulo": "¡Grupo creado!",
-  "crearListoTexto": "Comparte este código con tu grupo para que se unan:",
+  "crearListoTitulo": "Tu grupo está listo",
+  "crearListoTexto": "Invita a los demás: comparte el enlace o que escaneen este código.",
 
   "unirseTitulo": "Unirme a un grupo",
   "unirseCodigo": "Código del grupo",

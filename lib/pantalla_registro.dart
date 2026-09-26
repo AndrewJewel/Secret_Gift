@@ -116,6 +116,10 @@ class PantallaRegistro extends StatefulWidget {
   /// para cuando `initState` corriera ya no habría nada que leer.
   final String? reemplazo;
 
+  /// Recién creado por quien lo abre: la pantalla arranca con la invitación
+  /// abierta, que es lo primero que hay que hacer con un grupo vacío.
+  final bool recienCreado;
+
   const PantallaRegistro({
     super.key,
     required this.codigo,
@@ -124,6 +128,7 @@ class PantallaRegistro extends StatefulWidget {
     this.nombreGrupo = '',
     this.vinculo,
     this.reemplazo,
+    this.recienCreado = false,
   });
 
   @override
@@ -244,6 +249,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   void initState() {
     super.initState();
     _mirarSiHayReemplazo();
+    if (widget.recienCreado) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _invitar(recienCreado: true);
+      });
+    }
     _suscripcionGrupo = _grupoRef.snapshots().listen((snap) {
       if (!mounted) return;
       // El grupo dejó de existir: su organizador lo eliminó mientras
@@ -590,23 +600,37 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     ));
   }
 
-  void _mostrarQR() {
+  /// QR, código y compartir juntos: invitar es una sola acción, no dos
+  /// iconos sueltos.
+  void _invitar({bool recienCreado = false}) {
     final t = Textos.of(context);
     showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text(t.grupoQRTitulo),
+        title: Text(recienCreado ? t.crearListoTitulo : t.grupoQRTitulo),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            QrImageView(data: _urlUnirse, size: 220),
-            const SizedBox(height: 12),
-            Text(widget.codigo,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            if (recienCreado) ...[
+              Text(t.crearListoTexto, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+            ],
+            SizedBox.square(dimension: 200, child: QrImageView(data: _urlUnirse)),
+            const SizedBox(height: 8),
+            SelectableText(widget.codigo,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: Text(t.cerrar)),
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: Text(recienCreado ? t.continuar : t.cerrar),
+          ),
+          FilledButton.icon(
+            onPressed: _compartir,
+            icon: const Icon(Icons.share),
+            label: Text(t.grupoCompartir),
+          ),
         ],
       ),
     );
@@ -925,6 +949,13 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                           label: t.sorteoBoton,
                         ),
                         const SizedBox(height: 10),
+                        GlassOutlineButton(
+                          color: _color,
+                          onPressed: _invitar,
+                          icon: Icons.person_add_alt,
+                          label: t.grupoCompartir,
+                        ),
+                        const SizedBox(height: 10),
                       ],
                       // Un solo botón lleno por estado. Antes del sorteo no hay
                       // nada que ver: en vez de un botón muerto, se dice qué
@@ -1013,7 +1044,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
             IconButton(
               icon: Icon(Icons.qr_code, color: _color.shade800, size: 20),
               tooltip: t.grupoQR,
-              onPressed: _mostrarQR,
+              onPressed: _invitar,
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.only(left: 4),
               visualDensity: VisualDensity.compact,

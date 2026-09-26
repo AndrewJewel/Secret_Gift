@@ -232,10 +232,11 @@ class TextosEn extends Textos {
   String get crearCreando => 'Creating...';
 
   @override
-  String get crearListoTitulo => 'Group created!';
+  String get crearListoTitulo => 'Your group is ready';
 
   @override
-  String get crearListoTexto => 'Share this code so your group can join:';
+  String get crearListoTexto =>
+      'Invite everyone: share the link or let them scan this code.';
 
   @override
   String get unirseTitulo => 'Join a group';
