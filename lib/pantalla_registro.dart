@@ -6,8 +6,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'avatar.dart';
+import 'exclusiones.dart';
 import 'funciones.dart';
 import 'glass.dart';
+import 'hoja_exclusiones.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
@@ -187,6 +189,39 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   bool get _esOrganizador => _vinculo?.esOrganizador ?? false;
 
+  /// Parejas excluidas (claves de [clavePareja]). Null hasta cargarlas; solo
+  /// se cargan para el organizador y antes del sorteo, que es cuando cuentan.
+  Set<String>? _exclusiones;
+
+  bool get _gestionaExclusiones =>
+      _esOrganizador && !(_vinculo?.sorteado ?? false) && _exclusiones != null;
+
+  List<String> get _idsParticipantes => [for (final d in _participantes ?? const []) d.id];
+
+  /// Las que cuentan ahora: las de quien ya no está se ignoran.
+  Set<String> get _exclusionesVigentes =>
+      parejasVigentes(_exclusiones ?? const {}, _idsParticipantes);
+
+  /// Con las exclusiones y la gente de ahora, ¿se puede sortear? Si alguien
+  /// se salió tras marcar, puede dejar de poderse.
+  bool get _sorteoPosible =>
+      !_gestionaExclusiones || hayCadenaConIds(_idsParticipantes, _exclusionesVigentes);
+
+  Set<String> _desdePares(Object? pares) => {
+        for (final par in (pares as List? ?? const []))
+          clavePareja((par as List)[0] as String, par[1] as String),
+      };
+
+  Future<void> _cargarExclusiones() async {
+    if (!_esOrganizador || (_vinculo?.sorteado ?? false)) return;
+    try {
+      final datos = await llamarFuncion('verExclusiones', {'codigo': widget.codigo});
+      if (mounted) setState(() => _exclusiones = _desdePares(datos['exclusiones']));
+    } catch (e) {
+      _avisarError(e);
+    }
+  }
+
   bool _reglasAbiertas = false;
 
   /// Imagen elegida para el registro, todavía sin subir. Viaja junto con
@@ -247,6 +282,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       // contra ella— pero el fallo no desaparece sin dejar rastro.
       reportarFalloDeEscucha('participantes', e, st);
     });
+    _cargarExclusiones();
   }
 
   @override
@@ -505,7 +541,11 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       builder: (c) => AlertDialog(
         icon: Icon(Icons.casino_outlined, color: _color.shade700, size: 36),
         title: Text(t.sorteoTitulo),
-        content: Text(t.sorteoTexto),
+        content: Text([
+          t.sorteoTexto,
+          if (_gestionaExclusiones && _exclusionesVigentes.isNotEmpty)
+            t.exclusionesSeRespetaran(_exclusionesVigentes.length),
+        ].join('\n\n')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
           FilledButton(
@@ -572,6 +612,47 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   }
 
   // --- Acciones sobre un participante ----------------------------------
+
+  Future<void> _editarExclusiones(String participanteId) async {
+    final docs = _participantes ?? const [];
+    final excluidos = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => HojaExclusiones(
+        personaId: participanteId,
+        participantes: [
+          for (final d in docs)
+            (id: d.id, nombre: (d.data() as Map<String, dynamic>)['nombre'] as String? ?? ''),
+        ],
+        parejas: _exclusionesVigentes,
+        color: _color,
+      ),
+    );
+    if (excluidos == null || !mounted) return;
+    try {
+      final datos = await llamarFuncion('guardarExclusiones', {
+        'codigo': widget.codigo,
+        'participanteId': participanteId,
+        'excluidos': excluidos,
+      });
+      if (mounted) setState(() => _exclusiones = _desdePares(datos['exclusiones']));
+    } catch (e) {
+      _avisarError(e);
+    }
+  }
+
+  /// «No le toca: Ana, Pedro», solo para el organizador. Null si no tiene.
+  Widget? _resumenExclusiones(Textos t, String id, List<QueryDocumentSnapshot> docs) {
+    if (!_gestionaExclusiones) return null;
+    final nombres = [
+      for (final d in docs)
+        if (d.id != id && _exclusionesVigentes.contains(clavePareja(id, d.id)))
+          (d.data() as Map<String, dynamic>)['nombre'] as String? ?? '',
+    ];
+    if (nombres.isEmpty) return null;
+    return Text(t.exclusionesNoLeToca(nombres.join(', ')),
+        style: const TextStyle(fontSize: 12, color: Colors.black54));
+  }
 
   Future<void> _borrarComoOrganizador(String participanteId, String nombre) async {
     final t = Textos.of(context);
@@ -795,9 +876,24 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                   child: Column(
                     children: [
                       if (_esOrganizador) ...[
+                        if (_gestionaExclusiones && _exclusionesVigentes.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              _sorteoPosible
+                                  ? t.exclusionesSeRespetaran(_exclusionesVigentes.length)
+                                  : t.exclusionesSinSorteoPosible,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: _sorteoPosible
+                                      ? (_info.tematica.fondoOscuro ? Colors.white70 : Colors.black54)
+                                      : Colors.red.shade700),
+                            ),
+                          ),
                         GlassButton(
                           color: Colors.orange.shade800,
-                          onPressed: _sortear,
+                          onPressed: _sorteoPosible ? _sortear : null,
                           icon: Icons.casino,
                           label: t.sorteoBoton,
                         ),
@@ -1081,7 +1177,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
               subtitle: yaTieneAmigo
                   ? Text(t.registroYaTieneAmigo,
                       style: const TextStyle(fontSize: 12, color: Colors.black54))
-                  : null,
+                  : _resumenExclusiones(t, id, docs),
               trailing: _esOrganizador
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1101,6 +1197,12 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                             icon: Icon(Icons.swap_horiz, color: _color.shade700),
                             tooltip: t.reemplazarTooltip,
                             onPressed: () => _reemplazar(id, nombre),
+                          ),
+                        if (_gestionaExclusiones)
+                          IconButton(
+                            icon: Icon(Icons.block, color: _color.shade700),
+                            tooltip: t.exclusionesTitulo,
+                            onPressed: () => _editarExclusiones(id),
                           ),
                         IconButton(
                           icon: Icon(Icons.person_remove_outlined,
