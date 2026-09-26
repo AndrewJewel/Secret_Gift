@@ -283,5 +283,13 @@
 
   "errorExclusionesImposibles": "Con estas exclusiones no hay sorteo posible. Quita alguna y vuelve a intentarlo.",
   "errorExcluirseASiMismo": "Nadie puede excluirse a sí mismo.",
-  "errorExclusionesTrasSorteo": "El sorteo ya se hizo: las exclusiones ya no se pueden cambiar."
+  "errorExclusionesTrasSorteo": "El sorteo ya se hizo: las exclusiones ya no se pueden cambiar.",
+
+  "exclusionesTitulo": "Excluir participante",
+  "exclusionesHariaImposible": "Haría imposible el sorteo",
+  "exclusionesNoLeToca": "No le toca: {nombres}",
+  "@exclusionesNoLeToca": {"placeholders": {"nombres": {"type": "String"}}},
+  "exclusionesSeRespetaran": "{n, plural, =1{Se respetará 1 exclusión} other{Se respetarán {n} exclusiones}}",
+  "@exclusionesSeRespetaran": {"placeholders": {"n": {"type": "int"}}},
+  "exclusionesSinSorteoPosible": "Con las exclusiones actuales no hay sorteo posible. Quita alguna."
 }

@@ -873,4 +873,30 @@ class TextosEn extends Textos {
   @override
   String get errorExclusionesTrasSorteo =>
       'The draw already happened: exclusions can no longer be changed.';
+
+  @override
+  String get exclusionesTitulo => 'Exclude participant';
+
+  @override
+  String get exclusionesHariaImposible => 'Would make the draw impossible';
+
+  @override
+  String exclusionesNoLeToca(String nombres) {
+    return 'Can\'t get: $nombres';
+  }
+
+  @override
+  String exclusionesSeRespetaran(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n exclusions will be respected',
+      one: '1 exclusion will be respected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get exclusionesSinSorteoPosible =>
+      'With the current exclusions no draw is possible. Remove one.';
 }

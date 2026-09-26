@@ -872,4 +872,30 @@ class TextosEs extends Textos {
   @override
   String get errorExclusionesTrasSorteo =>
       'El sorteo ya se hizo: las exclusiones ya no se pueden cambiar.';
+
+  @override
+  String get exclusionesTitulo => 'Excluir participante';
+
+  @override
+  String get exclusionesHariaImposible => 'Haría imposible el sorteo';
+
+  @override
+  String exclusionesNoLeToca(String nombres) {
+    return 'No le toca: $nombres';
+  }
+
+  @override
+  String exclusionesSeRespetaran(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Se respetarán $n exclusiones',
+      one: 'Se respetará 1 exclusión',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get exclusionesSinSorteoPosible =>
+      'Con las exclusiones actuales no hay sorteo posible. Quita alguna.';
 }

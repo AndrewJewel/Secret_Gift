@@ -387,5 +387,13 @@
 
   "errorExclusionesImposibles": "With these exclusions no draw is possible. Remove one and try again.",
   "errorExcluirseASiMismo": "Nobody can exclude themselves.",
-  "errorExclusionesTrasSorteo": "The draw already happened: exclusions can no longer be changed."
+  "errorExclusionesTrasSorteo": "The draw already happened: exclusions can no longer be changed.",
+
+  "exclusionesTitulo": "Exclude participant",
+  "exclusionesHariaImposible": "Would make the draw impossible",
+  "exclusionesNoLeToca": "Can't get: {nombres}",
+  "@exclusionesNoLeToca": {"placeholders": {"nombres": {"type": "String"}}},
+  "exclusionesSeRespetaran": "{n, plural, =1{1 exclusion will be respected} other{{n} exclusions will be respected}}",
+  "@exclusionesSeRespetaran": {"placeholders": {"n": {"type": "int"}}},
+  "exclusionesSinSorteoPosible": "With the current exclusions no draw is possible. Remove one."
 }

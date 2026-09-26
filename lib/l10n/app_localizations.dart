@@ -1643,6 +1643,36 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The draw already happened: exclusions can no longer be changed.'**
   String get errorExclusionesTrasSorteo;
+
+  /// No description provided for @exclusionesTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude participant'**
+  String get exclusionesTitulo;
+
+  /// No description provided for @exclusionesHariaImposible.
+  ///
+  /// In en, this message translates to:
+  /// **'Would make the draw impossible'**
+  String get exclusionesHariaImposible;
+
+  /// No description provided for @exclusionesNoLeToca.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t get: {nombres}'**
+  String exclusionesNoLeToca(String nombres);
+
+  /// No description provided for @exclusionesSeRespetaran.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 exclusion will be respected} other{{n} exclusions will be respected}}'**
+  String exclusionesSeRespetaran(int n);
+
+  /// No description provided for @exclusionesSinSorteoPosible.
+  ///
+  /// In en, this message translates to:
+  /// **'With the current exclusions no draw is possible. Remove one.'**
+  String get exclusionesSinSorteoPosible;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {
