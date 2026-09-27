@@ -312,5 +312,10 @@
   "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}},
   "registroEsperaSorteo": "Cuando se haga el sorteo, aquí verás a quién le regalas.",
   "mostrarPassword": "Mostrar contraseña",
-  "ocultarPassword": "Ocultar contraseña"
+  "ocultarPassword": "Ocultar contraseña",
+  "errorCodigoIncorrecto": "Código incorrecto. Revísalo e inténtalo otra vez.",
+  "errorCodigoCaducado": "Ese código caducó. Pide otro.",
+  "errorCodigoAgotado": "Demasiados intentos con ese código. Pide uno nuevo.",
+  "errorDemasiadosCorreos": "Espera un momento antes de pedir otro correo.",
+  "errorCorreoNoEnviado": "No se pudo mandar el correo. Inténtalo otra vez."
 }

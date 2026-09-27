@@ -27,7 +27,7 @@ Future<T> _traduciendo<T>(Future<T> Function() accion) async {
 ///
 /// El orden importa: si `guardarPerfil` fallara después de mandar el
 /// correo, quedaría alguien verificado y sin PIN. Primero el perfil.
-Future<void> crearCuenta({
+Future<MedioVerificacion> crearCuenta({
   required String correo,
   required String password,
   required String nombre,
@@ -41,24 +41,94 @@ Future<void> crearCuenta({
     'apellido': apellido.trim(),
     'pin': pin.trim(),
   });
-  await mandarVerificacion();
+  return mandarVerificacion();
 }
 
 Future<void> entrar({required String correo, required String password}) =>
     _traduciendo(() => FirebaseAuth.instance
         .signInWithEmailAndPassword(email: correo.trim(), password: password));
 
-/// Manda (o reenvía) el enlace de verificación.
-///
+/// Cómo le llegó a la persona lo que tiene que hacer para verificar.
+enum MedioVerificacion { codigo, enlace, yaVerificado }
+
+typedef LlamadaServidor = Future<Map<String, dynamic>> Function(
+    String nombre, Map<String, dynamic> datos);
+
+/// Errores que son de quien usa la app: se enseñan tal cual. Cualquier otro
+/// (Resend caído, clave sin poner, cuota agotada) cae al correo de Firebase
+/// de siempre, para que nadie se quede sin poder entrar.
+const _sinRespaldo = {'demasiados_correos', 'sesion_invalida', 'correo_invalido'};
+
+/// Manda el código de verificación (correo propio, Resend). Si falla,
+/// manda el enlace de Firebase y lo dice en lo que devuelve.
+Future<MedioVerificacion> mandarVerificacion({
+  LlamadaServidor llamar = llamarFuncion,
+  Future<void> Function() respaldo = _enlaceDeFirebase,
+}) async {
+  try {
+    final r = await llamar(
+        'mandarCodigoVerificacion', {'idioma': Idioma.actual.value.languageCode});
+    return r['yaVerificado'] == true
+        ? MedioVerificacion.yaVerificado
+        : MedioVerificacion.codigo;
+  } on FuncionError catch (e) {
+    if (_sinRespaldo.contains(e.clave)) rethrow;
+    await respaldo();
+    return MedioVerificacion.enlace;
+  }
+}
+
 /// `setLanguageCode` va ANTES de mandarlo: es lo único que decide el idioma
-/// del correo, y sin esto le llega en inglés a todo el mundo.
-Future<void> mandarVerificacion() async {
+/// del correo de Firebase.
+Future<void> _enlaceDeFirebase() async {
   final u = FirebaseAuth.instance.currentUser;
   if (u == null) {
     throw FuncionError('auth', 'sesion_invalida', 'No hay sesión.');
   }
   await FirebaseAuth.instance.setLanguageCode(Idioma.actual.value.languageCode);
   await _traduciendo(() => u.sendEmailVerification());
+}
+
+/// Comprueba el código y, si es bueno, recarga la sesión para que el token
+/// nuevo ya diga email_verified: true (si no, el servidor seguiría
+/// respondiendo `correo_sin_verificar`).
+Future<void> verificarCodigo(
+  String codigo, {
+  LlamadaServidor llamar = llamarFuncion,
+  Future<bool> Function() confirmar = correoVerificado,
+}) async {
+  await llamar('verificarCodigo', {'codigo': codigo});
+  await confirmar();
+}
+
+/// Manda el correo para poner una contraseña nueva (propio, con botón).
+///
+/// **Nunca dice si ese correo tiene cuenta:** el servidor responde ok
+/// igual, y el respaldo de Firebase se traga `user-not-found`. Quien llama
+/// debe enseñar SIEMPRE el mismo mensaje.
+Future<void> mandarRecuperacion(
+  String correo, {
+  LlamadaServidor llamar = llamarFuncion,
+  Future<void> Function(String) respaldo = _recuperacionDeFirebase,
+}) async {
+  final limpio = correo.trim();
+  try {
+    await llamar('mandarCorreoRecuperacion',
+        {'correo': limpio, 'idioma': Idioma.actual.value.languageCode});
+  } on FuncionError catch (e) {
+    if (_sinRespaldo.contains(e.clave)) rethrow;
+    await respaldo(limpio);
+  }
+}
+
+Future<void> _recuperacionDeFirebase(String correo) async {
+  await FirebaseAuth.instance.setLanguageCode(Idioma.actual.value.languageCode);
+  try {
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: correo);
+  } on FirebaseAuthException catch (e) {
+    if (e.code == 'user-not-found') return;
+    throw comoFuncionError(e);
+  }
 }
 
 /// Recarga al usuario desde el servidor y dice si ya verificó.
@@ -126,21 +196,6 @@ Future<void> completarPerfil({
       'pin': pin.trim(),
     });
 
-/// Manda el enlace para poner una contraseña nueva.
-///
-/// **Nunca dice si ese correo tiene cuenta.** `user-not-found` se traga a
-/// propósito: distinguirlo sería un oráculo de existencia — cualquiera
-/// podría averiguar quién está registrado probando direcciones. Quien
-/// llama debe enseñar SIEMPRE el mismo mensaje.
-Future<void> mandarRecuperacion(String correo) async {
-  await FirebaseAuth.instance.setLanguageCode(Idioma.actual.value.languageCode);
-  try {
-    await FirebaseAuth.instance.sendPasswordResetEmail(email: correo.trim());
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'user-not-found') return;
-    throw comoFuncionError(e);
-  }
-}
 
 /// Cierra la sesión y suelta antes los avisos de este dispositivo.
 ///

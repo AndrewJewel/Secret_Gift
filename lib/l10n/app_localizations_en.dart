@@ -947,4 +947,21 @@ class TextosEn extends Textos {
 
   @override
   String get ocultarPassword => 'Hide password';
+
+  @override
+  String get errorCodigoIncorrecto => 'Wrong code. Check it and try again.';
+
+  @override
+  String get errorCodigoCaducado => 'That code expired. Ask for a new one.';
+
+  @override
+  String get errorCodigoAgotado =>
+      'Too many tries with that code. Ask for a new one.';
+
+  @override
+  String get errorDemasiadosCorreos =>
+      'Wait a moment before asking for another email.';
+
+  @override
+  String get errorCorreoNoEnviado => 'We couldn\'t send the email. Try again.';
 }

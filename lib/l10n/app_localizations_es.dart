@@ -945,4 +945,23 @@ class TextosEs extends Textos {
 
   @override
   String get ocultarPassword => 'Ocultar contraseña';
+
+  @override
+  String get errorCodigoIncorrecto =>
+      'Código incorrecto. Revísalo e inténtalo otra vez.';
+
+  @override
+  String get errorCodigoCaducado => 'Ese código caducó. Pide otro.';
+
+  @override
+  String get errorCodigoAgotado =>
+      'Demasiados intentos con ese código. Pide uno nuevo.';
+
+  @override
+  String get errorDemasiadosCorreos =>
+      'Espera un momento antes de pedir otro correo.';
+
+  @override
+  String get errorCorreoNoEnviado =>
+      'No se pudo mandar el correo. Inténtalo otra vez.';
 }

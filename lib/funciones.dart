@@ -94,6 +94,11 @@ extension MensajeLocalizado on FuncionError {
         'reemplazo_invalido' => t.errorReemplazoInvalido,
         'grupo_sin_sortear' => t.errorGrupoSinSortear,
         'token_invalido' => t.errorTokenInvalido,
+        'codigo_incorrecto' => t.errorCodigoIncorrecto,
+        'codigo_caducado' => t.errorCodigoCaducado,
+        'codigo_agotado' => t.errorCodigoAgotado,
+        'demasiados_correos' => t.errorDemasiadosCorreos,
+        'correo_no_enviado' => t.errorCorreoNoEnviado,
         _ => mensaje,
       };
 }

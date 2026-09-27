@@ -1745,6 +1745,36 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Hide password'**
   String get ocultarPassword;
+
+  /// No description provided for @errorCodigoIncorrecto.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong code. Check it and try again.'**
+  String get errorCodigoIncorrecto;
+
+  /// No description provided for @errorCodigoCaducado.
+  ///
+  /// In en, this message translates to:
+  /// **'That code expired. Ask for a new one.'**
+  String get errorCodigoCaducado;
+
+  /// No description provided for @errorCodigoAgotado.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tries with that code. Ask for a new one.'**
+  String get errorCodigoAgotado;
+
+  /// No description provided for @errorDemasiadosCorreos.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a moment before asking for another email.'**
+  String get errorDemasiadosCorreos;
+
+  /// No description provided for @errorCorreoNoEnviado.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t send the email. Try again.'**
+  String get errorCorreoNoEnviado;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

@@ -415,5 +415,10 @@
   "@secretaPersonas": {"placeholders": {"n": {"type": "int"}}},
   "registroEsperaSorteo": "Once the draw is done, you'll see here who you're giving a gift to.",
   "mostrarPassword": "Show password",
-  "ocultarPassword": "Hide password"
+  "ocultarPassword": "Hide password",
+  "errorCodigoIncorrecto": "Wrong code. Check it and try again.",
+  "errorCodigoCaducado": "That code expired. Ask for a new one.",
+  "errorCodigoAgotado": "Too many tries with that code. Ask for a new one.",
+  "errorDemasiadosCorreos": "Wait a moment before asking for another email.",
+  "errorCorreoNoEnviado": "We couldn't send the email. Try again."
 }
