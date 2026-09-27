@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacidad · Secret Gift</title>
+<meta name="description" content="Política de privacidad de Secret Gift. Privacy policy of Secret Gift.">
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:wght@400;700&family=Merriweather+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --fondo: #EDE6DA; --papel: #F4EFE5; --borde: #E2D8C6; --tinta: #181818; --suave: #5E554C; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta);
+    font: 16px/1.65 "Merriweather Sans", Arial, sans-serif; }
+  main { max-width: 760px; margin: 32px auto; padding: 36px clamp(20px, 5vw, 48px);
+    background: var(--papel); border: 1px solid var(--borde); border-radius: 20px; }
+  header { text-align: center; margin-bottom: 8px; }
+  header img { width: 64px; height: 64px; }
+  h1, h2 { font-family: "Gentium Book Plus", Georgia, serif; font-weight: 400; line-height: 1.2; }
+  h1 { font-size: 34px; margin: 12px 0 4px; }
+  h2 { font-size: 24px; margin: 32px 0 8px; }
+  .fecha { color: var(--suave); font-size: 14px; margin: 0; }
+  nav.idiomas { display: flex; justify-content: center; gap: 8px; margin: 20px 0 8px; }
+  nav.idiomas button { font: 600 13px "Merriweather Sans", Arial, sans-serif; letter-spacing: .08em;
+    padding: 8px 18px; border-radius: 999px; border: 1px solid var(--tinta);
+    background: transparent; color: var(--tinta); cursor: pointer; }
+  nav.idiomas button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
+  a { color: var(--tinta); }
+  ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
+  th { font-weight: 600; }
+  footer { text-align: center; color: var(--suave); font-size: 12px; letter-spacing: .15em; margin: 0 0 32px; }
+  .oculto { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="/assets/assets/logo.png" alt="Secret Gift">
+    <nav class="idiomas" aria-label="Idioma / Language">
+      <button type="button" data-idioma="es" aria-pressed="true">ESPAÑOL</button>
+      <button type="button" data-idioma="en" aria-pressed="false">ENGLISH</button>
+    </nav>
+  </header>
+
+  <article lang="es" id="es">
+    <h1>Política de privacidad</h1>
+    <p class="fecha">Vigente desde el 27 de septiembre de 2026</p>
+
+    <p>Secret Gift es una app para organizar intercambios de regalos (amigo secreto) en cualquier grupo. Esta política explica qué datos guarda, para qué y qué puedes hacer con ellos. La hemos escrito para que se entienda.</p>
+
+    <h2>Quién es el responsable</h2>
+    <p>Secret Gift lo ofrece <strong>NeonGate</strong>, en Estados Unidos. Para cualquier tema de privacidad escríbenos a <a href="mailto:contact@neongate.co">contact@neongate.co</a>.</p>
+
+    <h2>Qué datos guardamos</h2>
+    <table>
+      <tr><th>Dato</th><th>Para qué</th></tr>
+      <tr><td>Tu correo y tu contraseña</td><td>Crear tu cuenta y entrar. La contraseña la gestiona Firebase Authentication (Google); nosotros nunca la vemos.</td></tr>
+      <tr><td>Tu nombre y apellido</td><td>Identificarte en tu cuenta.</td></tr>
+      <tr><td>Tu PIN de 4 cifras</td><td>Proteger a quién te tocó. Solo guardamos una versión cifrada (bcrypt); nadie puede leerlo.</td></tr>
+      <tr><td>Los grupos que creas</td><td>Nombre, temática, color, reglas y valor mínimo del regalo.</td></tr>
+      <tr><td>Tu plaza en cada grupo</td><td>El nombre o personaje con el que participas, tu foto (opcional) y tu lista de deseos.</td></tr>
+      <tr><td>El sorteo y las exclusiones</td><td>A quién le regalas y quién no puede tocarle a quién.</td></tr>
+      <tr><td>Los mensajes del chat del grupo</td><td>El chat es anónimo: cada mensaje se guarda solo con una máscara, sin tu nombre ni tu cuenta.</td></tr>
+      <tr><td>El identificador de notificaciones de tu dispositivo y su idioma</td><td>Avisarte del sorteo, de mensajes nuevos o de cambios en tu grupo, en tu idioma. Solo si activas los avisos.</td></tr>
+      <tr><td>Códigos de verificación</td><td>Confirmar tu correo. Se guardan cifrados y caducan a los 10 minutos.</td></tr>
+      <tr><td>Registros técnicos</td><td>Google guarda registros de funcionamiento y seguridad de sus servidores (por ejemplo, la dirección IP de cada petición).</td></tr>
+    </table>
+    <p>En tu dispositivo guardamos solo tu idioma y, si llegaste por una invitación, el código del grupo hasta que entres.</p>
+    <p><strong>No usamos publicidad, no vendemos tus datos, no hacemos perfiles y no usamos herramientas de analítica de terceros.</strong></p>
+
+    <h2>Quién más ve tus datos</h2>
+    <ul>
+      <li><strong>Las personas de tu grupo</strong> ven tu nombre o personaje y tu foto. <strong>Solo quien te regala</strong> ve tu lista de deseos. Quien organiza o administra el grupo puede editarlo, sortear y gestionar las plazas.</li>
+      <li><strong>Google (Firebase)</strong> aloja la app y guarda los datos: cuentas, base de datos, fotos, funciones del servidor y notificaciones. Sus servidores están en Estados Unidos.</li>
+      <li><strong>Resend</strong> envía nuestros correos (el código de verificación y el de cambiar la contraseña). Recibe tu dirección de correo y el contenido de ese correo.</li>
+      <li><strong>Autoridades</strong>, solo si una ley nos obliga.</li>
+    </ul>
+
+    <h2>Cuánto tiempo los guardamos</h2>
+    <p>Mientras tengas tu cuenta. Si la eliminas:</p>
+    <ul>
+      <li>Se borran de inmediato tu cuenta, tu perfil, tu PIN y tus fotos.</li>
+      <li>Sales de los grupos que aún no han sorteado. En los que ya sortearon, tu plaza queda como «Plaza libre», sin tu nombre, foto ni deseos, para que el grupo pueda reemplazarla.</li>
+      <li>Los grupos en los que estabas solo se borran enteros.</li>
+      <li>Tus mensajes del chat se quedan en el grupo porque no están vinculados a ti; desaparecen cuando se borra el grupo.</li>
+      <li>Las copias de seguridad y los registros técnicos de Google pueden conservarse un tiempo limitado antes de borrarse.</li>
+    </ul>
+
+    <h2>Tus derechos</h2>
+    <ul>
+      <li><strong>Ver y corregir</strong> tus datos: desde la app puedes cambiar tu nombre, tu foto, tu lista de deseos, tu PIN y tu idioma.</li>
+      <li><strong>Eliminar</strong> tu cuenta y tus datos: en la app, en Configuración → «Eliminar mi cuenta», o como se explica en <a href="/eliminar-cuenta">secretgift.app/eliminar-cuenta</a>.</li>
+      <li><strong>Pedir una copia</strong> de tus datos o cualquier otra consulta: escríbenos a <a href="mailto:contact@neongate.co">contact@neongate.co</a> desde el correo de tu cuenta. Respondemos en un máximo de 30 días.</li>
+      <li><strong>Residentes de California (CCPA/CPRA):</strong> tienes derecho a saber, borrar y corregir tus datos, y a no ser discriminado por ejercerlos. No vendemos ni compartimos tus datos para publicidad.</li>
+      <li><strong>Unión Europea y Reino Unido:</strong> tratamos tus datos para darte el servicio que pides (contrato). Tienes derecho de acceso, rectificación, supresión, portabilidad y oposición, y a reclamar ante tu autoridad de protección de datos.</li>
+    </ul>
+
+    <h2>Menores</h2>
+    <p>Secret Gift no está dirigida a menores de 13 años y no recogemos a sabiendas sus datos. Un adulto puede gestionar la plaza de un niño dentro de un grupo familiar. Si crees que un menor de 13 años nos ha dado sus datos, escríbenos y los borraremos.</p>
+
+    <h2>Seguridad</h2>
+    <p>Todo viaja cifrado (HTTPS). Las reglas de la base de datos impiden leer lo privado de otras personas, el PIN y los códigos se guardan cifrados, y las acciones importantes, como eliminar la cuenta, piden otra vez tu contraseña.</p>
+
+    <h2>Cambios en esta política</h2>
+    <p>Si cambia, actualizaremos la fecha de arriba y, si el cambio es importante, te avisaremos en la app.</p>
+
+    <h2>Contacto</h2>
+    <p>NeonGate · <a href="mailto:contact@neongate.co">contact@neongate.co</a></p>
+  </article>
+
+  <article lang="en" id="en" class="oculto">
+    <h1>Privacy policy</h1>
+    <p class="fecha">Effective September 27, 2026</p>
+
+    <p>Secret Gift is an app to organize gift exchanges (Secret Santa) in any group. This policy explains what data it keeps, why, and what you can do about it. We wrote it to be understood.</p>
+
+    <h2>Who is responsible</h2>
+    <p>Secret Gift is provided by <strong>NeonGate</strong>, in the United States. For anything related to privacy, write to <a href="mailto:contact@neongate.co">contact@neongate.co</a>.</p>
+
+    <h2>What data we keep</h2>
+    <table>
+      <tr><th>Data</th><th>Why</th></tr>
+      <tr><td>Your email and password</td><td>To create your account and sign in. The password is handled by Firebase Authentication (Google); we never see it.</td></tr>
+      <tr><td>Your first and last name</td><td>To identify your account.</td></tr>
+      <tr><td>Your 4-digit PIN</td><td>To protect who you got. We only keep an encrypted version (bcrypt); nobody can read it.</td></tr>
+      <tr><td>The groups you create</td><td>Name, theme, color, rules and minimum gift amount.</td></tr>
+      <tr><td>Your spot in each group</td><td>The name or character you play as, your photo (optional) and your wish list.</td></tr>
+      <tr><td>The draw and exclusions</td><td>Who you give to, and who can't get whom.</td></tr>
+      <tr><td>Group chat messages</td><td>The chat is anonymous: each message is stored only with a mask, without your name or account.</td></tr>
+      <tr><td>Your device's notification token and its language</td><td>To tell you about the draw, new messages or changes in your group, in your language. Only if you turn notifications on.</td></tr>
+      <tr><td>Verification codes</td><td>To confirm your email. They're stored encrypted and expire after 10 minutes.</td></tr>
+      <tr><td>Technical logs</td><td>Google keeps operational and security logs of its servers (for example, the IP address of each request).</td></tr>
+    </table>
+    <p>On your device we only keep your language and, if you arrived through an invitation, the group code until you sign in.</p>
+    <p><strong>We don't show ads, don't sell your data, don't build profiles and don't use third-party analytics.</strong></p>
+
+    <h2>Who else sees your data</h2>
+    <ul>
+      <li><strong>People in your group</strong> see your name or character and your photo. <strong>Only the person giving you a gift</strong> sees your wish list. Whoever organizes or runs the group can edit it, run the draw and manage spots.</li>
+      <li><strong>Google (Firebase)</strong> hosts the app and stores the data: accounts, database, photos, server functions and notifications. Its servers are in the United States.</li>
+      <li><strong>Resend</strong> sends our emails (the verification code and the password reset). It receives your email address and the content of that email.</li>
+      <li><strong>Authorities</strong>, only if a law requires it.</li>
+    </ul>
+
+    <h2>How long we keep it</h2>
+    <p>For as long as you have an account. If you delete it:</p>
+    <ul>
+      <li>Your account, profile, PIN and photos are deleted right away.</li>
+      <li>You leave the groups that haven't drawn yet. In those that already drew, your spot becomes an "Open spot", without your name, photo or wishes, so the group can replace it.</li>
+      <li>Groups where you were the only one are deleted entirely.</li>
+      <li>Your chat messages stay in the group because they aren't linked to you; they go away when the group is deleted.</li>
+      <li>Google's backups and technical logs may be kept for a limited time before being deleted.</li>
+    </ul>
+
+    <h2>Your rights</h2>
+    <ul>
+      <li><strong>See and correct</strong> your data: in the app you can change your name, photo, wish list, PIN and language.</li>
+      <li><strong>Delete</strong> your account and data: in the app, under Settings → "Delete my account", or as explained at <a href="/delete-account">secretgift.app/delete-account</a>.</li>
+      <li><strong>Get a copy</strong> of your data or ask anything else: write to <a href="mailto:contact@neongate.co">contact@neongate.co</a> from your account's email. We answer within 30 days.</li>
+      <li><strong>California residents (CCPA/CPRA):</strong> you have the right to know, delete and correct your data, and not to be discriminated against for using these rights. We don't sell or share your data for advertising.</li>
+      <li><strong>European Union and United Kingdom:</strong> we process your data to provide the service you ask for (contract). You have the right of access, rectification, erasure, portability and objection, and to complain to your data protection authority.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>Secret Gift is not directed at children under 13 and we don't knowingly collect their data. An adult can manage a child's spot inside a family group. If you believe a child under 13 has given us their data, write to us and we'll delete it.</p>
+
+    <h2>Security</h2>
+    <p>Everything travels encrypted (HTTPS). The database rules prevent reading other people's private data, the PIN and codes are stored encrypted, and important actions, such as deleting your account, ask for your password again.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>If it changes, we'll update the date above and, if the change is significant, let you know in the app.</p>
+
+    <h2>Contact</h2>
+    <p>NeonGate · <a href="mailto:contact@neongate.co">contact@neongate.co</a></p>
+  </article>
+</main>
+<footer>SECRET GIFT · SECRETGIFT.APP</footer>
+<script>
+  (function () {
+    var enIngles = /^\/(privacy|delete-account)/.test(location.pathname) || location.hash === '#en';
+    function mostrar(idioma) {
+      document.getElementById('es').classList.toggle('oculto', idioma !== 'es');
+      document.getElementById('en').classList.toggle('oculto', idioma !== 'en');
+      document.documentElement.lang = idioma;
+      document.querySelectorAll('nav.idiomas button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.idioma === idioma));
+      });
+    }
+    document.querySelectorAll('nav.idiomas button').forEach(function (b) {
+      b.addEventListener('click', function () { mostrar(b.dataset.idioma); });
+    });
+    mostrar(enIngles ? 'en' : 'es');
+  })();
+</script>
+</body>
+</html>

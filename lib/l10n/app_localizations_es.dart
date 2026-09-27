@@ -1085,4 +1085,11 @@ class TextosEs extends Textos {
   @override
   String get errorDebesNombrarAdministrador =>
       'Nombra un administrador en tus grupos antes de eliminar tu cuenta.';
+
+  @override
+  String get politicaPrivacidad => 'Política de privacidad';
+
+  @override
+  String get alCrearAceptas =>
+      'Al crear tu cuenta aceptas la política de privacidad';
 }

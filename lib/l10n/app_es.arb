@@ -359,5 +359,7 @@
   "eliminarPassword": "Escribe tu contraseña para confirmar",
   "eliminarConfirmar": "Eliminar mi cuenta",
   "entendido": "Entendido",
-  "errorDebesNombrarAdministrador": "Nombra un administrador en tus grupos antes de eliminar tu cuenta."
+  "errorDebesNombrarAdministrador": "Nombra un administrador en tus grupos antes de eliminar tu cuenta.",
+  "politicaPrivacidad": "Política de privacidad",
+  "alCrearAceptas": "Al crear tu cuenta aceptas la política de privacidad"
 }

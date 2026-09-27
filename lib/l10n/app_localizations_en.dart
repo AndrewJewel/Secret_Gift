@@ -1085,4 +1085,11 @@ class TextosEn extends Textos {
   @override
   String get errorDebesNombrarAdministrador =>
       'Name an admin in your groups before deleting your account.';
+
+  @override
+  String get politicaPrivacidad => 'Privacy policy';
+
+  @override
+  String get alCrearAceptas =>
+      'By creating your account you accept the privacy policy';
 }

@@ -462,5 +462,7 @@
   "eliminarPassword": "Type your password to confirm",
   "eliminarConfirmar": "Delete my account",
   "entendido": "Got it",
-  "errorDebesNombrarAdministrador": "Name an admin in your groups before deleting your account."
+  "errorDebesNombrarAdministrador": "Name an admin in your groups before deleting your account.",
+  "politicaPrivacidad": "Privacy policy",
+  "alCrearAceptas": "By creating your account you accept the privacy policy"
 }

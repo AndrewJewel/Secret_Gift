@@ -4,6 +4,7 @@ import 'acceso_cuenta.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'privacidad.dart';
 import 'ocasion.dart';
 import 'push.dart';
 import 'selector_idioma.dart';
@@ -243,6 +244,7 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
               label: Text(t.eliminarCuenta),
               onPressed: _eliminando ? null : _eliminarCuenta,
             ),
+            EnlacePrivacidad(texto: t.politicaPrivacidad),
           ],
         ),
       ),

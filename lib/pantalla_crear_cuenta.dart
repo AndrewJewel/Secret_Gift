@@ -4,6 +4,7 @@ import 'acceso_cuenta.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'privacidad.dart';
 import 'ocasion.dart';
 import 'oferta_avisos.dart';
 import 'pantalla_completar_perfil.dart';
@@ -241,7 +242,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                     label: t.cuentaCrearTitulo,
                     onPressed: _cargando ? null : _enviar,
                   ),
-                  const SizedBox(height: 12),
+                  EnlacePrivacidad(texto: t.alCrearAceptas),
                   TextButton(
                     onPressed: _cargando
                         ? null

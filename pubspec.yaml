@@ -59,6 +59,9 @@ dependencies:
   # (app abierta). En web no se usa — ahí sigue sirviendo `Uri.base`, que
   # ya funcionaba y no dependía de ningún paquete.
   app_links: ^7.0.0
+  # Abre la política de privacidad en el navegador (Google Play exige que
+  # se pueda consultar desde dentro de la app).
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

@@ -1973,6 +1973,18 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Name an admin in your groups before deleting your account.'**
   String get errorDebesNombrarAdministrador;
+
+  /// No description provided for @politicaPrivacidad.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get politicaPrivacidad;
+
+  /// No description provided for @alCrearAceptas.
+  ///
+  /// In en, this message translates to:
+  /// **'By creating your account you accept the privacy policy'**
+  String get alCrearAceptas;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {
