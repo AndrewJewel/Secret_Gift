@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'avatar.dart';
@@ -17,6 +16,7 @@ import 'ocasion.dart';
 import 'pantalla_chat.dart';
 import 'pantalla_editar_grupo.dart';
 import 'pantalla_secreta.dart';
+import 'qr_marca.dart';
 import 'tematica.dart';
 
 /// Los datos del grupo que se muestran en pantalla. Llegan primero como
@@ -622,7 +622,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
               Text(t.crearListoTexto, textAlign: TextAlign.center),
               const SizedBox(height: 12),
             ],
-            SizedBox.square(dimension: 200, child: QrImageView(data: _urlUnirse)),
+            QrMarca(datos: _urlUnirse),
             const SizedBox(height: 8),
             SelectableText(widget.codigo,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2)),
