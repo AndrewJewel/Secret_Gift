@@ -34,6 +34,14 @@ const AVISOS = {
     es: {titulo: "Novedades en tu grupo", cuerpo: `Algo cambió en «${grupo}». Ábrelo para verlo.`},
     en: {titulo: "News in your group", cuerpo: `Something changed in “${grupo}”. Open it to see.`},
   }),
+  ahoraAdministras: (grupo) => ({
+    es: {titulo: "Ahora eres administrador", cuerpo: `De «${grupo}». Ya puedes dirigir el grupo.`},
+    en: {titulo: "You're now an admin", cuerpo: `Of “${grupo}”. You can now run the group.`},
+  }),
+  plazaLibre: (grupo) => ({
+    es: {titulo: "Hay una plaza libre", cuerpo: `Alguien dejó «${grupo}». Reemplázalo desde el grupo.`},
+    en: {titulo: "A spot is open", cuerpo: `Someone left “${grupo}”. Replace them from the group.`},
+  }),
 };
 
 module.exports = {AVISOS, IDIOMAS, IDIOMA_POR_DEFECTO, idiomaValido};

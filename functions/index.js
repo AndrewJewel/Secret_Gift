@@ -388,6 +388,18 @@ exports.misGrupos = onCall(async (request) => {
   const detalles = (await Promise.all(codigos.map(async (codigo) => {
     const gs = await grupoRef(codigo).get();
     if (!gs.exists) return null;
+    // Grupos creados antes de los administradores: su organizador aún no
+    // figura en `directores` ni tiene etiqueta. Se completa una vez.
+    if (grupos[codigo].rol === "organizador") {
+      const priv = await grupoPrivadoRef(codigo).get();
+      if (!priv.data()?.directores?.[uid]) {
+        await grupoPrivadoRef(codigo).set({directores: {[uid]: "organizador"}}, {merge: true});
+        if (grupos[codigo].participanteId) {
+          await participanteRef(codigo, grupos[codigo].participanteId)
+              .set({rol: "organizador"}, {merge: true});
+        }
+      }
+    }
     return {
       codigo,
       rol: grupos[codigo].rol,
@@ -451,9 +463,11 @@ async function autorizar(codigo, uid) {
   };
 }
 
-function exigirOrganizador(sesion) {
-  if (sesion.rol !== "organizador") {
-    throw new HttpsError("permission-denied", "Solo el organizador del grupo puede hacer esto.", {clave: "no_eres_organizador"});
+/** Dirigir el grupo: el organizador que lo creó o un administrador. */
+function exigirQueDirija(sesion) {
+  if (sesion.rol !== "organizador" && sesion.rol !== "administrador") {
+    throw new HttpsError("permission-denied", "Solo quien dirige el grupo puede hacer esto.",
+        {clave: "no_eres_organizador"});
   }
 }
 
@@ -551,6 +565,7 @@ exports.crearGrupo = onCall(async (request) => {
         });
       });
       await vincularComoOrganizador(uid, codigo);
+      await grupoPrivadoRef(codigo).set({directores: {[uid]: "organizador"}}, {merge: true});
       return {codigo};
     } catch (e) {
       if (e instanceof HttpsError && e.message === "código repetido, reintentar") {
@@ -635,6 +650,7 @@ exports.agregarParticipante = onCall(async (request) => {
       avatarUrl: avatarUrl || "",
       fecha: FieldValue.serverTimestamp(),
       tieneAmigo: false,
+      ...(vinculo.rol === "organizador" ? {rol: "organizador"} : {}),
     });
     tx.set(participantePrivadoRef(codigo, ref.id), {
       // De qué cuenta es esta plaza. Sin este dato, borrarParticipante no
@@ -673,7 +689,7 @@ exports.borrarParticipante = onCall(async (request) => {
 
   const sesion = await autorizar(codigo, uidDe(request));
   // O es tu propia plaza, o eres el organizador.
-  if (sesion.participanteId !== participanteId) exigirOrganizador(sesion);
+  if (sesion.participanteId !== participanteId) exigirQueDirija(sesion);
 
   // Tras el sorteo, sacar a alguien deja a quien le regalaba apuntando a
   // un fantasma —su nombre_asignado sigue ahí pero ya no hay nadie— y ese
@@ -702,8 +718,9 @@ exports.borrarParticipante = onCall(async (request) => {
     //    `participanteId`, incluida su propia plaza.
     //
     // La guarda de abajo distingue "yo mismo, sin ser organizador" usando
-    // `sesion.rol`, el mismo dato que ya comprueba `exigirOrganizador`.
-    if (sesion.participanteId === participanteId && sesion.rol !== "organizador") {
+    // `sesion.rol`, el mismo dato que ya comprueba `exigirQueDirija`.
+    if (sesion.participanteId === participanteId &&
+        !["organizador", "administrador"].includes(sesion.rol)) {
       throw new HttpsError(
           "failed-precondition",
           "El sorteo ya se hizo: no puedes salirte tú solo. Pídele al organizador que te reemplace.",
@@ -736,7 +753,7 @@ exports.borrarParticipante = onCall(async (request) => {
   // siempre: sin rol no puede sortear, ni editar, ni sacar a nadie, ni
   // siquiera eliminar el grupo, que quedaba ingobernable e imborrable. Y
   // nada lo frenaba, porque salir uno mismo no pasa por
-  // `exigirOrganizador`.
+  // `exigirQueDirija`.
   //
   // Así que al organizador se le conserva la entrada con
   // `participanteId: null`: vuelve al estado de "organizador que todavía
@@ -756,6 +773,11 @@ exports.borrarParticipante = onCall(async (request) => {
             {rol: "organizador", participanteId: null} :
             FieldValue.delete(),
       );
+      // El administrador lo es por su plaza: sin ella deja de dirigir.
+      if (vinculo?.rol === "administrador") {
+        await grupoPrivadoRef(codigo).set(
+            {directores: {[cuentaDeLaPlaza]: FieldValue.delete()}}, {merge: true});
+      }
     }
   }
 
@@ -777,6 +799,41 @@ function generarToken() {
   return randomBytes(24).toString("base64url");
 }
 
+exports.cambiarRol = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const participanteId = request.data?.participanteId;
+  const administrador = request.data?.administrador === true;
+  if (!codigo || !participanteId) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o la persona.", {clave: "faltan_datos"});
+  }
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
+  const cuenta = (await participantePrivadoRef(codigo, participanteId).get()).data()?.cuenta;
+  if (!cuenta) {
+    throw new HttpsError("failed-precondition", "Esa plaza no tiene cuenta.", {clave: "plaza_sin_cuenta"});
+  }
+  const rol = administrador ? "administrador" : "participante";
+  await db.runTransaction(async (tx) => {
+    const vinculo = ((await tx.get(usuarioRef(cuenta))).data()?.grupos || {})[codigo];
+    if (!vinculo) {
+      throw new HttpsError("not-found", "Esa persona ya no está.", {clave: "participante_no_existe"});
+    }
+    if (vinculo.rol === "organizador") {
+      throw new HttpsError("failed-precondition", "Al organizador no se le cambia el rol.",
+          {clave: "es_el_organizador"});
+    }
+    tx.update(usuarioRef(cuenta), new FieldPath("grupos", codigo, "rol"), rol);
+    tx.update(participanteRef(codigo, participanteId),
+        {rol: administrador ? "administrador" : FieldValue.delete()});
+    tx.set(grupoPrivadoRef(codigo),
+        {directores: {[cuenta]: administrador ? "administrador" : FieldValue.delete()}}, {merge: true});
+  });
+  if (administrador) {
+    const nombreGrupo = (await grupoRef(codigo).get()).data()?.nombreGrupo || "";
+    await avisar(cuenta, {textos: AVISOS.ahoraAdministras(nombreGrupo), datos: {codigo}});
+  }
+  return {ok: true};
+});
+
 exports.generarReemplazo = onCall(async (request) => {
   const codigo = (request.data?.codigo || "").trim();
   const participanteId = request.data?.participanteId;
@@ -784,7 +841,7 @@ exports.generarReemplazo = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo o el participante.", {clave: "faltan_datos"});
   }
 
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
 
   const grupoSnap = await grupoRef(codigo).get();
   if (!grupoSnap.exists) {
@@ -965,7 +1022,7 @@ exports.canjearReemplazo = onCall(async (request) => {
   // La plaza conserva su id, su `asignado_a`, su `nombre_asignado` y su
   // `deseos_asignado`: quien entra regala a la misma persona. Eso es lo que
   // mantiene la cadena entera.
-  batch.update(plazaRef, {nombre, avatarUrl: avatarUrl || ""});
+  batch.update(plazaRef, {nombre, avatarUrl: avatarUrl || "", vacante: FieldValue.delete()});
   batch.set(participantePrivadoRef(codigo, participanteId), {
     cuenta: uid,
     deseos: deseosNuevos,
@@ -1122,7 +1179,7 @@ exports.cambiarAvatar = onCall(async (request) => {
   }
 
   const sesion = await autorizar(codigo, uidDe(request));
-  if (sesion.participanteId !== participanteId) exigirOrganizador(sesion);
+  if (sesion.participanteId !== participanteId) exigirQueDirija(sesion);
 
   const ref = participanteRef(codigo, participanteId);
   const anterior = (await ref.get()).data()?.avatarUrl;
@@ -1143,7 +1200,7 @@ exports.editarParticipante = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo, el participante o el nuevo nombre.", {clave: "faltan_datos"});
   }
 
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
 
   const ref = participanteRef(codigo, participanteId);
   const snap = await ref.get();
@@ -1254,7 +1311,7 @@ exports.verExclusiones = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
 
   const [priv, participantes] = await Promise.all([
     grupoPrivadoRef(codigo).get(),
@@ -1276,7 +1333,7 @@ exports.guardarExclusiones = onCall(async (request) => {
       !excluidos.every((id) => typeof id === "string" && id.trim() !== "")) {
     throw new HttpsError("invalid-argument", "Faltan datos.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
   if (excluidos.includes(participanteId)) {
     throw new HttpsError("invalid-argument", "Nadie se excluye a sí mismo.",
         {clave: "excluirse_a_si_mismo"});
@@ -1328,7 +1385,7 @@ exports.ejecutarSorteo = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
 
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
 
   // Se sortea UNA vez. Volver a hacerlo rebaraja a gente que ya vio su
   // asignación y quizá ya compró el regalo: se quedarían con un regalo
@@ -1534,7 +1591,7 @@ exports.borrarMensaje = onCall(async (request) => {
   if (!codigo || !mensajeId) {
     throw new HttpsError("invalid-argument", "Falta el grupo o el mensaje.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
   await grupoRef(codigo).collection("chat").doc(mensajeId).delete();
   return {ok: true};
 });
@@ -1552,7 +1609,7 @@ exports.miMascara = onCall(async (request) => {
 });
 
 // --- Acciones de organizador -----------------------------------------
-// Cada una comprueba `exigirOrganizador` por su cuenta: no hay ya un PIN
+// Cada una comprueba `exigirQueDirija` por su cuenta: no hay ya un PIN
 // maestro que desbloquee un "modo organizador" en el cliente, así que no
 // hay nada que memorizar entre acciones.
 
@@ -1565,7 +1622,7 @@ exports.editarGrupo = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
 
   // Solo se tocan los campos que vengan en la petición: así la pantalla
   // puede mandar un cambio suelto sin pisar los demás.
@@ -1604,7 +1661,7 @@ exports.eliminarGrupo = onCall(async (request) => {
   if (!codigo) {
     throw new HttpsError("invalid-argument", "Falta el grupo.", {clave: "faltan_datos"});
   }
-  exigirOrganizador(await autorizar(codigo, uidDe(request)));
+  exigirQueDirija(await autorizar(codigo, uidDe(request)));
 
   // recursiveDelete baja por las subcolecciones (participantes y cada
   // privado/data) y parte el trabajo en lotes por dentro.
