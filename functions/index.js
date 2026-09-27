@@ -1645,7 +1645,8 @@ async function reservarEnvio(ref) {
 
 async function mandarCorreo(correo) {
   try {
-    await correos.enviarConResend(RESEND_API_KEY.value(), correo);
+    // trim: una clave pegada con un salto de línea detrás es «inválida» para Resend.
+    await correos.enviarConResend(RESEND_API_KEY.value().trim(), correo);
   } catch (e) {
     logger.error("Resend no mandó el correo", {motivo: e.message});
     throw new HttpsError("unavailable", "No se pudo mandar el correo.", {clave: "correo_no_enviado"});
