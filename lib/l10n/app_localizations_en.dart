@@ -1037,4 +1037,52 @@ class TextosEn extends Textos {
 
   @override
   String get errorEsElOrganizador => 'The organizer\'s role can\'t be changed.';
+
+  @override
+  String get eliminarCuenta => 'Delete my account';
+
+  @override
+  String get eliminarBloqueoTitulo => 'Before deleting your account';
+
+  @override
+  String eliminarBloqueo(String grupo) {
+    return 'You need to name an admin in the group “$grupo” to delete your account.';
+  }
+
+  @override
+  String get eliminarIntro =>
+      'This can\'t be undone. When you delete your account:';
+
+  @override
+  String eliminarBorraGrupo(String grupo) {
+    return '“$grupo” will be deleted: you\'re the only one in it.';
+  }
+
+  @override
+  String eliminarSales(String grupo) {
+    return 'You\'ll leave “$grupo”.';
+  }
+
+  @override
+  String eliminarLibera(String grupo) {
+    return 'Your spot in “$grupo” will open up to be replaced, because that group already drew names.';
+  }
+
+  @override
+  String eliminarDejasDeDirigir(String grupo) {
+    return 'You\'ll stop running “$grupo”.';
+  }
+
+  @override
+  String get eliminarPassword => 'Type your password to confirm';
+
+  @override
+  String get eliminarConfirmar => 'Delete my account';
+
+  @override
+  String get entendido => 'Got it';
+
+  @override
+  String get errorDebesNombrarAdministrador =>
+      'Name an admin in your groups before deleting your account.';
 }

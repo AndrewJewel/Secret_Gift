@@ -342,5 +342,22 @@
   "plazaLibreAyuda": "Quien dirige el grupo la reemplazará pronto.",
   "chatAbandono": "Un participante ha abandonado el juego",
   "errorPlazaSinCuenta": "Esa plaza está libre: no puede ser administradora.",
-  "errorEsElOrganizador": "Al organizador no se le cambia el rol."
+  "errorEsElOrganizador": "Al organizador no se le cambia el rol.",
+  "eliminarCuenta": "Eliminar mi cuenta",
+  "eliminarBloqueoTitulo": "Antes de eliminar tu cuenta",
+  "eliminarBloqueo": "Debes nombrar un administrador en el grupo «{grupo}» para borrar tu cuenta.",
+  "@eliminarBloqueo": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarIntro": "Esto no se puede deshacer. Al eliminar tu cuenta:",
+  "eliminarBorraGrupo": "«{grupo}» se borrará: estás solo en ese grupo.",
+  "@eliminarBorraGrupo": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarSales": "Saldrás de «{grupo}».",
+  "@eliminarSales": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarLibera": "Tu plaza en «{grupo}» quedará libre para que la reemplacen, porque ese grupo ya sorteó.",
+  "@eliminarLibera": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarDejasDeDirigir": "Dejarás de dirigir «{grupo}».",
+  "@eliminarDejasDeDirigir": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarPassword": "Escribe tu contraseña para confirmar",
+  "eliminarConfirmar": "Eliminar mi cuenta",
+  "entendido": "Entendido",
+  "errorDebesNombrarAdministrador": "Nombra un administrador en tus grupos antes de eliminar tu cuenta."
 }

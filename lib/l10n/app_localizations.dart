@@ -1901,6 +1901,78 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'The organizer\'s role can\'t be changed.'**
   String get errorEsElOrganizador;
+
+  /// No description provided for @eliminarCuenta.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get eliminarCuenta;
+
+  /// No description provided for @eliminarBloqueoTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Before deleting your account'**
+  String get eliminarBloqueoTitulo;
+
+  /// No description provided for @eliminarBloqueo.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to name an admin in the group “{grupo}” to delete your account.'**
+  String eliminarBloqueo(String grupo);
+
+  /// No description provided for @eliminarIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone. When you delete your account:'**
+  String get eliminarIntro;
+
+  /// No description provided for @eliminarBorraGrupo.
+  ///
+  /// In en, this message translates to:
+  /// **'“{grupo}” will be deleted: you\'re the only one in it.'**
+  String eliminarBorraGrupo(String grupo);
+
+  /// No description provided for @eliminarSales.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll leave “{grupo}”.'**
+  String eliminarSales(String grupo);
+
+  /// No description provided for @eliminarLibera.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spot in “{grupo}” will open up to be replaced, because that group already drew names.'**
+  String eliminarLibera(String grupo);
+
+  /// No description provided for @eliminarDejasDeDirigir.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll stop running “{grupo}”.'**
+  String eliminarDejasDeDirigir(String grupo);
+
+  /// No description provided for @eliminarPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your password to confirm'**
+  String get eliminarPassword;
+
+  /// No description provided for @eliminarConfirmar.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get eliminarConfirmar;
+
+  /// No description provided for @entendido.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get entendido;
+
+  /// No description provided for @errorDebesNombrarAdministrador.
+  ///
+  /// In en, this message translates to:
+  /// **'Name an admin in your groups before deleting your account.'**
+  String get errorDebesNombrarAdministrador;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

@@ -23,8 +23,10 @@ class HojaConfiguracion extends StatefulWidget {
 
   const HojaConfiguracion({super.key, required this.alCerrarSesion});
 
-  static Future<void> mostrar(BuildContext context,
-      {required Future<void> Function() alCerrarSesion}) {
+  static Future<void> mostrar(
+    BuildContext context, {
+    required Future<void> Function() alCerrarSesion,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -39,6 +41,7 @@ class HojaConfiguracion extends StatefulWidget {
 
 class _HojaConfiguracionState extends State<HojaConfiguracion> {
   bool _cambiandoPin = false;
+  bool _eliminando = false;
 
   /// Si hay avisos activos para ESTA cuenta en ESTE dispositivo. Lo decide
   /// `avisosActivos` (en `push.dart`) cruzando dos cosas: el permiso que
@@ -133,9 +136,7 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
-          FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(t.cambiarPinGuardar)),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t.cambiarPinGuardar)),
         ],
       ),
     );
@@ -147,8 +148,7 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
         _avisar('✅ ${t.cambiarPinGuardado}');
       } catch (e) {
         if (mounted) {
-          _avisar(
-              e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
+          _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
         }
       } finally {
         if (mounted) setState(() => _cambiandoPin = false);
@@ -156,6 +156,39 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
     }
     password.dispose();
     pinNuevo.dispose();
+  }
+
+  Future<void> _eliminarCuenta() async {
+    final t = Textos.of(context);
+    setState(() => _eliminando = true);
+    try {
+      final plan = await llamarFuncion('planEliminarCuenta', {});
+      if (!mounted) return;
+      final bloqueos = (plan['bloqueos'] as List).cast<String>();
+      if (bloqueos.isNotEmpty) {
+        await showDialog<void>(
+          context: context,
+          builder: (_) => DialogoBloqueoEliminar(grupos: bloqueos),
+        );
+        return;
+      }
+      final password = TextEditingController();
+      final acciones = (plan['acciones'] as List).cast<Map<String, dynamic>>();
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => DialogoConfirmarEliminar(acciones: acciones, password: password),
+      );
+      if (ok != true) return;
+      await reautenticar(password.text);
+      await llamarFuncion('eliminarCuenta', {});
+      if (!mounted) return;
+      Navigator.pop(context); // cierra la hoja
+      await widget.alCerrarSesion();
+    } catch (e) {
+      _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
+    } finally {
+      if (mounted) setState(() => _eliminando = false);
+    }
   }
 
   @override
@@ -173,8 +206,7 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(t.configuracion,
-                textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
+            Text(t.configuracion, textAlign: TextAlign.center, style: tituloGlass(colorNeutro)),
             const SizedBox(height: 20),
             const CampoIdioma(),
             const SizedBox(height: 16),
@@ -204,9 +236,93 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
               label: t.misGruposCerrarSesion,
               onPressed: widget.alCerrarSesion,
             ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+              icon: const Icon(Icons.delete_forever_outlined),
+              label: Text(t.eliminarCuenta),
+              onPressed: _eliminando ? null : _eliminarCuenta,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+String textoDeAccion(Textos t, String accion, String grupo) => switch (accion) {
+  'borrarGrupo' => t.eliminarBorraGrupo(grupo),
+  'salir' => t.eliminarSales(grupo),
+  'liberar' => t.eliminarLibera(grupo),
+  _ => t.eliminarDejasDeDirigir(grupo),
+};
+
+/// Si eres el último que dirige un grupo con más gente, no se borra nada.
+class DialogoBloqueoEliminar extends StatelessWidget {
+  final List<String> grupos;
+  const DialogoBloqueoEliminar({super.key, required this.grupos});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Textos.of(context);
+    return AlertDialog(
+      title: Text(t.eliminarBloqueoTitulo),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final g in grupos)
+            Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(t.eliminarBloqueo(g))),
+        ],
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.entendido))],
+    );
+  }
+}
+
+/// Qué pasará, grupo por grupo, y la contraseña. Devuelve true si confirma.
+class DialogoConfirmarEliminar extends StatelessWidget {
+  final List<Map<String, dynamic>> acciones;
+  final TextEditingController password;
+  const DialogoConfirmarEliminar({super.key, required this.acciones, required this.password});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Textos.of(context);
+    return AlertDialog(
+      title: Text(t.eliminarCuenta),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.eliminarIntro),
+            const SizedBox(height: 8),
+            for (final a in acciones)
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 6),
+                child: Text(
+                  '• ${textoDeAccion(t, a['accion'] as String, a['nombreGrupo'] as String)}',
+                ),
+              ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: password,
+              obscureText: true,
+              autofillHints: const [AutofillHints.password],
+              decoration: InputDecoration(labelText: t.eliminarPassword),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.cancelar)),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(t.eliminarConfirmar),
+        ),
+      ],
     );
   }
 }

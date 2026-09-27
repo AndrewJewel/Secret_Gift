@@ -1037,4 +1037,52 @@ class TextosEs extends Textos {
 
   @override
   String get errorEsElOrganizador => 'Al organizador no se le cambia el rol.';
+
+  @override
+  String get eliminarCuenta => 'Eliminar mi cuenta';
+
+  @override
+  String get eliminarBloqueoTitulo => 'Antes de eliminar tu cuenta';
+
+  @override
+  String eliminarBloqueo(String grupo) {
+    return 'Debes nombrar un administrador en el grupo «$grupo» para borrar tu cuenta.';
+  }
+
+  @override
+  String get eliminarIntro =>
+      'Esto no se puede deshacer. Al eliminar tu cuenta:';
+
+  @override
+  String eliminarBorraGrupo(String grupo) {
+    return '«$grupo» se borrará: estás solo en ese grupo.';
+  }
+
+  @override
+  String eliminarSales(String grupo) {
+    return 'Saldrás de «$grupo».';
+  }
+
+  @override
+  String eliminarLibera(String grupo) {
+    return 'Tu plaza en «$grupo» quedará libre para que la reemplacen, porque ese grupo ya sorteó.';
+  }
+
+  @override
+  String eliminarDejasDeDirigir(String grupo) {
+    return 'Dejarás de dirigir «$grupo».';
+  }
+
+  @override
+  String get eliminarPassword => 'Escribe tu contraseña para confirmar';
+
+  @override
+  String get eliminarConfirmar => 'Eliminar mi cuenta';
+
+  @override
+  String get entendido => 'Entendido';
+
+  @override
+  String get errorDebesNombrarAdministrador =>
+      'Nombra un administrador en tus grupos antes de eliminar tu cuenta.';
 }

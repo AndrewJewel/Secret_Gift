@@ -445,5 +445,22 @@
   "plazaLibreAyuda": "Whoever runs the group will replace it soon.",
   "chatAbandono": "A participant has left the game",
   "errorPlazaSinCuenta": "That spot is open: it can't be an admin.",
-  "errorEsElOrganizador": "The organizer's role can't be changed."
+  "errorEsElOrganizador": "The organizer's role can't be changed.",
+  "eliminarCuenta": "Delete my account",
+  "eliminarBloqueoTitulo": "Before deleting your account",
+  "eliminarBloqueo": "You need to name an admin in the group “{grupo}” to delete your account.",
+  "@eliminarBloqueo": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarIntro": "This can't be undone. When you delete your account:",
+  "eliminarBorraGrupo": "“{grupo}” will be deleted: you're the only one in it.",
+  "@eliminarBorraGrupo": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarSales": "You'll leave “{grupo}”.",
+  "@eliminarSales": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarLibera": "Your spot in “{grupo}” will open up to be replaced, because that group already drew names.",
+  "@eliminarLibera": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarDejasDeDirigir": "You'll stop running “{grupo}”.",
+  "@eliminarDejasDeDirigir": {"placeholders": {"grupo": {"type": "String"}}},
+  "eliminarPassword": "Type your password to confirm",
+  "eliminarConfirmar": "Delete my account",
+  "entendido": "Got it",
+  "errorDebesNombrarAdministrador": "Name an admin in your groups before deleting your account."
 }

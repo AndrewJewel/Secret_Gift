@@ -81,6 +81,7 @@ extension MensajeLocalizado on FuncionError {
         'no_eres_organizador' => t.errorNoEresOrganizador,
         'plaza_sin_cuenta' => t.errorPlazaSinCuenta,
         'es_el_organizador' => t.errorEsElOrganizador,
+        'debes_nombrar_administrador' => t.errorDebesNombrarAdministrador,
         'no_estas_en_el_grupo' => t.errorNoEstasEnElGrupo,
         'ya_estas_en_el_grupo' => t.errorYaEstasEnElGrupo,
         'grupo_ya_sorteado' => t.errorGrupoYaSorteado,
