@@ -23,6 +23,7 @@ const {defineSecret} = require("firebase-functions/params");
 const {logger} = require("firebase-functions");
 const {getAuth} = require("firebase-admin/auth");
 const correos = require("./correos");
+const {planDeEliminacion} = require("./cuenta");
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
@@ -1784,5 +1785,111 @@ exports.mandarCorreoRecuperacion = onCall({secrets: [RESEND_API_KEY]}, async (re
   const url = new URL(enlace);
   url.searchParams.set("lang", idioma);
   await mandarCorreo({para: correo, ...correos.correoRecuperacion(idioma, correo, url.toString())});
+  return {ok: true};
+});
+
+// --- Eliminar cuenta ---------------------------------------------------
+// Diseño: locker/docs/superpowers/specs/2026-09-27-administradores-y-eliminar-cuenta-design.md
+
+
+/** Lo que `planDeEliminacion` necesita saber de cada grupo de `uid`. */
+async function recogerSituacion(uid) {
+  const grupos = (await usuarioRef(uid).get()).data()?.grupos || {};
+  const situacion = await Promise.all(Object.entries(grupos).map(async ([codigo, v]) => {
+    const gs = await grupoRef(codigo).get();
+    if (!gs.exists) return null;
+    const directores = (await grupoPrivadoRef(codigo).get()).data()?.directores || {};
+    const plazas = await grupoRef(codigo).collection("participantes").get();
+    const cuentas = await Promise.all(plazas.docs.map(async (d) =>
+      (await participantePrivadoRef(codigo, d.id).get()).data()?.cuenta));
+    const otras = new Set([...cuentas.filter(Boolean), ...Object.keys(directores)]);
+    otras.delete(uid);
+    const dirige = v.rol === "organizador" || v.rol === "administrador";
+    return {
+      codigo,
+      nombreGrupo: gs.data().nombreGrupo || codigo,
+      dirige,
+      participanteId: v.participanteId || null,
+      sorteado: gs.data().sorteado === true,
+      otrasPersonas: otras.size,
+      otrosDirectores: Object.keys(directores).filter((u) => u !== uid).length,
+    };
+  }));
+  return situacion.filter(Boolean);
+}
+
+exports.planEliminarCuenta = onCall(async (request) => {
+  const uid = uidDe(request, {exigirVerificado: false});
+  const {bloqueos, acciones} = planDeEliminacion(await recogerSituacion(uid));
+  return {bloqueos, acciones: acciones.map(({nombreGrupo, accion}) => ({nombreGrupo, accion}))};
+});
+
+/**
+ * La plaza se queda en la cadena sin datos de nadie. Devuelve quién dirige
+ * el grupo, para avisarle.
+ */
+async function liberarPlaza(uid, codigo, participanteId) {
+  const plazaRef = participanteRef(codigo, participanteId);
+  const [publico, privado, grupoPriv] = await Promise.all([
+    plazaRef.get(), participantePrivadoRef(codigo, participanteId).get(), grupoPrivadoRef(codigo).get()]);
+  const quienRegala = await quienLeRegalaA(codigo, participanteId, privado.data()?.recibe_de);
+  const batch = db.batch();
+  batch.update(plazaRef, {nombre: "", avatarUrl: "", vacante: true, rol: FieldValue.delete()});
+  batch.set(participantePrivadoRef(codigo, participanteId), {
+    cuenta: FieldValue.delete(), deseos: "",
+    mascara: FieldValue.delete(), mascaraRepeticion: FieldValue.delete(), ultimoMensajeMs: FieldValue.delete(),
+  }, {merge: true});
+  if (quienRegala) {
+    batch.set(participantePrivadoRef(codigo, quienRegala),
+        {nombre_asignado: "", deseos_asignado: ""}, {merge: true});
+  }
+  // Sin máscara ni autor: el texto lo pone cada cliente en su idioma.
+  batch.set(grupoRef(codigo).collection("chat").doc(),
+      {sistema: "abandono", fecha: FieldValue.serverTimestamp()});
+  await batch.commit();
+  await borrarAvatarPorUrl(publico.data()?.avatarUrl);
+  return Object.keys(grupoPriv.data()?.directores || {}).filter((u) => u !== uid);
+}
+
+exports.eliminarCuenta = onCall(async (request) => {
+  exigirReciente(request);
+  const uid = uidDe(request, {exigirVerificado: false});
+  const {bloqueos, acciones} = planDeEliminacion(await recogerSituacion(uid));
+  if (bloqueos.length) {
+    throw new HttpsError("failed-precondition",
+        `Nombra un administrador en: ${bloqueos.join(", ")}`, {clave: "debes_nombrar_administrador"});
+  }
+  const avisos = [];
+  for (const a of acciones) {
+    if (a.accion === "borrarGrupo") {
+      await db.recursiveDelete(grupoRef(a.codigo));
+      try {
+        await getStorage().bucket(BUCKET).deleteFiles({prefix: `avatares/${a.codigo}/`});
+      } catch (e) {
+        console.warn("No se pudieron borrar los avatares del grupo:", e.message);
+      }
+      continue;
+    }
+    if (a.accion === "salir") {
+      const publico = await participanteRef(a.codigo, a.participanteId).get();
+      const batch = db.batch();
+      batch.delete(participanteRef(a.codigo, a.participanteId));
+      batch.delete(participantePrivadoRef(a.codigo, a.participanteId));
+      await batch.commit();
+      await borrarAvatarPorUrl(publico.data()?.avatarUrl);
+    }
+    if (a.accion === "liberar") {
+      const directores = await liberarPlaza(uid, a.codigo, a.participanteId);
+      avisos.push({uids: directores, grupo: a.nombreGrupo, codigo: a.codigo});
+    }
+    await grupoPrivadoRef(a.codigo).set({directores: {[uid]: FieldValue.delete()}}, {merge: true});
+  }
+  await db.collection("verificaciones").doc(uid).delete();
+  await usuarioRef(uid).delete();
+  // Al final: si algo falló antes, la persona aún puede entrar y reintentar.
+  await getAuth().deleteUser(uid);
+  for (const a of avisos) {
+    await avisarAVarios(a.uids, {textos: AVISOS.plazaLibre(a.grupo), datos: {codigo: a.codigo}});
+  }
   return {ok: true};
 });
