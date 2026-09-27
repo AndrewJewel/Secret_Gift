@@ -457,8 +457,15 @@ async function seguir(emailOrganizador, emailParticipante, emailTercero) {
 
   // EL BUG QUE ORIGINÓ TODO ESTO: crear un grupo y apuntarse a él lo sacaba
   // DOS veces en Mis grupos, porque arrayUnion guardaba dos entradas.
-  const {id} = await llamar("agregarParticipante",
-      {codigo, nombre: "Yo mismo", deseos: "Nada"}, tokenOrg);
+  // Doble toque a «Inscribirme»: dos llamadas a la vez. Antes las dos
+  // pasaban la comprobación y la persona quedaba DOS veces en el grupo.
+  const dobles = await Promise.allSettled([1, 2].map(() => llamar("agregarParticipante",
+      {codigo, nombre: "Yo mismo", deseos: "Nada"}, tokenOrg)));
+  const entraron = dobles.filter((r) => r.status === "fulfilled");
+  ok("doble toque: entra UNA sola vez", entraron.length === 1, `entraron ${entraron.length}`);
+  ok("doble toque: la otra sale con ya_estas_en_el_grupo",
+      dobles.some((r) => r.status === "rejected" && r.reason.clave === "ya_estas_en_el_grupo"));
+  const {id} = entraron[0].value;
 
   const misGruposOrg = await llamar("misGrupos", {}, tokenOrg);
   const deEsteGrupo = misGruposOrg.grupos.filter((g) => g.codigo === codigo);

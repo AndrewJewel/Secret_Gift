@@ -594,54 +594,59 @@ exports.agregarParticipante = onCall(async (request) => {
   // no queda un avatar huérfano en Storage ni un participante inscrito.
   const sesion = await autorizar(codigo, uidDe(request));
 
-  // Una cuenta, una plaza por grupo. Sin esto, volver a entrar por el
-  // código a un grupo donde ya estás creaba un SEGUNDO documento y
-  // sobrescribía el puntero de la cuenta: la plaza vieja quedaba huérfana
-  // y nadie podía borrarla —tú ya no, porque para el servidor había
-  // dejado de ser la tuya— y si el grupo ya había sorteado se quedaba
-  // dentro de la cadena como un fantasma.
-  //
-  // No basta con mirar si el campo está relleno: hay que comprobarlo
-  // contra Firestore. Si el vínculo apunta a un participante que ya no
-  // existe, volver a entrar DEBE funcionar — es justo el caso de alguien
-  // a quien sacaron del grupo y quiere volver.
-  if (sesion.participanteId) {
-    const plaza = await participanteRef(codigo, sesion.participanteId).get();
-    if (plaza.exists) {
-      throw new HttpsError(
-          "already-exists",
-          "Ya tienes una plaza en este grupo.",
-          {clave: "ya_estas_en_el_grupo"},
-      );
-    }
-  }
-
   const ref = grupoRef(codigo).collection("participantes").doc();
   // La imagen se sube antes de escribir en Firestore: si falla, no queda
   // un participante a medias apuntando a un avatar que no existe.
+  // ponytail: si la transacción de abajo rechaza un doble toque, este
+  // avatar queda huérfano en Storage (unos KB). Borrarlo si llega a pesar.
   const avatarUrl = await guardarAvatar(codigo, ref.id, request.data?.avatarBase64);
 
-  const batch = db.batch();
-  batch.set(ref, {
-    nombre,
-    avatarUrl: avatarUrl || "",
-    fecha: FieldValue.serverTimestamp(),
-    tieneAmigo: false,
+  // Una cuenta, una plaza por grupo, comprobado y escrito en la MISMA
+  // transacción. Antes se miraba fuera y se escribía después: dos toques
+  // seguidos a «Inscribirme» (con foto la llamada tarda) pasaban los dos
+  // la comprobación y la persona quedaba dos veces en el grupo. Ahora las
+  // dos transacciones chocan en el documento de la cuenta; la segunda se
+  // reintenta, ve la plaza de la primera y sale con `ya_estas_en_el_grupo`.
+  //
+  // Se mira contra Firestore y no solo el campo: si el vínculo apunta a
+  // una plaza que ya no existe (te sacaron del grupo), volver a entrar
+  // DEBE funcionar.
+  await db.runTransaction(async (tx) => {
+    const cuenta = await tx.get(usuarioRef(sesion.uid));
+    const vinculo = (cuenta.data()?.grupos || {})[codigo] || {};
+    if (vinculo.participanteId) {
+      const plaza = await tx.get(participanteRef(codigo, vinculo.participanteId));
+      if (plaza.exists) {
+        throw new HttpsError(
+            "already-exists",
+            "Ya tienes una plaza en este grupo.",
+            {clave: "ya_estas_en_el_grupo"},
+        );
+      }
+    }
+    tx.set(ref, {
+      nombre,
+      avatarUrl: avatarUrl || "",
+      fecha: FieldValue.serverTimestamp(),
+      tieneAmigo: false,
+    });
+    tx.set(participantePrivadoRef(codigo, ref.id), {
+      // De qué cuenta es esta plaza. Sin este dato, borrarParticipante no
+      // puede limpiar el puntero de usuarios/{x}.grupos —no sabría de
+      // quién— y el grupo seguiría saliendo en su "Mis grupos" apuntando a
+      // un participante que ya no existe. Este documento está cerrado a
+      // cero para el cliente (ver firestore.rules).
+      cuenta: sesion.uid,
+      deseos,
+      asignado_a: "",
+      nombre_asignado: "",
+      deseos_asignado: "",
+    });
+    // Fusión profunda: quien creó el grupo conserva su rol de organizador.
+    tx.set(usuarioRef(sesion.uid),
+        {grupos: {[codigo]: {rol: vinculo.rol || "participante", participanteId: ref.id}}},
+        {merge: true});
   });
-  batch.set(participantePrivadoRef(codigo, ref.id), {
-    // De qué cuenta es esta plaza. Sin este dato, borrarParticipante no
-    // puede limpiar el puntero de usuarios/{x}.grupos —no sabría de
-    // quién— y el grupo seguiría saliendo en su "Mis grupos" apuntando a
-    // un participante que ya no existe. Este documento está cerrado a
-    // cero para el cliente (ver firestore.rules).
-    cuenta: sesion.uid,
-    deseos,
-    asignado_a: "",
-    nombre_asignado: "",
-    deseos_asignado: "",
-  });
-  await batch.commit();
-  await vincularComoParticipante(sesion.uid, codigo, ref.id);
   return {id: ref.id};
 });
 

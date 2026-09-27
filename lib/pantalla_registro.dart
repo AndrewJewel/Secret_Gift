@@ -230,6 +230,10 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   bool _reglasAbiertas = false;
 
+  /// Inscripción en vuelo. Con foto la llamada tarda unos segundos y un
+  /// segundo toque inscribía a la persona dos veces.
+  bool _inscribiendo = false;
+
   /// Imagen elegida para el registro, todavía sin subir. Viaja junto con
   /// el resto del formulario en una sola llamada.
   String? _avatarBase64;
@@ -407,6 +411,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       return;
     }
 
+    setState(() => _inscribiendo = true);
     try {
       final creado = _tokenReemplazo != null
           ? await llamarFuncion('canjearReemplazo', {
@@ -436,6 +441,8 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       FocusScope.of(context).unfocus();
     } catch (e) {
       _avisarError(e);
+    } finally {
+      if (mounted) setState(() => _inscribiendo = false);
     }
   }
 
@@ -1185,7 +1192,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           const SizedBox(height: 12),
           GlassButton(
             color: _color.shade600,
-            onPressed: _agregar,
+            onPressed: _inscribiendo ? null : _agregar,
             icon: Icons.save,
             label: t.registroBoton,
           ),
