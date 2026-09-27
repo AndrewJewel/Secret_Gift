@@ -964,4 +964,32 @@ class TextosEs extends Textos {
   @override
   String get errorCorreoNoEnviado =>
       'No se pudo mandar el correo. Inténtalo otra vez.';
+
+  @override
+  String get verificarCodigoTitulo => 'Revisa tu correo';
+
+  @override
+  String verificarCodigoTexto(String correo) {
+    return 'Te mandamos un código de 6 dígitos a $correo.';
+  }
+
+  @override
+  String get verificarCodigoCampo => 'Código';
+
+  @override
+  String get verificarCodigoBoton => 'Verificar';
+
+  @override
+  String get verificarOtroCodigo => 'Mandar otro código';
+
+  @override
+  String verificarOtroCodigoEn(int segundos) {
+    return 'Mandar otro código en $segundos s';
+  }
+
+  @override
+  String get verificarCodigoMandado => 'Código mandado';
+
+  @override
+  String get verificarConEnlace => 'Ya verifiqué con el enlace';
 }

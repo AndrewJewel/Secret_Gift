@@ -317,5 +317,15 @@
   "errorCodigoCaducado": "Ese código caducó. Pide otro.",
   "errorCodigoAgotado": "Demasiados intentos con ese código. Pide uno nuevo.",
   "errorDemasiadosCorreos": "Espera un momento antes de pedir otro correo.",
-  "errorCorreoNoEnviado": "No se pudo mandar el correo. Inténtalo otra vez."
+  "errorCorreoNoEnviado": "No se pudo mandar el correo. Inténtalo otra vez.",
+  "verificarCodigoTitulo": "Revisa tu correo",
+  "verificarCodigoTexto": "Te mandamos un código de 6 dígitos a {correo}.",
+  "@verificarCodigoTexto": {"placeholders": {"correo": {"type": "String"}}},
+  "verificarCodigoCampo": "Código",
+  "verificarCodigoBoton": "Verificar",
+  "verificarOtroCodigo": "Mandar otro código",
+  "verificarOtroCodigoEn": "Mandar otro código en {segundos} s",
+  "@verificarOtroCodigoEn": {"placeholders": {"segundos": {"type": "int"}}},
+  "verificarCodigoMandado": "Código mandado",
+  "verificarConEnlace": "Ya verifiqué con el enlace"
 }

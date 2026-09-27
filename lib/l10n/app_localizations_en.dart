@@ -964,4 +964,32 @@ class TextosEn extends Textos {
 
   @override
   String get errorCorreoNoEnviado => 'We couldn\'t send the email. Try again.';
+
+  @override
+  String get verificarCodigoTitulo => 'Check your email';
+
+  @override
+  String verificarCodigoTexto(String correo) {
+    return 'We sent a 6-digit code to $correo.';
+  }
+
+  @override
+  String get verificarCodigoCampo => 'Code';
+
+  @override
+  String get verificarCodigoBoton => 'Verify';
+
+  @override
+  String get verificarOtroCodigo => 'Send another code';
+
+  @override
+  String verificarOtroCodigoEn(int segundos) {
+    return 'Send another code in ${segundos}s';
+  }
+
+  @override
+  String get verificarCodigoMandado => 'Code sent';
+
+  @override
+  String get verificarConEnlace => 'I verified with the link';
 }

@@ -1775,6 +1775,54 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'We couldn\'t send the email. Try again.'**
   String get errorCorreoNoEnviado;
+
+  /// No description provided for @verificarCodigoTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email'**
+  String get verificarCodigoTitulo;
+
+  /// No description provided for @verificarCodigoTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a 6-digit code to {correo}.'**
+  String verificarCodigoTexto(String correo);
+
+  /// No description provided for @verificarCodigoCampo.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get verificarCodigoCampo;
+
+  /// No description provided for @verificarCodigoBoton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verificarCodigoBoton;
+
+  /// No description provided for @verificarOtroCodigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Send another code'**
+  String get verificarOtroCodigo;
+
+  /// No description provided for @verificarOtroCodigoEn.
+  ///
+  /// In en, this message translates to:
+  /// **'Send another code in {segundos}s'**
+  String verificarOtroCodigoEn(int segundos);
+
+  /// No description provided for @verificarCodigoMandado.
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent'**
+  String get verificarCodigoMandado;
+
+  /// No description provided for @verificarConEnlace.
+  ///
+  /// In en, this message translates to:
+  /// **'I verified with the link'**
+  String get verificarConEnlace;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

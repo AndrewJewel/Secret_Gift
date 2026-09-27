@@ -420,5 +420,15 @@
   "errorCodigoCaducado": "That code expired. Ask for a new one.",
   "errorCodigoAgotado": "Too many tries with that code. Ask for a new one.",
   "errorDemasiadosCorreos": "Wait a moment before asking for another email.",
-  "errorCorreoNoEnviado": "We couldn't send the email. Try again."
+  "errorCorreoNoEnviado": "We couldn't send the email. Try again.",
+  "verificarCodigoTitulo": "Check your email",
+  "verificarCodigoTexto": "We sent a 6-digit code to {correo}.",
+  "@verificarCodigoTexto": {"placeholders": {"correo": {"type": "String"}}},
+  "verificarCodigoCampo": "Code",
+  "verificarCodigoBoton": "Verify",
+  "verificarOtroCodigo": "Send another code",
+  "verificarOtroCodigoEn": "Send another code in {segundos}s",
+  "@verificarOtroCodigoEn": {"placeholders": {"segundos": {"type": "int"}}},
+  "verificarCodigoMandado": "Code sent",
+  "verificarConEnlace": "I verified with the link"
 }

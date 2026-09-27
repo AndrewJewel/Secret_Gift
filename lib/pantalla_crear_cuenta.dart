@@ -101,7 +101,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
     setState(() => _cargando = true);
     try {
-      await crearCuenta(
+      final medio = await crearCuenta(
         correo: _correo.text,
         password: _password.text,
         nombre: _nombre.text,
@@ -111,7 +111,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar)),
+        MaterialPageRoute(builder: (_) => PantallaVerificarCorreo(alVerificar: _trasVerificar, medio: medio)),
       );
     } on FuncionError catch (e) {
       _avisar(e.texto(t));
