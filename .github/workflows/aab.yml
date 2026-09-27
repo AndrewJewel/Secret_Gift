@@ -1,0 +1,57 @@
+# Compila el App Bundle (AAB) firmado que se sube a Google Play.
+#
+# Se lanza a mano (Actions → «Compilar AAB para Google Play» → Run
+# workflow) solo cuando se va a subir una versión: compilarlo en cada push
+# alargaría todas las publicaciones para nada. Usa la misma clave y los
+# mismos secretos que el APK de desplegar.yml; con Play App Signing esa
+# clave es la de subida.
+#
+# El AAB queda como artefacto del run (30 días): se descarga desde la
+# página del run y se sube a Play Console.
+name: Compilar AAB para Google Play
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.10
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: flutter pub get
+
+      - name: Clave de firma Android
+        env:
+          CLAVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$CLAVE" | base64 -d > "$RUNNER_TEMP/firma.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/firma.jks" >> "$GITHUB_ENV"
+
+      # El número de compilación (versionCode) sale del mismo contador que el
+      # APK del despliegue, más 100000: siempre mayor que cualquier APK ya
+      # instalado, y Play no acepta un versionCode que no suba.
+      - name: AAB
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: flutter build appbundle --release --build-number=$((100000 + ${{ github.run_number }}))
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: secretgift-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
