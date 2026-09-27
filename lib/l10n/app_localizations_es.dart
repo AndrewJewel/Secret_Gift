@@ -131,7 +131,7 @@ class TextosEs extends Textos {
 
   @override
   String get errorNoEresOrganizador =>
-      'Solo el organizador del grupo puede hacer esto';
+      'Solo quien dirige el grupo puede hacer esto.';
 
   @override
   String get errorNoEstasEnElGrupo => 'Todavía no estás inscrito en este grupo';
@@ -992,4 +992,49 @@ class TextosEs extends Textos {
 
   @override
   String get verificarConEnlace => 'Ya verifiqué con el enlace';
+
+  @override
+  String get rolOrganizador => 'Organizador';
+
+  @override
+  String get rolAdministrador => 'Administrador';
+
+  @override
+  String get misGruposAdministrador => 'Administrador';
+
+  @override
+  String get hacerAdministrador => 'Hacer administrador';
+
+  @override
+  String get quitarAdministrador => 'Quitar administrador';
+
+  @override
+  String hacerAdministradorPregunta(String nombre) {
+    return '¿Hacer administrador a $nombre?';
+  }
+
+  @override
+  String get hacerAdministradorTexto =>
+      'Podrá dirigir el grupo igual que el organizador: editarlo, sortear, sacar y reemplazar personas, y nombrar otros administradores.';
+
+  @override
+  String quitarAdministradorPregunta(String nombre) {
+    return '¿Quitarle a $nombre el rol de administrador?';
+  }
+
+  @override
+  String get plazaLibre => 'Plaza libre';
+
+  @override
+  String get plazaLibreAyuda => 'Quien dirige el grupo la reemplazará pronto.';
+
+  @override
+  String get chatAbandono => 'Un participante ha abandonado el juego';
+
+  @override
+  String get errorPlazaSinCuenta =>
+      'Esa plaza está libre: no puede ser administradora.';
+
+  @override
+  String get errorEsElOrganizador => 'Al organizador no se le cambia el rol.';
 }

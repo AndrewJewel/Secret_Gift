@@ -1291,6 +1291,9 @@ exports.verAmigoSecreto = onCall(async (request) => {
     // de participantes que mostraba PantallaLogin, que desaparece.
     nombre: publico.data()?.nombre || "",
     nombreAmigo: privado.nombre_asignado || "",
+    // Hay a quién regalar, pero esa plaza quedó libre (su cuenta se borró).
+    // Un nombre vacío solo no basta: también significa «sin sorteo».
+    amigoVacante: Boolean(privado.asignado_a) && !privado.nombre_asignado,
     // Vacío y no "Sin sugerencias": el texto por defecto lo pone el
     // cliente traducido, y aquí saldría siempre en español.
     deseosAmigo: deseosLimpios(privado.deseos_asignado),

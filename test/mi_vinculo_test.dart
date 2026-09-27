@@ -38,4 +38,10 @@ void main() {
     });
     expect(v.estoyDentro, isFalse);
   });
+
+  test('dirige: organizador y administrador sí, participante no', () {
+    expect(const MiVinculo(rol: 'organizador').dirige, isTrue);
+    expect(const MiVinculo(rol: 'administrador').dirige, isTrue);
+    expect(const MiVinculo(rol: 'participante').dirige, isFalse);
+  });
 }

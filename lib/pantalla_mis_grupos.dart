@@ -128,7 +128,11 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                           final g = _grupos[index];
                           final ocasion = Ocasion.desdeId(g['ocasion'] as String);
                           final nombreGrupo = g['nombreGrupo'] as String? ?? '';
-                          final esOrganizador = g['rol'] == 'organizador';
+                          final etiquetaRol = switch (g['rol']) {
+                            'organizador' => t.misGruposOrganizador,
+                            'administrador' => t.misGruposAdministrador,
+                            _ => t.misGruposParticipante,
+                          };
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: GlassCard(
@@ -145,7 +149,7 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                                       color: Colors.black87, fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
-                                  '${esOrganizador ? t.misGruposOrganizador : t.misGruposParticipante} · ${g['codigo']}',
+                                  '$etiquetaRol · ${g['codigo']}',
                                   style: const TextStyle(color: Colors.black54),
                                 ),
                                 trailing: Icon(Icons.chevron_right,

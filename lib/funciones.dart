@@ -79,6 +79,8 @@ extension MensajeLocalizado on FuncionError {
         'sesion_invalida' => t.errorSesionInvalida,
         'pin_formato' => t.errorPinFormato,
         'no_eres_organizador' => t.errorNoEresOrganizador,
+        'plaza_sin_cuenta' => t.errorPlazaSinCuenta,
+        'es_el_organizador' => t.errorEsElOrganizador,
         'no_estas_en_el_grupo' => t.errorNoEstasEnElGrupo,
         'ya_estas_en_el_grupo' => t.errorYaEstasEnElGrupo,
         'grupo_ya_sorteado' => t.errorGrupoYaSorteado,

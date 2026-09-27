@@ -28,12 +28,17 @@ class PantallaSecreta extends StatefulWidget {
   /// Vacío = la persona no escribió deseos.
   final String deseosAmigo;
 
+  /// Hay a quién regalar, pero esa plaza quedó libre: quien la tenía borró
+  /// su cuenta y quien dirige el grupo la reemplazará.
+  final bool amigoVacante;
+
   const PantallaSecreta({
     super.key,
     required this.nombreGrupo,
     this.personas,
     required this.nombreAmigo,
     required this.deseosAmigo,
+    this.amigoVacante = false,
   });
 
   @override
@@ -125,10 +130,12 @@ class _PantallaSecretaState extends State<PantallaSecreta>
     return n == null ? grupo : '$grupo · ${t.secretaPersonas(n).toUpperCase()}';
   }
 
+  String _nombre(Textos t) => widget.amigoVacante ? t.plazaLibre : widget.nombreAmigo;
+
   @override
   Widget build(BuildContext context) {
     final t = Textos.of(context);
-    final sinSorteo = widget.nombreAmigo.isEmpty;
+    final sinSorteo = widget.nombreAmigo.isEmpty && !widget.amigoVacante;
     return Scaffold(
       backgroundColor: _marfil,
       appBar: AppBar(
@@ -350,7 +357,7 @@ class _PantallaSecretaState extends State<PantallaSecreta>
             height: w * 0.28,
             child: Semantics(
               liveRegion: visible,
-              label: visible ? t.secretaAnuncio(widget.nombreAmigo) : null,
+              label: visible ? t.secretaAnuncio(_nombre(t)) : null,
               excludeSemantics: true,
               child: Opacity(
                 opacity: asiento.clamp(0.0, 1.0),
@@ -369,7 +376,7 @@ class _PantallaSecretaState extends State<PantallaSecreta>
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            widget.nombreAmigo,
+                            _nombre(t),
                             textAlign: TextAlign.center,
                             style: _serif(
                               tam: w * 0.078,
@@ -416,7 +423,9 @@ class _PantallaSecretaState extends State<PantallaSecreta>
         ),
       );
     }
-    final deseos = widget.deseosAmigo.trim().isEmpty
+    final deseos = widget.amigoVacante
+        ? t.plazaLibreAyuda
+        : widget.deseosAmigo.trim().isEmpty
         ? t.secretaSinSugerencias
         : widget.deseosAmigo.trim();
     return Opacity(

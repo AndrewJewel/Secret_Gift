@@ -247,6 +247,17 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data();
+            // Sin máscara ni autor: lo escribe el servidor cuando alguien
+            // borra su cuenta en un grupo ya sorteado.
+            if (data['sistema'] == 'abandono') {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(Textos.of(context).chatAbandono,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 13, fontStyle: FontStyle.italic, color: Colors.black54)),
+              );
+            }
             final mascara = (data['mascara'] as num?)?.toInt() ?? 0;
             final repeticion = (data['repeticion'] as num?)?.toInt() ?? 0;
             return _Burbuja(
@@ -255,7 +266,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
               repeticion: repeticion,
               esMia: _miMascara != null && _miMascara == mascara,
               color: _color,
-              onBorrar: widget.vinculo?.esOrganizador == true ? () => _borrarMensaje(doc.id) : null,
+              onBorrar: widget.vinculo?.dirige == true ? () => _borrarMensaje(doc.id) : null,
             );
           },
         );

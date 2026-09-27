@@ -6,7 +6,8 @@ import 'package:santa_secreto/pantalla_secreta.dart';
 
 /// Con «reducir movimiento» la caja se abre al instante: la prueba no
 /// depende de los tiempos de la animación.
-Widget _envoltorio({required String deseos}) => MaterialApp(
+Widget _envoltorio({required String deseos, String nombre = 'Ana María', bool vacante = false}) =>
+    MaterialApp(
       locale: const Locale('es'),
       supportedLocales: const [Locale('en'), Locale('es')],
       localizationsDelegates: Textos.localizationsDelegates,
@@ -15,8 +16,9 @@ Widget _envoltorio({required String deseos}) => MaterialApp(
         child: PantallaSecreta(
           nombreGrupo: 'Oficina 2026',
           personas: 8,
-          nombreAmigo: 'Ana María',
+          nombreAmigo: nombre,
           deseosAmigo: deseos,
+          amigoVacante: vacante,
         ),
       ),
     );
@@ -48,5 +50,14 @@ void main() {
     await tester.tap(find.text('Abrir mi caja'));
     await tester.pump();
     expect(find.text('Sin sugerencias'), findsOneWidget);
+  });
+
+  testWidgets('plaza libre: sin nombre dice «Plaza libre»', (tester) async {
+    await tester.pumpWidget(_envoltorio(deseos: '', nombre: '', vacante: true));
+    await tester.pump();
+    await tester.tap(find.text('Abrir mi caja'));
+    await tester.pump();
+    expect(find.text('Plaza libre'), findsOneWidget);
+    expect(find.text('Quien dirige el grupo la reemplazará pronto.'), findsOneWidget);
   });
 }

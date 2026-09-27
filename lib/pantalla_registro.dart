@@ -193,14 +193,14 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   /// se actualiza al darte de alta. Null = no estás dentro → formulario.
   late MiVinculo? _vinculo = widget.vinculo;
 
-  bool get _esOrganizador => _vinculo?.esOrganizador ?? false;
+  bool get _dirige => _vinculo?.dirige ?? false;
 
   /// Parejas excluidas (claves de [clavePareja]). Null hasta cargarlas; solo
   /// se cargan para el organizador y antes del sorteo, que es cuando cuentan.
   Set<String>? _exclusiones;
 
   bool get _gestionaExclusiones =>
-      _esOrganizador && !(_vinculo?.sorteado ?? false) && _exclusiones != null;
+      _dirige && !(_vinculo?.sorteado ?? false) && _exclusiones != null;
 
   List<String> get _idsParticipantes => [for (final d in _participantes ?? const []) d.id];
 
@@ -219,7 +219,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       };
 
   Future<void> _cargarExclusiones() async {
-    if (!_esOrganizador || (_vinculo?.sorteado ?? false)) return;
+    if (!_dirige || (_vinculo?.sorteado ?? false)) return;
     try {
       final datos = await llamarFuncion('verExclusiones', {'codigo': widget.codigo});
       if (mounted) setState(() => _exclusiones = _desdePares(datos['exclusiones']));
@@ -515,6 +515,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
             // Vacío se queda vacío: la pantalla pone «Sin sugerencias» en el
             // idioma de quien la lee.
             deseosAmigo: deseos,
+            amigoVacante: data['amigoVacante'] == true,
           ),
         ),
       );
@@ -755,6 +756,36 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   /// El diálogo dice lo que va a pasar en concreto, no un "¿estás seguro?":
   /// lo que se pierde y lo que NO cambia son cosas distintas y quien decide
   /// necesita las dos.
+  Future<void> _cambiarRol(String participanteId, String nombre, bool administrador) async {
+    final t = Textos.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(administrador
+            ? t.hacerAdministradorPregunta(nombre)
+            : t.quitarAdministradorPregunta(nombre)),
+        content: administrador ? Text(t.hacerAdministradorTexto) : null,
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancelar)),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(administrador ? t.hacerAdministrador : t.quitarAdministrador),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await llamarFuncion('cambiarRol', {
+        'codigo': widget.codigo,
+        'participanteId': participanteId,
+        'administrador': administrador,
+      });
+    } catch (e) {
+      _avisarError(e);
+    }
+  }
+
   Future<void> _reemplazar(String id, String nombre) async {
     final t = Textos.of(context);
     final confirmado = await showDialog<bool>(
@@ -812,7 +843,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       builder: (_) => DialogoEditarParticipante(
         nombre: nombreActual,
         avatarUrl: avatarUrl,
-        puedeEditarNombre: _esOrganizador,
+        puedeEditarNombre: _dirige,
         deseos: deseos,
         tematica: _info.tematica,
         color: _color,
@@ -890,7 +921,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
               // El botón para desbloquear el modo organizador desapareció:
               // serlo ya no es un modo que se active, lo dice `_vinculo`
               // desde antes de pintar el primer frame.
-              if (_esOrganizador)
+              if (_dirige)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
                   tooltip: t.organizadorEditarGrupo,
@@ -929,7 +960,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      if (_esOrganizador && !yaSorteado) ...[
+                      if (_dirige && !yaSorteado) ...[
                         if (_gestionaExclusiones && _exclusionesVigentes.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
@@ -988,7 +1019,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                           ),
                         const SizedBox(height: 10),
                       ],
-                      if (_esOrganizador && yaSorteado) ...[
+                      if (_dirige && yaSorteado) ...[
                         GlassOutlineButton(
                           color: _color,
                           onPressed: null,
@@ -1235,7 +1266,9 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       itemBuilder: (context, index) {
         final data = docs[index].data() as Map<String, dynamic>;
         final id = docs[index].id;
-        final nombre = data['nombre'] as String? ?? '';
+        final vacante = data['vacante'] == true;
+        final rol = data['rol'] as String?;
+        final nombre = vacante ? t.plazaLibre : data['nombre'] as String? ?? '';
         final yaTieneAmigo = data['tieneAmigo'] == true;
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -1256,14 +1289,35 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                       : nombre,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.black87)),
-              subtitle: yaTieneAmigo
-                  ? Text(t.registroYaTieneAmigo,
-                      style: const TextStyle(fontSize: 12, color: Colors.black54))
-                  : _resumenExclusiones(t, id, docs),
-              trailing: _esOrganizador
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (rol == 'organizador' || rol == 'administrador')
+                    Text(rol == 'organizador' ? t.rolOrganizador : t.rolAdministrador,
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600, color: _color.shade700)),
+                  if (yaTieneAmigo)
+                    Text(t.registroYaTieneAmigo,
+                        style: const TextStyle(fontSize: 12, color: Colors.black54))
+                  else
+                    ?_resumenExclusiones(t, id, docs),
+                ],
+              ),
+              trailing: _dirige
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (!vacante && rol != 'organizador')
+                          IconButton(
+                            icon: Icon(
+                                rol == 'administrador' ? Icons.shield : Icons.shield_outlined,
+                                color: _color.shade700),
+                            tooltip: rol == 'administrador'
+                                ? t.quitarAdministrador
+                                : t.hacerAdministrador,
+                            onPressed: () => _cambiarRol(id, nombre, rol != 'administrador'),
+                          ),
                         IconButton(
                           icon: Icon(Icons.edit_outlined, color: _color.shade700),
                           tooltip: t.editarParticipanteTitulo,

@@ -26,6 +26,9 @@ class MiVinculo {
 
   bool get esOrganizador => rol == 'organizador';
 
+  /// Organizador o administrador: los dos dirigen el grupo con el mismo poder.
+  bool get dirige => rol == 'organizador' || rol == 'administrador';
+
   bool get estoyDentro => participanteId != null && participanteId!.isNotEmpty;
 
   /// Lee una entrada de las que devuelve `misGrupos`.

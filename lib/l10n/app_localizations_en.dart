@@ -133,7 +133,8 @@ class TextosEn extends Textos {
   String get errorPinFormato => 'The PIN must be exactly 4 digits';
 
   @override
-  String get errorNoEresOrganizador => 'Only the group organizer can do this';
+  String get errorNoEresOrganizador =>
+      'Only whoever runs the group can do this.';
 
   @override
   String get errorNoEstasEnElGrupo => 'You are not signed up in this group yet';
@@ -992,4 +993,48 @@ class TextosEn extends Textos {
 
   @override
   String get verificarConEnlace => 'I verified with the link';
+
+  @override
+  String get rolOrganizador => 'Organizer';
+
+  @override
+  String get rolAdministrador => 'Admin';
+
+  @override
+  String get misGruposAdministrador => 'Admin';
+
+  @override
+  String get hacerAdministrador => 'Make admin';
+
+  @override
+  String get quitarAdministrador => 'Remove admin';
+
+  @override
+  String hacerAdministradorPregunta(String nombre) {
+    return 'Make $nombre an admin?';
+  }
+
+  @override
+  String get hacerAdministradorTexto =>
+      'They\'ll be able to run the group just like the organizer: edit it, run the draw, remove and replace people, and name other admins.';
+
+  @override
+  String quitarAdministradorPregunta(String nombre) {
+    return 'Remove $nombre as admin?';
+  }
+
+  @override
+  String get plazaLibre => 'Open spot';
+
+  @override
+  String get plazaLibreAyuda => 'Whoever runs the group will replace it soon.';
+
+  @override
+  String get chatAbandono => 'A participant has left the game';
+
+  @override
+  String get errorPlazaSinCuenta => 'That spot is open: it can\'t be an admin.';
+
+  @override
+  String get errorEsElOrganizador => 'The organizer\'s role can\'t be changed.';
 }

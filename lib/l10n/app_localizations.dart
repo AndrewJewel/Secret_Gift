@@ -328,7 +328,7 @@ abstract class Textos {
   /// No description provided for @errorNoEresOrganizador.
   ///
   /// In en, this message translates to:
-  /// **'Only the group organizer can do this'**
+  /// **'Only whoever runs the group can do this.'**
   String get errorNoEresOrganizador;
 
   /// No description provided for @errorNoEstasEnElGrupo.
@@ -1823,6 +1823,84 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'I verified with the link'**
   String get verificarConEnlace;
+
+  /// No description provided for @rolOrganizador.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer'**
+  String get rolOrganizador;
+
+  /// No description provided for @rolAdministrador.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get rolAdministrador;
+
+  /// No description provided for @misGruposAdministrador.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get misGruposAdministrador;
+
+  /// No description provided for @hacerAdministrador.
+  ///
+  /// In en, this message translates to:
+  /// **'Make admin'**
+  String get hacerAdministrador;
+
+  /// No description provided for @quitarAdministrador.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove admin'**
+  String get quitarAdministrador;
+
+  /// No description provided for @hacerAdministradorPregunta.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {nombre} an admin?'**
+  String hacerAdministradorPregunta(String nombre);
+
+  /// No description provided for @hacerAdministradorTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'They\'ll be able to run the group just like the organizer: edit it, run the draw, remove and replace people, and name other admins.'**
+  String get hacerAdministradorTexto;
+
+  /// No description provided for @quitarAdministradorPregunta.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {nombre} as admin?'**
+  String quitarAdministradorPregunta(String nombre);
+
+  /// No description provided for @plazaLibre.
+  ///
+  /// In en, this message translates to:
+  /// **'Open spot'**
+  String get plazaLibre;
+
+  /// No description provided for @plazaLibreAyuda.
+  ///
+  /// In en, this message translates to:
+  /// **'Whoever runs the group will replace it soon.'**
+  String get plazaLibreAyuda;
+
+  /// No description provided for @chatAbandono.
+  ///
+  /// In en, this message translates to:
+  /// **'A participant has left the game'**
+  String get chatAbandono;
+
+  /// No description provided for @errorPlazaSinCuenta.
+  ///
+  /// In en, this message translates to:
+  /// **'That spot is open: it can\'t be an admin.'**
+  String get errorPlazaSinCuenta;
+
+  /// No description provided for @errorEsElOrganizador.
+  ///
+  /// In en, this message translates to:
+  /// **'The organizer\'s role can\'t be changed.'**
+  String get errorEsElOrganizador;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {
