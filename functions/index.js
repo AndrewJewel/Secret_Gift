@@ -1712,13 +1712,17 @@ exports.mandarCorreoRecuperacion = onCall({secrets: [RESEND_API_KEY]}, async (re
   // guarda el hash, no el correo.
   await reservarEnvio(db.collection("limitesCorreo")
       .doc(createHash("sha256").update(correo).digest("hex")));
-  let enlace;
+  // Se mira ANTES de pedir el enlace: con la protección contra enumeración
+  // de correos activa, generatePasswordResetLink de un correo sin cuenta no
+  // dice «no existe», lanza «INTERNAL ASSERT FAILED: Unable to create the
+  // email action link» (comprobado en producción el 27-sep).
   try {
-    enlace = await getAuth().generatePasswordResetLink(correo);
+    await getAuth().getUserByEmail(correo);
   } catch (e) {
     if (e.code === "auth/user-not-found") return {ok: true};
     throw e;
   }
+  const enlace = await getAuth().generatePasswordResetLink(correo);
   const url = new URL(enlace);
   url.searchParams.set("lang", idioma);
   await mandarCorreo({para: correo, ...correos.correoRecuperacion(idioma, correo, url.toString())});
