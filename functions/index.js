@@ -6,7 +6,7 @@ const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue, FieldPath} = require("firebase-admin/firestore");
 const {getStorage} = require("firebase-admin/storage");
 const {avisar, avisarAVarios} = require("./push");
-const {AVISOS, idiomaValido} = require("./avisos");
+const {AVISOS, idiomaValido, IDIOMA_POR_DEFECTO} = require("./avisos");
 const {
   claveDePareja, parejasVigentes, idsOrdenados, aIndices, hayCadena, sortearCadena,
 } = require("./sorteo");
@@ -18,7 +18,13 @@ const bcrypt = require("bcryptjs");
 // secretos: el código del grupo —que desde que se cerró el `list` de
 // Firestore es la ÚNICA llave para llegar a él—, la cadena del sorteo, y
 // la máscara que sostiene el anonimato del chat.
-const {randomInt, randomBytes} = require("node:crypto");
+const {randomInt, randomBytes, createHash} = require("node:crypto");
+const {defineSecret} = require("firebase-functions/params");
+const {logger} = require("firebase-functions");
+const {getAuth} = require("firebase-admin/auth");
+const correos = require("./correos");
+
+const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
 initializeApp();
 const db = getFirestore();
@@ -1611,5 +1617,110 @@ exports.eliminarGrupo = onCall(async (request) => {
   } catch (e) {
     console.warn("No se pudieron borrar los avatares del grupo:", e.message);
   }
+  return {ok: true};
+});
+
+// --- Correos propios (Resend) --------------------------------------------
+// Firebase tiene bloqueadas las plantillas de este proyecto: ni asunto ni
+// cuerpo. Estos correos los mandamos nosotros. Diseño en el locker:
+// docs/superpowers/specs/2026-09-26-correos-propios-design.md
+
+function idiomaDe(request) {
+  const idioma = request.data?.idioma;
+  return idiomaValido(idioma) ? idioma : IDIOMA_POR_DEFECTO;
+}
+
+/** Aplica el límite de envíos guardado en `ref` (campo `limite`) o lanza. */
+async function reservarEnvio(ref) {
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const decision = correos.decidirEnvio(snap.data()?.limite, Date.now());
+    if (!decision.permitido) {
+      throw new HttpsError("resource-exhausted", "Espera antes de pedir otro correo.",
+          {clave: "demasiados_correos"});
+    }
+    tx.set(ref, {limite: decision.limite}, {merge: true});
+  });
+}
+
+async function mandarCorreo(correo) {
+  try {
+    await correos.enviarConResend(RESEND_API_KEY.value(), correo);
+  } catch (e) {
+    logger.error("Resend no mandó el correo", {motivo: e.message});
+    throw new HttpsError("unavailable", "No se pudo mandar el correo.", {clave: "correo_no_enviado"});
+  }
+}
+
+exports.mandarCodigoVerificacion = onCall({secrets: [RESEND_API_KEY]}, async (request) => {
+  const uid = uidDe(request, {exigirVerificado: false});
+  const usuario = await getAuth().getUser(uid);
+  if (usuario.emailVerified) return {yaVerificado: true};
+  const ref = db.collection("verificaciones").doc(uid);
+  await reservarEnvio(ref);
+  const codigo = correos.generarCodigo6();
+  // bcrypt como el PIN: si alguien leyera la colección no tendría el código.
+  await ref.set({
+    hash: bcrypt.hashSync(codigo, 8),
+    expira: Date.now() + correos.CADUCIDAD_CODIGO_MS,
+    intentos: 0,
+  }, {merge: true});
+  await mandarCorreo({para: usuario.email, ...correos.correoCodigo(idiomaDe(request), usuario.email, codigo)});
+  return {ok: true};
+});
+
+exports.verificarCodigo = onCall(async (request) => {
+  const uid = uidDe(request, {exigirVerificado: false});
+  const codigo = String(request.data?.codigo || "").trim();
+  if (!/^\d{6}$/.test(codigo)) {
+    throw new HttpsError("invalid-argument", "El código son 6 cifras.", {clave: "codigo_incorrecto"});
+  }
+  const ref = db.collection("verificaciones").doc(uid);
+  // En transacción: dos intentos a la vez no se saltan el contador.
+  const resultado = await db.runTransaction(async (tx) => {
+    const doc = (await tx.get(ref)).data();
+    const estado = correos.evaluarIntento(doc, Date.now());
+    if (estado !== "comparar") return estado;
+    if (await bcrypt.compare(codigo, doc.hash)) return "ok";
+    tx.update(ref, {intentos: FieldValue.increment(1)});
+    return "incorrecto";
+  });
+  if (resultado === "caducado") {
+    throw new HttpsError("failed-precondition", "El código caducó.", {clave: "codigo_caducado"});
+  }
+  if (resultado === "agotado") {
+    throw new HttpsError("failed-precondition", "Demasiados intentos.", {clave: "codigo_agotado"});
+  }
+  if (resultado === "incorrecto") {
+    throw new HttpsError("invalid-argument", "Código incorrecto.", {clave: "codigo_incorrecto"});
+  }
+  // Primero se marca la cuenta; después se gasta el código. Si lo primero
+  // fallara, el código seguiría sirviendo para reintentar.
+  await getAuth().updateUser(uid, {emailVerified: true});
+  await ref.delete();
+  return {ok: true};
+});
+
+exports.mandarCorreoRecuperacion = onCall({secrets: [RESEND_API_KEY]}, async (request) => {
+  const correo = String(request.data?.correo || "").trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+    throw new HttpsError("invalid-argument", "Correo no válido.", {clave: "correo_invalido"});
+  }
+  const idioma = idiomaDe(request);
+  // El límite va ANTES de mirar si la cuenta existe: responde igual en los
+  // dos casos, así que no sirve para averiguar quién está registrado. Se
+  // guarda el hash, no el correo.
+  await reservarEnvio(db.collection("limitesCorreo")
+      .doc(createHash("sha256").update(correo).digest("hex")));
+  let enlace;
+  try {
+    enlace = await getAuth().generatePasswordResetLink(correo);
+  } catch (e) {
+    if (e.code === "auth/user-not-found") return {ok: true};
+    throw e;
+  }
+  const url = new URL(enlace);
+  url.searchParams.set("lang", idioma);
+  await mandarCorreo({para: correo, ...correos.correoRecuperacion(idioma, correo, url.toString())});
   return {ok: true};
 });
