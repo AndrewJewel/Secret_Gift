@@ -64,6 +64,17 @@ async function avisar(uid, {textos, datos} = {}) {
       const respuesta = await getMessaging().sendEachForMulticast({
         tokens: grupo,
         notification: {title: titulo, body: cuerpo},
+        // Sin icono, Chrome pinta la inicial del sitio sobre gris y Android
+        // un icono genérico. `icon` es el logo a color; `badge` e
+        // `ic_notificacion` son la silueta blanca que piden las barras de
+        // estado (un solo color, transparente alrededor).
+        webpush: {
+          notification: {
+            icon: "https://secretgift.app/icons/Icon-192.png",
+            badge: "https://secretgift.app/icons/badge-96.png",
+          },
+        },
+        android: {notification: {icon: "ic_notificacion", color: "#9B1226"}},
         data: datos || {},
       });
       muertos.push(...tokensMuertos(respuesta, grupo));

@@ -60,6 +60,22 @@
                     android:path="/"/>
             </intent-filter>
         </activity>
+        <!-- Icono y color de las notificaciones que pinta Firebase cuando el
+             aviso no trae los suyos: la silueta blanca del logo. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notificacion" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notificacion" />
+        <!-- Icono y color de las notificaciones que pinta Firebase cuando el
+             aviso no trae los suyos: la silueta blanca del logo. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notificacion" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notificacion" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

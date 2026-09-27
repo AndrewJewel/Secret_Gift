@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FBF6EE</color>
+    <!-- Tinte del icono de las notificaciones: el carmín de la marca. -->
+    <color name="notificacion">#9B1226</color>
+    <!-- Tinte del icono de las notificaciones: el carmín de la marca. -->
+    <color name="notificacion">#9B1226</color>
 </resources>
