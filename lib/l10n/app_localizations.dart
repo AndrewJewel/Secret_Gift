@@ -1980,11 +1980,137 @@ abstract class Textos {
   /// **'Privacy policy'**
   String get politicaPrivacidad;
 
-  /// No description provided for @alCrearAceptas.
+  /// No description provided for @condicionesAceptoTerminos.
   ///
   /// In en, this message translates to:
-  /// **'By creating your account you accept the privacy policy'**
-  String get alCrearAceptas;
+  /// **'I accept the Terms of Use'**
+  String get condicionesAceptoTerminos;
+
+  /// No description provided for @condicionesLeerTerminos.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the terms'**
+  String get condicionesLeerTerminos;
+
+  /// No description provided for @condicionesAutorizoDatos.
+  ///
+  /// In en, this message translates to:
+  /// **'I authorize the processing of my data under the Privacy Policy'**
+  String get condicionesAutorizoDatos;
+
+  /// No description provided for @condicionesLeerPrivacidad.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the privacy policy'**
+  String get condicionesLeerPrivacidad;
+
+  /// No description provided for @condicionesTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you continue'**
+  String get condicionesTitulo;
+
+  /// No description provided for @condicionesTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'We published our terms of use and updated the privacy policy. To keep using Secret Gift, please accept them.'**
+  String get condicionesTexto;
+
+  /// No description provided for @condicionesAceptar.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get condicionesAceptar;
+
+  /// No description provided for @errorCondicionesSinAceptar.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept the terms of use to write in the chat.'**
+  String get errorCondicionesSinAceptar;
+
+  /// No description provided for @errorVersionInvalida.
+  ///
+  /// In en, this message translates to:
+  /// **'The terms changed. Reopen the app and accept them.'**
+  String get errorVersionInvalida;
+
+  /// No description provided for @errorMotivoInvalido.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a reason for the report.'**
+  String get errorMotivoInvalido;
+
+  /// No description provided for @chatDenunciar.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get chatDenunciar;
+
+  /// No description provided for @chatBloquear.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this mask'**
+  String get chatBloquear;
+
+  /// No description provided for @chatDenunciarTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you reporting it?'**
+  String get chatDenunciarTitulo;
+
+  /// No description provided for @motivoOfensivo.
+  ///
+  /// In en, this message translates to:
+  /// **'Offensive or harassment'**
+  String get motivoOfensivo;
+
+  /// No description provided for @motivoSexual.
+  ///
+  /// In en, this message translates to:
+  /// **'Sexual content'**
+  String get motivoSexual;
+
+  /// No description provided for @motivoSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get motivoSpam;
+
+  /// No description provided for @motivoOtro.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get motivoOtro;
+
+  /// No description provided for @chatDenunciado.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks. We\'ll review it.'**
+  String get chatDenunciado;
+
+  /// No description provided for @chatBloqueada.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t see any more messages from {mascara} in this group.'**
+  String chatBloqueada(String mascara);
+
+  /// No description provided for @chatBloqueadas.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked masks'**
+  String get chatBloqueadas;
+
+  /// No description provided for @chatSinBloqueadas.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t blocked anyone.'**
+  String get chatSinBloqueadas;
+
+  /// No description provided for @chatDesbloquear.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get chatDesbloquear;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

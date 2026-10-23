@@ -4,6 +4,7 @@ import 'acceso_cuenta.dart';
 import 'glass.dart';
 import 'hoja_configuracion.dart';
 import 'l10n/app_localizations.dart';
+import 'condiciones.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_crear_grupo.dart';
@@ -54,11 +55,22 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
   /// pero deja de valer en cuanto se crea o se entra a un grupo. Se
   /// recarga al volver de esas pantallas: si no, un grupo recién creado
   /// no aparecería hasta cerrar sesión y volver a entrar.
+  /// Evita dos diálogos de condiciones a la vez (la recarga se dispara al volver).
+  bool _pidiendoCondiciones = false;
+
   Future<void> _recargar() async {
     try {
       final r = await cargarMisGrupos();
       if (!mounted || r == null) return;
       setState(() => _grupos = r.grupos);
+      if (!condicionesAlDia(r.aceptaciones) && !_pidiendoCondiciones) {
+        _pidiendoCondiciones = true;
+        await DialogoCondiciones.mostrar(context, salir: () async {
+          await salir();
+          if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
+        });
+        _pidiendoCondiciones = false;
+      }
     } catch (_) {
       // Sin conexión se queda la lista que ya había, que es mejor que
       // vaciarla o mostrar un error por algo secundario.

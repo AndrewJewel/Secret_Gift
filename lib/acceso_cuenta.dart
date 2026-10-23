@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'auth.dart';
+import 'condiciones.dart';
 import 'funciones.dart';
 import 'idioma.dart';
 import 'push.dart';
@@ -10,7 +11,10 @@ class ResultadoAcceso {
   final String nombre;
   final String apellido;
   final List<Map<String, dynamic>> grupos;
-  const ResultadoAcceso(this.nombre, this.apellido, this.grupos);
+
+  /// Condiciones y privacidad aceptadas, cada una con su versión y fecha.
+  final Map<String, dynamic> aceptaciones;
+  const ResultadoAcceso(this.nombre, this.apellido, this.grupos, [this.aceptaciones = const {}]);
 }
 
 /// Convierte cualquier fallo de Auth en el [FuncionError] que la interfaz
@@ -41,6 +45,8 @@ Future<MedioVerificacion> crearCuenta({
     'apellido': apellido.trim(),
     'pin': pin.trim(),
   });
+  // Constancia de las dos casillas del alta, con versión y fecha.
+  await aceptarCondicionesEnServidor();
   return mandarVerificacion();
 }
 
@@ -181,6 +187,7 @@ Future<ResultadoAcceso?> cargarMisGrupos() async {
     r['apellido'] as String? ?? '',
     List<Map<String, dynamic>>.from(
         (r['grupos'] as List).map((g) => Map<String, dynamic>.from(g as Map))),
+    Map<String, dynamic>.from((r['aceptaciones'] as Map?) ?? const {}),
   );
 }
 

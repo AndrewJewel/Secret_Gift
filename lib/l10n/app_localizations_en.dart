@@ -1090,6 +1090,74 @@ class TextosEn extends Textos {
   String get politicaPrivacidad => 'Privacy policy';
 
   @override
-  String get alCrearAceptas =>
-      'By creating your account you accept the privacy policy';
+  String get condicionesAceptoTerminos => 'I accept the Terms of Use';
+
+  @override
+  String get condicionesLeerTerminos => 'Read the terms';
+
+  @override
+  String get condicionesAutorizoDatos =>
+      'I authorize the processing of my data under the Privacy Policy';
+
+  @override
+  String get condicionesLeerPrivacidad => 'Read the privacy policy';
+
+  @override
+  String get condicionesTitulo => 'Before you continue';
+
+  @override
+  String get condicionesTexto =>
+      'We published our terms of use and updated the privacy policy. To keep using Secret Gift, please accept them.';
+
+  @override
+  String get condicionesAceptar => 'Accept';
+
+  @override
+  String get errorCondicionesSinAceptar =>
+      'Accept the terms of use to write in the chat.';
+
+  @override
+  String get errorVersionInvalida =>
+      'The terms changed. Reopen the app and accept them.';
+
+  @override
+  String get errorMotivoInvalido => 'Choose a reason for the report.';
+
+  @override
+  String get chatDenunciar => 'Report';
+
+  @override
+  String get chatBloquear => 'Block this mask';
+
+  @override
+  String get chatDenunciarTitulo => 'Why are you reporting it?';
+
+  @override
+  String get motivoOfensivo => 'Offensive or harassment';
+
+  @override
+  String get motivoSexual => 'Sexual content';
+
+  @override
+  String get motivoSpam => 'Spam';
+
+  @override
+  String get motivoOtro => 'Other';
+
+  @override
+  String get chatDenunciado => 'Thanks. We\'ll review it.';
+
+  @override
+  String chatBloqueada(String mascara) {
+    return 'You won\'t see any more messages from $mascara in this group.';
+  }
+
+  @override
+  String get chatBloqueadas => 'Blocked masks';
+
+  @override
+  String get chatSinBloqueadas => 'You haven\'t blocked anyone.';
+
+  @override
+  String get chatDesbloquear => 'Unblock';
 }

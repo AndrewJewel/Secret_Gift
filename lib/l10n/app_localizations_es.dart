@@ -1090,6 +1090,74 @@ class TextosEs extends Textos {
   String get politicaPrivacidad => 'Política de privacidad';
 
   @override
-  String get alCrearAceptas =>
-      'Al crear tu cuenta aceptas la política de privacidad';
+  String get condicionesAceptoTerminos => 'Acepto las Condiciones de uso';
+
+  @override
+  String get condicionesLeerTerminos => 'Leer las condiciones';
+
+  @override
+  String get condicionesAutorizoDatos =>
+      'Autorizo el tratamiento de mis datos según la Política de privacidad';
+
+  @override
+  String get condicionesLeerPrivacidad => 'Leer la política de privacidad';
+
+  @override
+  String get condicionesTitulo => 'Antes de seguir';
+
+  @override
+  String get condicionesTexto =>
+      'Publicamos nuestras condiciones de uso y actualizamos la política de privacidad. Para seguir usando Secret Gift, acéptalas.';
+
+  @override
+  String get condicionesAceptar => 'Aceptar';
+
+  @override
+  String get errorCondicionesSinAceptar =>
+      'Acepta las condiciones de uso para poder escribir en el chat.';
+
+  @override
+  String get errorVersionInvalida =>
+      'Las condiciones cambiaron. Vuelve a abrir la app y acéptalas.';
+
+  @override
+  String get errorMotivoInvalido => 'Elige un motivo para la denuncia.';
+
+  @override
+  String get chatDenunciar => 'Denunciar';
+
+  @override
+  String get chatBloquear => 'Bloquear a esta máscara';
+
+  @override
+  String get chatDenunciarTitulo => '¿Por qué lo denuncias?';
+
+  @override
+  String get motivoOfensivo => 'Ofensivo o acoso';
+
+  @override
+  String get motivoSexual => 'Contenido sexual';
+
+  @override
+  String get motivoSpam => 'Spam';
+
+  @override
+  String get motivoOtro => 'Otro';
+
+  @override
+  String get chatDenunciado => 'Gracias. Lo revisaremos.';
+
+  @override
+  String chatBloqueada(String mascara) {
+    return 'No verás más mensajes de $mascara en este grupo.';
+  }
+
+  @override
+  String get chatBloqueadas => 'Máscaras bloqueadas';
+
+  @override
+  String get chatSinBloqueadas => 'No has bloqueado a nadie.';
+
+  @override
+  String get chatDesbloquear => 'Desbloquear';
 }

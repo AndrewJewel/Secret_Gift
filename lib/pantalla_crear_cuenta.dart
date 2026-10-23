@@ -4,7 +4,7 @@ import 'acceso_cuenta.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
-import 'privacidad.dart';
+import 'condiciones.dart';
 import 'ocasion.dart';
 import 'oferta_avisos.dart';
 import 'pantalla_completar_perfil.dart';
@@ -53,6 +53,9 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
   final _pin = TextEditingController();
   final _confirmarPin = TextEditingController();
   bool _cargando = false;
+
+  /// Las dos casillas (condiciones y tratamiento de datos) marcadas.
+  bool _aceptaTodo = false;
   bool _verPassword = false;
 
   @override
@@ -236,13 +239,14 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                     obscureText: true,
                   ),
                   const SizedBox(height: 24),
+                  CasillasCondiciones(onCambio: (v) => setState(() => _aceptaTodo = v)),
+                  const SizedBox(height: 12),
                   GlassButton(
                     color: colorNeutro.shade600,
                     icon: Icons.person_add_alt,
                     label: t.cuentaCrearTitulo,
-                    onPressed: _cargando ? null : _enviar,
+                    onPressed: _cargando || !_aceptaTodo ? null : _enviar,
                   ),
-                  EnlacePrivacidad(texto: t.alCrearAceptas),
                   TextButton(
                     onPressed: _cargando
                         ? null
