@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import 'acceso_cuenta.dart';
+import 'condiciones.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'grupo_a_la_vista.dart';
@@ -48,6 +50,10 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
   int? _miMascara;
   bool _enviando = false;
 
+  /// Máscaras que esta persona bloqueó en este grupo, como "mascara:repeticion".
+  /// Sus mensajes no se pintan; solo ella lo sabe.
+  Set<String> _bloqueadas = {};
+
   late final Query<Map<String, dynamic>> _chatRef = FirebaseFirestore.instance
       .collection('grupos')
       .doc(widget.codigo)
@@ -82,11 +88,12 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
   Future<void> _cargarMiMascara() async {
     if (widget.vinculo?.estoyDentro != true) return;
     try {
-      final datos = await llamarFuncion('miMascara', {
-        'codigo': widget.codigo,
-      });
+      final datos = await llamarFuncion('miMascara', {'codigo': widget.codigo});
       if (!mounted) return;
-      setState(() => _miMascara = datos['mascara'] as int?);
+      setState(() {
+        _miMascara = datos['mascara'] as int?;
+        _bloqueadas = {...((datos['bloqueadas'] as List?) ?? const []).cast<String>()};
+      });
     } catch (_) {
       // Sin máscara solo se pierde el resaltado de los propios mensajes;
       // leer el chat sigue funcionando.
@@ -106,25 +113,158 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
 
     setState(() => _enviando = true);
     try {
-      final datos = await llamarFuncion('enviarMensaje', {
-        'codigo': widget.codigo,
-        'texto': texto,
-      });
+      final datos = await llamarFuncion('enviarMensaje', {'codigo': widget.codigo, 'texto': texto});
       _mensajeController.clear();
       if (!mounted) return;
       setState(() => _miMascara = datos['mascara'] as int?);
       // La lista va invertida, así que lo más nuevo está en el offset 0.
       if (_scroll.hasClients) {
-        _scroll.animateTo(0,
-            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+        _scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
       }
     } catch (e) {
       if (!mounted) return;
       final t = Textos.of(context);
+      // Cuentas de antes de las condiciones: se aceptan aquí mismo y se
+      // reintenta. Google Play exige aceptarlas antes de publicar.
+      if (e is FuncionError && e.clave == 'condiciones_sin_aceptar') {
+        final aceptado = await DialogoCondiciones.mostrar(
+          context,
+          salir: () async {
+            await salir();
+            if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
+          },
+        );
+        if (aceptado && mounted) {
+          setState(() => _enviando = false);
+          return _enviar();
+        }
+        return;
+      }
       _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
+  }
+
+  // --- Denunciar y bloquear ---------------------------------------------
+
+  /// Menú de un mensaje ajeno (pulsación larga).
+  Future<void> _menuMensaje(String mensajeId, int mascara, int repeticion) async {
+    final t = Textos.of(context);
+    final eleccion = await showModalBottomSheet<String>(
+      context: context,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: Text(t.chatDenunciar),
+              onTap: () => Navigator.pop(c, 'denunciar'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.block),
+              title: Text(t.chatBloquear),
+              onTap: () => Navigator.pop(c, 'bloquear'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (eleccion == 'denunciar') await _denunciar(mensajeId);
+    if (eleccion == 'bloquear') await _bloquear(mascara, repeticion, true);
+  }
+
+  Future<void> _denunciar(String mensajeId) async {
+    final t = Textos.of(context);
+    final motivos = {
+      'ofensivo': t.motivoOfensivo,
+      'sexual': t.motivoSexual,
+      'spam': t.motivoSpam,
+      'otro': t.motivoOtro,
+    };
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (c) => SimpleDialog(
+        title: Text(t.chatDenunciarTitulo),
+        children: [
+          for (final m in motivos.entries)
+            SimpleDialogOption(onPressed: () => Navigator.pop(c, m.key), child: Text(m.value)),
+        ],
+      ),
+    );
+    if (motivo == null) return;
+    try {
+      await llamarFuncion('denunciarMensaje', {
+        'codigo': widget.codigo,
+        'mensajeId': mensajeId,
+        'motivo': motivo,
+      });
+      _avisar(t.chatDenunciado);
+    } catch (e) {
+      _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
+    }
+  }
+
+  Future<void> _bloquear(int mascara, int repeticion, bool bloquear) async {
+    final t = Textos.of(context);
+    final clave = '$mascara:$repeticion';
+    try {
+      await llamarFuncion('bloquearMascara', {
+        'codigo': widget.codigo,
+        'mascara': mascara,
+        'repeticion': repeticion,
+        'bloquear': bloquear,
+      });
+      if (!mounted) return;
+      setState(() => bloquear ? _bloqueadas.add(clave) : _bloqueadas.remove(clave));
+      if (bloquear) _avisar(t.chatBloqueada(Mascara.nombre(t, mascara, repeticion)));
+    } catch (e) {
+      _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
+    }
+  }
+
+  /// Lista de máscaras bloqueadas, para desbloquearlas.
+  Future<void> _verBloqueadas() async {
+    final t = Textos.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (c) => StatefulBuilder(
+        builder: (c, refrescar) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(t.chatBloqueadas, style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (_bloqueadas.isEmpty)
+                  Padding(padding: const EdgeInsets.all(16), child: Text(t.chatSinBloqueadas)),
+                for (final clave in _bloqueadas.toList())
+                  Builder(
+                    builder: (_) {
+                      final partes = clave.split(':');
+                      final m = int.tryParse(partes.first) ?? 0;
+                      final r = int.tryParse(partes.length > 1 ? partes[1] : '0') ?? 0;
+                      return ListTile(
+                        leading: InsigniaMascara(indice: m, radio: 16),
+                        title: Text(Mascara.nombre(t, m, r)),
+                        trailing: TextButton(
+                          onPressed: () async {
+                            await _bloquear(m, r, false);
+                            refrescar(() {});
+                          },
+                          child: Text(t.chatDesbloquear),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _borrarMensaje(String mensajeId) async {
@@ -147,10 +287,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
     if (confirmado != true) return;
 
     try {
-      await llamarFuncion('borrarMensaje', {
-        'codigo': widget.codigo,
-        'mensajeId': mensajeId,
-      });
+      await llamarFuncion('borrarMensaje', {'codigo': widget.codigo, 'mensajeId': mensajeId});
     } catch (e) {
       if (!mounted) return;
       _avisar(e is FuncionError ? e.texto(t) : t.errorInesperado(e.toString()));
@@ -179,6 +316,14 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
           appBar: GlassAppBar(
             title: Text(t.chatTitulo),
             color: _color,
+            actions: [
+              if (widget.vinculo?.estoyDentro == true)
+                IconButton(
+                  icon: const Icon(Icons.block),
+                  tooltip: t.chatBloqueadas,
+                  onPressed: _verBloqueadas,
+                ),
+            ],
           ),
           body: SafeArea(
             child: Column(
@@ -232,8 +377,11 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text(t.chatVacio,
-                  textAlign: TextAlign.center, style: TextStyle(color: colorSuelto)),
+              child: Text(
+                t.chatVacio,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colorSuelto),
+              ),
             ),
           );
         }
@@ -252,21 +400,32 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
             if (data['sistema'] == 'abandono') {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(Textos.of(context).chatAbandono,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 13, fontStyle: FontStyle.italic, color: Colors.black54)),
+                child: Text(
+                  Textos.of(context).chatAbandono,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.black54,
+                  ),
+                ),
               );
             }
             final mascara = (data['mascara'] as num?)?.toInt() ?? 0;
             final repeticion = (data['repeticion'] as num?)?.toInt() ?? 0;
+            if (_bloqueadas.contains('$mascara:$repeticion')) return const SizedBox.shrink();
+            final esMia = _miMascara != null && _miMascara == mascara;
             return _Burbuja(
               texto: data['texto'] as String? ?? '',
               mascara: mascara,
               repeticion: repeticion,
-              esMia: _miMascara != null && _miMascara == mascara,
+              esMia: esMia,
               color: _color,
               onBorrar: widget.vinculo?.dirige == true ? () => _borrarMensaje(doc.id) : null,
+              // Denunciar o bloquear: solo mensajes ajenos y solo si estás dentro.
+              onMenu: !esMia && widget.vinculo?.estoyDentro == true
+                  ? () => _menuMensaje(doc.id, mascara, repeticion)
+                  : null,
             );
           },
         );
@@ -295,9 +454,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
             width: 52,
             height: 52,
             child: FilledButton(
-              onPressed: (_enviando || widget.vinculo?.estoyDentro != true)
-                  ? null
-                  : _enviar,
+              onPressed: (_enviando || widget.vinculo?.estoyDentro != true) ? null : _enviar,
               style: FilledButton.styleFrom(
                 backgroundColor: legibleSobreBlanco(_color.shade600),
                 padding: EdgeInsets.zero,
@@ -307,7 +464,8 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
                   : Tooltip(message: t.chatEnviar, child: const Icon(Icons.send)),
             ),
           ),
@@ -328,6 +486,9 @@ class _Burbuja extends StatelessWidget {
   final MaterialColor color;
   final VoidCallback? onBorrar;
 
+  /// Pulsación larga: denunciar o bloquear. Null en los propios.
+  final VoidCallback? onMenu;
+
   const _Burbuja({
     required this.texto,
     required this.mascara,
@@ -335,6 +496,7 @@ class _Burbuja extends StatelessWidget {
     required this.esMia,
     required this.color,
     this.onBorrar,
+    this.onMenu,
   });
 
   @override
@@ -347,53 +509,53 @@ class _Burbuja extends StatelessWidget {
         mainAxisAlignment: esMia ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!esMia) ...[
-            InsigniaMascara(indice: mascara, radio: 16),
-            const SizedBox(width: 8),
-          ],
+          if (!esMia) ...[InsigniaMascara(indice: mascara, radio: 16), const SizedBox(width: 8)],
           Flexible(
-            child: GlassCard(
-              color: color,
-              radius: 16,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Column(
-                crossAxisAlignment:
-                    esMia ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(esMia ? '$nombre (${t.chatTu})' : nombre,
+            child: GestureDetector(
+              onLongPress: onMenu,
+              child: GlassCard(
+                color: color,
+                radius: 16,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: esMia ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          esMia ? '$nombre (${t.chatTu})' : nombre,
                           style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Mascara.de(mascara).color)),
-                      if (onBorrar != null)
-                        InkWell(
-                          onTap: onBorrar,
-                          customBorder: const CircleBorder(),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: Icon(Icons.delete_outline,
-                                size: 16, color: Colors.red.shade700),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Mascara.de(mascara).color,
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(texto,
-                      style: const TextStyle(color: Colors.black87, height: 1.35)),
-                ],
+                        if (onBorrar != null)
+                          InkWell(
+                            onTap: onBorrar,
+                            customBorder: const CircleBorder(),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: Colors.red.shade700,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(texto, style: const TextStyle(color: Colors.black87, height: 1.35)),
+                  ],
+                ),
               ),
             ),
           ),
-          if (esMia) ...[
-            const SizedBox(width: 8),
-            InsigniaMascara(indice: mascara, radio: 16),
-          ],
+          if (esMia) ...[const SizedBox(width: 8), InsigniaMascara(indice: mascara, radio: 16)],
         ],
       ),
     );
   }
 }
-
