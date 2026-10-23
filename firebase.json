@@ -55,6 +55,22 @@
         "destination": "/eliminar-cuenta.html"
       },
       {
+        "source": "/terminos",
+        "destination": "/terminos.html"
+      },
+      {
+        "source": "/terms",
+        "destination": "/terminos.html"
+      },
+      {
+        "source": "/precios",
+        "destination": "/precios.html"
+      },
+      {
+        "source": "/pricing",
+        "destination": "/precios.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

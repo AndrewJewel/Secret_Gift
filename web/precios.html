@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Precios · Secret Gift</title>
+<meta name="description" content="Precios de Secret Gift. Secret Gift pricing.">
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:wght@400;700&family=Merriweather+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --fondo: #EDE6DA; --papel: #F4EFE5; --borde: #E2D8C6; --tinta: #181818; --suave: #5E554C; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta);
+    font: 16px/1.65 "Merriweather Sans", Arial, sans-serif; }
+  main { max-width: 760px; margin: 32px auto; padding: 36px clamp(20px, 5vw, 48px);
+    background: var(--papel); border: 1px solid var(--borde); border-radius: 20px; }
+  header { text-align: center; margin-bottom: 8px; }
+  header img { width: 64px; height: 64px; }
+  h1, h2 { font-family: "Gentium Book Plus", Georgia, serif; font-weight: 400; line-height: 1.2; }
+  h1 { font-size: 34px; margin: 12px 0 4px; }
+  h2 { font-size: 24px; margin: 32px 0 8px; }
+  .fecha { color: var(--suave); font-size: 14px; margin: 0; }
+  nav.idiomas { display: flex; justify-content: center; gap: 8px; margin: 20px 0 8px; }
+  nav.idiomas button { font: 600 13px "Merriweather Sans", Arial, sans-serif; letter-spacing: .08em;
+    padding: 8px 18px; border-radius: 999px; border: 1px solid var(--tinta);
+    background: transparent; color: var(--tinta); cursor: pointer; }
+  nav.idiomas button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
+  a { color: var(--tinta); }
+  ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
+  th { font-weight: 600; }
+  footer { text-align: center; color: var(--suave); font-size: 12px; letter-spacing: .15em; margin: 0 0 32px; }
+  .oculto { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="/assets/assets/logo.png" alt="Secret Gift">
+    <nav class="idiomas" aria-label="Idioma / Language">
+      <button type="button" data-idioma="es" aria-pressed="true">ESPAÑOL</button>
+      <button type="button" data-idioma="en" aria-pressed="false">ENGLISH</button>
+    </nav>
+  </header>
+
+  <article lang="es" id="es">
+    <h1>Precios</h1>
+    <p class="fecha">Secret Gift · NeonGate LLC</p>
+
+    <h2>Tu primer grupo es gratis</h2>
+    <p>Puedes crear un grupo gratis siempre que no tengas otro grupo activo creado por ti. Unirte a grupos de otras personas es siempre gratis, y también lo son el sorteo, las exclusiones, el chat anónimo y los avisos.</p>
+
+    <h2>5 USD por cada grupo adicional</h2>
+    <ul>
+      <li>Pago único por grupo, <strong>sin suscripción</strong>.</li>
+      <li>El grupo es tuyo mientras exista, con todas sus funciones.</li>
+      <li>En la web cobra <strong>Paddle.com</strong>, que actúa como vendedor oficial (merchant of record) y añade los impuestos que correspondan según tu país. En la app de Android cobra Google Play.</li>
+    </ul>
+
+    <h2>Devoluciones</h2>
+    <p>El grupo se entrega en el momento del pago, así que <strong>no hay devoluciones</strong>, salvo un error en el cobro o un fallo nuestro que te impida usarlo: en ese caso escríbenos a <a href="mailto:contact@neongate.co">contact@neongate.co</a> y lo resolvemos. Al pagar aceptas la entrega inmediata y, si vives en la Unión Europea, renuncias al plazo de desistimiento de 14 días.</p>
+
+    <p>Más detalles en las <a href="/terminos">condiciones de uso</a> y la <a href="/privacidad">política de privacidad</a>.</p>
+  </article>
+
+  <article lang="en" id="en" class="oculto">
+    <h1>Pricing</h1>
+    <p class="fecha">Secret Gift · NeonGate LLC</p>
+
+    <h2>Your first group is free</h2>
+    <p>You can create a group for free as long as you don't have another active group you created. Joining other people's groups is always free, and so are the draw, exclusions, the anonymous chat and notifications.</p>
+
+    <h2>USD 5 per additional group</h2>
+    <ul>
+      <li>One-time payment per group, <strong>no subscription</strong>.</li>
+      <li>The group is yours for as long as it exists, with all its features.</li>
+      <li>On the web, payments are handled by <strong>Paddle.com</strong>, our merchant of record, which adds any taxes that apply in your country. In the Android app, by Google Play.</li>
+    </ul>
+
+    <h2>Refunds</h2>
+    <p>The group is delivered at the moment of payment, so <strong>there are no refunds</strong>, except for a billing error or a fault on our side that prevents you from using it: in that case write to <a href="mailto:contact@neongate.co">contact@neongate.co</a> and we'll fix it. By paying you agree to immediate delivery and, if you live in the European Union, waive the 14-day withdrawal period.</p>
+
+    <p>More details in the <a href="/terms">terms of use</a> and the <a href="/privacy">privacy policy</a>.</p>
+  </article>
+</main>
+<footer>SECRET GIFT · SECRETGIFT.APP</footer>
+<script>
+  (function () {
+    var enIngles = /^\/(pricing)/.test(location.pathname) || location.hash === '#en';
+    function mostrar(idioma) {
+      document.getElementById('es').classList.toggle('oculto', idioma !== 'es');
+      document.getElementById('en').classList.toggle('oculto', idioma !== 'en');
+      document.documentElement.lang = idioma;
+      document.querySelectorAll('nav.idiomas button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.idioma === idioma));
+      });
+    }
+    document.querySelectorAll('nav.idiomas button').forEach(function (b) {
+      b.addEventListener('click', function () { mostrar(b.dataset.idioma); });
+    });
+    mostrar(enIngles ? 'en' : 'es');
+  })();
+</script>
+</body>
+</html>
