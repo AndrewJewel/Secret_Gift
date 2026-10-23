@@ -1,4 +1,4 @@
-const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onCall, onRequest, HttpsError} = require("firebase-functions/v2/https");
 // firebase-admin v13 retiró la API con espacio de nombres (`admin.firestore()`,
 // `admin.storage()`, `admin.firestore.FieldValue`). Ahora cada cosa se pide a
 // su módulo.
@@ -28,6 +28,9 @@ const condiciones = require("./condiciones");
 const cobro = require("./cobro");
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
+// Secreto de la notificación de Paddle (Events → Notifications). Lo pone el
+// usuario en Secret Manager; nunca va al repo.
+const PADDLE_WEBHOOK_SECRET = defineSecret("PADDLE_WEBHOOK_SECRET");
 
 initializeApp();
 const db = getFirestore();
@@ -2016,4 +2019,54 @@ exports.denunciarMensaje = onCall({secrets: [RESEND_API_KEY]}, async (request) =
   const directores = Object.keys((await grupoPrivadoRef(codigo).get()).data()?.directores || {});
   await avisarAVarios(directores, {textos: AVISOS.denuncia(nombreGrupo), datos: {codigo}});
   return {ok: true};
+});
+
+// --- Cobro con Paddle ------------------------------------------------------
+// Diseño: locker/docs/superpowers/specs/2026-10-22-cobro-por-grupo-design.md
+
+/** Un pago completado suma créditos. Repetido, no suma dos veces. */
+async function registrarPago(ev) {
+  const ref = db.collection("pagos").doc(ev.id);
+  await db.runTransaction(async (tx) => {
+    if ((await tx.get(ref)).exists) return;
+    tx.set(ref, {
+      uid: ev.uid, estado: ev.uid ? "completado" : "sin_uid", cantidad: ev.cantidad,
+      importe: ev.importe, moneda: ev.moneda, origen: "paddle", fecha: FieldValue.serverTimestamp(),
+    });
+    if (ev.uid) tx.set(usuarioRef(ev.uid), {creditosGrupo: FieldValue.increment(ev.cantidad)}, {merge: true});
+  });
+  if (!ev.uid) logger.error("Pago de Paddle sin uid en custom_data", {transaccion: ev.id});
+}
+
+/** Reembolso o contracargo: quita los créditos de esa compra que sigan sin usar. */
+async function registrarReembolso(ev) {
+  const ref = db.collection("pagos").doc(ev.transaccion || "-");
+  await db.runTransaction(async (tx) => {
+    const pago = await tx.get(ref);
+    if (!pago.exists || pago.data().estado === "reembolsado" || !pago.data().uid) return;
+    const usuario = usuarioRef(pago.data().uid);
+    const creditos = (await tx.get(usuario)).data()?.creditosGrupo || 0;
+    const restar = Math.min(creditos, pago.data().cantidad || 1);
+    tx.update(ref, {estado: "reembolsado", creditosRetirados: restar});
+    if (restar > 0) tx.update(usuario, {creditosGrupo: FieldValue.increment(-restar)});
+  });
+}
+
+exports.webhookPaddle = onRequest({secrets: [PADDLE_WEBHOOK_SECRET]}, async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(405).send("");
+    return;
+  }
+  const valida = cobro.firmaValida(
+      req.rawBody, req.get("paddle-signature"), PADDLE_WEBHOOK_SECRET.value().trim(),
+      Math.floor(Date.now() / 1000),
+  );
+  if (!valida) {
+    res.status(401).send("");
+    return;
+  }
+  const ev = cobro.leerEvento(req.body);
+  if (ev?.tipo === "pago") await registrarPago(ev);
+  if (ev?.tipo === "reembolso") await registrarReembolso(ev);
+  res.status(200).send("ok");
 });

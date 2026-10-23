@@ -11,6 +11,7 @@
 // responden `sesion_invalida`; si el servidor está caído, 500 o «Rate
 // exceeded». Tras un despliegue tardan en arrancar, así que se reintenta
 // (SMOKE_REINTENTOS, cada 30 s).
+// El webhook de Paddle, que no es callable, debe responder 401 sin firma.
 
 const WEB = "https://secretgift.app";
 const FUNCIONES = "https://us-central1-secretgift-app.cloudfunctions.net";
@@ -83,6 +84,24 @@ await funcion("misGrupos");
 await funcion("verificarCodigo", {codigo: "000000"});
 await funcion("aceptarCondiciones");
 await funcion("denunciarMensaje", {codigo: "X", mensajeId: "m", motivo: "spam"});
+
+// El webhook de Paddle no es callable: sin firma debe responder 401. Un 500
+// o «Rate exceeded» sería que está caído; se reintenta como las demás.
+async function webhookCerrado() {
+  let ultima = "";
+  for (let intento = 1; intento <= REINTENTOS; intento++) {
+    try {
+      const r = await fetch(`${FUNCIONES}/webhookPaddle`, {method: "POST", body: "{}"});
+      if (r.status === 401) return ok("webhookPaddle rechaza lo que no viene firmado", true);
+      ultima = `estado ${r.status}`;
+    } catch (e) {
+      ultima = e.message;
+    }
+    if (intento < REINTENTOS) await new Promise((res) => setTimeout(res, 30000));
+  }
+  ok("webhookPaddle rechaza lo que no viene firmado", false, ultima);
+}
+await webhookCerrado();
 
 console.log(`\nsmoke ${WEB}: ${pasadas}/${pasadas + fallos.length} comprobaciones`);
 if (fallos.length) {
