@@ -25,6 +25,7 @@ const {getAuth} = require("firebase-admin/auth");
 const correos = require("./correos");
 const {planDeEliminacion} = require("./cuenta");
 const condiciones = require("./condiciones");
+const cobro = require("./cobro");
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
@@ -483,18 +484,6 @@ function exigirParticipante(sesion) {
 }
 
 /**
- * Al crear un grupo. La plaza de participante todavía no existe: quien
- * crea el grupo se inscribe después, como todo el mundo.
- */
-async function vincularComoOrganizador(uid, codigo) {
-  if (!uid) return;
-  await usuarioRef(uid).set(
-      {grupos: {[codigo]: {rol: "organizador", participanteId: null}}},
-      {merge: true},
-  );
-}
-
-/**
  * Al inscribirse en un grupo.
  *
  * `merge` hace una fusión PROFUNDA de mapas, así que esto rellena tu
@@ -554,10 +543,27 @@ exports.crearGrupo = onCall(async (request) => {
     const codigo = generarCodigo();
     const ref = grupoRef(codigo);
     try {
+      // Todo en UNA transacción: si el vínculo y el crédito se escribieran
+      // después, dos «Crear grupo» a la vez verían los dos «gratis».
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(ref);
         if (snap.exists) {
           throw new HttpsError("already-exists", "código repetido, reintentar");
+        }
+        const usuario = (await tx.get(usuarioRef(uid))).data() || {};
+        const config = (await tx.get(db.collection("config").doc("cobro"))).data() || null;
+        // «Creado por ti y que siga existiendo»: `eliminarGrupo` no limpia
+        // el mapa `grupos` de las cuentas, así que hay que mirar el grupo.
+        const propios = Object.entries(usuario.grupos || {})
+            .filter(([, g]) => g?.rol === "organizador")
+            .map(([c]) => grupoRef(c));
+        const activos = propios.length ?
+          (await tx.getAll(...propios)).filter((s) => s.exists).length : 0;
+        const decision = cobro.decidirCobro({
+          config, uid, gruposPropiosActivos: activos, creditos: usuario.creditosGrupo || 0,
+        });
+        if (decision === "pago_requerido") {
+          throw new HttpsError("failed-precondition", "Este grupo es de pago.", {clave: "pago_requerido"});
         }
         tx.set(ref, {
           ocasion,
@@ -568,8 +574,13 @@ exports.crearGrupo = onCall(async (request) => {
           reglas,
           fecha: FieldValue.serverTimestamp(),
         });
+        // Quien crea el grupo se inscribe después, como todo el mundo: aún
+        // no tiene plaza.
+        tx.set(usuarioRef(uid), {
+          grupos: {[codigo]: {rol: "organizador", participanteId: null}},
+          ...(decision === "credito" ? {creditosGrupo: FieldValue.increment(-1)} : {}),
+        }, {merge: true});
       });
-      await vincularComoOrganizador(uid, codigo);
       await grupoPrivadoRef(codigo).set({directores: {[uid]: "organizador"}}, {merge: true});
       return {codigo};
     } catch (e) {
