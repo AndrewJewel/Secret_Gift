@@ -47,6 +47,8 @@ class _PantallaIniciarSesionState extends State<PantallaIniciarSesion> {
 
   Future<void> _enviar() async {
     final t = Textos.of(context);
+    // Teclado cerrado antes de navegar: ver pantalla_unirse_grupo.dart.
+    FocusScope.of(context).unfocus();
     final correo = _correo.text.trim();
     final password = _password.text;
     if (correo.isEmpty || password.isEmpty) {

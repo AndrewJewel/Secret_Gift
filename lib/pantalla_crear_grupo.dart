@@ -46,6 +46,8 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
 
   Future<void> _crearGrupo() async {
     final t = Textos.of(context);
+    // Teclado cerrado antes de navegar: ver pantalla_unirse_grupo.dart.
+    FocusScope.of(context).unfocus();
     final nombreGrupo = _nombreGrupoController.text.trim();
     final valorMinimo = _valorMinimoController.text.trim();
 

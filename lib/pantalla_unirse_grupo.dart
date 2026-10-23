@@ -30,6 +30,13 @@ class _PantallaUnirseGrupoState extends State<PantallaUnirseGrupo> {
 
   Future<void> _unirse() async {
     final t = Textos.of(context);
+    // Cerrar el teclado YA, con la pantalla quieta. Si se cierra a mitad de
+    // la navegación (el campo desaparece y el teclado se va de golpe), el
+    // engine web pinta un cuadro con el alto del teclado abierto DESPUÉS
+    // del último resize y la app se queda con media pantalla en blanco.
+    // Medido con ?diag=1 el 22-oct. Lo mismo en entrar, crear cuenta y
+    // crear grupo.
+    FocusScope.of(context).unfocus();
     final codigo = _codigoController.text.trim().toUpperCase();
     if (codigo.isEmpty) return;
 

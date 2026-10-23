@@ -78,12 +78,7 @@ void main() async {
   runApp(const SantaApp());
   // En web Flutter no arma el árbol de accesibilidad hasta que alguien pulsa
   // un botón invisible: un lector de pantalla llegaba a una página muda.
-  // Diagnóstico temporal (22-oct): con ?sinsem=1 arranca sin ese árbol, para
-  // comprobar en el celular si es él quien deja la franja blanca al cerrar
-  // el teclado. Quitar en cuanto haya veredicto.
-  if (kIsWeb && !Uri.base.queryParameters.containsKey('sinsem')) {
-    SemanticsBinding.instance.ensureSemantics();
-  }
+  if (kIsWeb) SemanticsBinding.instance.ensureSemantics();
 }
 
 class SantaApp extends StatelessWidget {

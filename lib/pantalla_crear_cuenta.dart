@@ -77,6 +77,8 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
   Future<void> _enviar() async {
     final t = Textos.of(context);
+    // Teclado cerrado antes de navegar: ver pantalla_unirse_grupo.dart.
+    FocusScope.of(context).unfocus();
     final correo = _correo.text.trim();
     final nombre = _nombre.text.trim();
     final apellido = _apellido.text.trim();
