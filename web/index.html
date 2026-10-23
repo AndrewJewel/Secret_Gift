@@ -90,20 +90,44 @@
       document.addEventListener('DOMContentLoaded', function () {
         document.body.appendChild(caja);
       });
+      // Bitácora de eventos (22-oct): en qué orden se mueven el teclado, el
+      // foco y el alto de la app. Las últimas 14 líneas, en ms desde la carga.
+      var eventos = [];
+      function anotar(texto) {
+        eventos.push(Math.round(performance.now()) + ' ' + texto);
+        if (eventos.length > 14) eventos.shift();
+      }
+      if (window.visualViewport) {
+        visualViewport.addEventListener('resize', function () {
+          anotar('vv ' + Math.round(visualViewport.height));
+        });
+      }
+      document.addEventListener('focusin', function (e) {
+        anotar('foco+ ' + e.target.tagName);
+      });
+      document.addEventListener('focusout', function (e) {
+        anotar('foco- ' + e.target.tagName);
+      });
+      var altoAnterior = '';
       setInterval(function () {
         var vv = window.visualViewport;
         var fv = document.querySelector('flutter-view');
         var r = fv ? fv.getBoundingClientRect() : null;
+        var alto = fv ? fv.style.height : '';
+        if (alto !== altoAnterior) {
+          anotar('fv ' + (alto || '(vacio)'));
+          altoAnterior = alto;
+        }
         caja.textContent =
           'innerH      ' + window.innerHeight + '\n' +
           'visualH     ' + (vv ? Math.round(vv.height) : '-') + '\n' +
           'scrollY     ' + Math.round(window.scrollY) + '\n' +
           'fv alto     ' + (r ? Math.round(r.height) : '-') + '\n' +
-          // Con el engine ya corregido esto debe quedar SIEMPRE en
-          // "(vacio)": nadie escribe el alto a mano. Si vuelve a salir un
-          // valor en px, es que algo lo está forzando otra vez.
-          'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)');
-      }, 250);
+          // Desde 3.38.10 el engine sí escribe aquí el alto en px en cada
+          // frame; lo que importa es que coincida con visualH.
+          'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)') + '\n' +
+          '---\n' + eventos.join('\n');
+      }, 50);
     })();
   </script>
 
