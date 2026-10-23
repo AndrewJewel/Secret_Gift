@@ -1,12 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'almacen_local.dart';
+import 'dialogo_pago.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_editar_grupo.dart' show SelectorTematica;
+import 'pago.dart';
 import 'pantalla_registro.dart';
 import 'tematica.dart';
 
@@ -48,37 +52,73 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     final t = Textos.of(context);
     // Teclado cerrado antes de navegar: ver pantalla_unirse_grupo.dart.
     FocusScope.of(context).unfocus();
-    final nombreGrupo = _nombreGrupoController.text.trim();
-    final valorMinimo = _valorMinimoController.text.trim();
-
-    if (nombreGrupo.isEmpty) {
+    if (_nombreGrupoController.text.trim().isEmpty) {
       _avisar(t.crearFaltanDatos);
       return;
     }
 
     setState(() => _creando = true);
     try {
-      final datos = await llamarFuncion('crearGrupo', {
-        'ocasion': _ocasion.id,
-        'nombreGrupo': nombreGrupo,
-        'valorMinimo': valorMinimo,
-        'tematica': _tematica.id,
-        if (_tematica == Tematica.ninguna && _colorPersonal != null)
-          'color': hexDe(_colorPersonal!),
-        // Arranca con las reglas propias de la temática; el organizador
-        // las puede reescribir después desde "Editar grupo".
-        'reglas': _tematica.reglasPorDefecto(t),
-      });
-      final codigo = datos['codigo'] as String;
-      if (!mounted) return;
-      await _continuar(codigo);
+      await _crearYContinuar(t);
     } on FuncionError catch (e) {
-      _avisar(e.texto(t));
+      if (e.clave == 'pago_requerido') {
+        await _pagarYCrear(t);
+      } else {
+        _avisar(e.texto(t));
+      }
     } catch (e) {
       _avisar(t.errorInesperado(e.toString()));
     } finally {
       if (mounted) setState(() => _creando = false);
     }
+  }
+
+  Future<void> _crearYContinuar(Textos t) async {
+    final datos = await llamarFuncion('crearGrupo', {
+      'ocasion': _ocasion.id,
+      'nombreGrupo': _nombreGrupoController.text.trim(),
+      'valorMinimo': _valorMinimoController.text.trim(),
+      'tematica': _tematica.id,
+      if (_tematica == Tematica.ninguna && _colorPersonal != null)
+        'color': hexDe(_colorPersonal!),
+      // Arranca con las reglas propias de la temática; el organizador
+      // las puede reescribir después desde "Editar grupo".
+      'reglas': _tematica.reglasPorDefecto(t),
+    });
+    if (!mounted) return;
+    await _continuar(datos['codigo'] as String);
+  }
+
+  /// Grupo de pago: casilla → checkout de Paddle → esperar el crédito que
+  /// suma el webhook → crear. Si se corta en cualquier punto, el crédito
+  /// pagado se queda en la cuenta y el próximo «Crear grupo» lo usa.
+  Future<void> _pagarYCrear(Textos t) async {
+    if (!kIsWeb) {
+      _avisar(t.pagoSoloWeb);
+      return;
+    }
+    if (!await DialogoPago.mostrar(context) || !mounted) return;
+    final usuario = FirebaseAuth.instance.currentUser;
+    if (usuario == null) return;
+    final String resultado;
+    try {
+      resultado = await abrirPago(
+        uid: usuario.uid,
+        correo: usuario.email ?? '',
+        idioma: Localizations.localeOf(context).languageCode,
+      );
+    } catch (_) {
+      _avisar(t.pagoNoCargo);
+      return;
+    }
+    if (resultado != 'completado' || !mounted) return;
+    _avisar(t.pagoEsperando);
+    if (!await esperarCredito(usuario.uid)) {
+      _avisar(t.pagoTardando);
+      return;
+    }
+    if (!mounted) return;
+    await _crearYContinuar(t);
   }
 
   Future<void> _continuar(String codigo) async {
