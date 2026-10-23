@@ -89,7 +89,7 @@
   "crearNombreGrupo": "Group name",
   "crearNombreGrupoPista": "e.g. The Smiths, Office 2026",
   "crearValorMinimo": "Minimum gift value (optional)",
-  "crearValorMinimoPista": "e.g. $50",
+  "crearValorMinimoPista": "e.g. $50 USD",
   "crearFaltanDatos": "The group name is missing",
   "crearBoton": "Create group",
   "crearCreando": "Creating...",

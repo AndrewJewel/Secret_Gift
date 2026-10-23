@@ -221,7 +221,7 @@ class TextosEn extends Textos {
   String get crearValorMinimo => 'Minimum gift value (optional)';
 
   @override
-  String get crearValorMinimoPista => 'e.g. \$50';
+  String get crearValorMinimoPista => 'e.g. \$50 USD';
 
   @override
   String get crearFaltanDatos => 'The group name is missing';

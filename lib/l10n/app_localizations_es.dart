@@ -219,7 +219,7 @@ class TextosEs extends Textos {
   String get crearValorMinimo => 'Valor mínimo del regalo (opcional)';
 
   @override
-  String get crearValorMinimoPista => 'Ej: \$50.000 COP';
+  String get crearValorMinimoPista => 'Ej: \$50 USD';
 
   @override
   String get crearFaltanDatos => 'Falta el nombre del grupo';

@@ -67,7 +67,7 @@
   "crearNombreGrupo": "Nombre del grupo",
   "crearNombreGrupoPista": "Ej: Familia Pérez, Oficina 2026",
   "crearValorMinimo": "Valor mínimo del regalo (opcional)",
-  "crearValorMinimoPista": "Ej: $50.000 COP",
+  "crearValorMinimoPista": "Ej: $50 USD",
   "crearFaltanDatos": "Falta el nombre del grupo",
   "crearBoton": "Crear grupo",
   "crearCreando": "Creando...",

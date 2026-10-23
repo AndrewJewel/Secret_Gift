@@ -472,7 +472,7 @@ abstract class Textos {
   /// No description provided for @crearValorMinimoPista.
   ///
   /// In en, this message translates to:
-  /// **'e.g. \$50'**
+  /// **'e.g. \$50 USD'**
   String get crearValorMinimoPista;
 
   /// No description provided for @crearFaltanDatos.
