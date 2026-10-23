@@ -24,6 +24,7 @@ const {logger} = require("firebase-functions");
 const {getAuth} = require("firebase-admin/auth");
 const correos = require("./correos");
 const {planDeEliminacion} = require("./cuenta");
+const condiciones = require("./condiciones");
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
@@ -380,7 +381,7 @@ exports.misGrupos = onCall(async (request) => {
 
   const snap = await usuarioRef(uid).get();
   if (!snap.exists) {
-    return {perfilCompleto: false, nombre: "", apellido: "", grupos: []};
+    return {perfilCompleto: false, nombre: "", apellido: "", grupos: [], aceptaciones: {}};
   }
   const datos = snap.data();
 
@@ -436,6 +437,9 @@ exports.misGrupos = onCall(async (request) => {
     perfilCompleto: true,
     nombre: datos.nombre || "",
     apellido: datos.apellido || "",
+    // Las dos aceptaciones (condiciones y privacidad), cada una con su
+    // versión y su fecha: el cliente decide si pedirlas otra vez.
+    aceptaciones: datos.aceptaciones || {},
     grupos: detalles,
   };
 });
@@ -1532,6 +1536,11 @@ exports.enviarMensaje = onCall(async (request) => {
 
   const sesion = await autorizar(codigo, uidDe(request));
   exigirParticipante(sesion);
+  // Google Play exige que quien publica contenido haya aceptado las normas.
+  if (!condiciones.condicionesAlDia(sesion.datos.aceptaciones)) {
+    throw new HttpsError("failed-precondition", "Acepta las condiciones de uso para escribir.",
+        {clave: "condiciones_sin_aceptar"});
+  }
   const participanteId = sesion.participanteId;
   const privado = await obtenerPrivado(codigo, participanteId);
 
@@ -1609,7 +1618,9 @@ exports.miMascara = onCall(async (request) => {
   }
   const sesion = await autorizar(codigo, uidDe(request));
   exigirParticipante(sesion);
-  return await obtenerMascara(codigo, sesion.participanteId);
+  const mascara = await obtenerMascara(codigo, sesion.participanteId);
+  const priv = await participantePrivadoRef(codigo, sesion.participanteId).get();
+  return {...mascara, bloqueadas: priv.data()?.bloqueadas || []};
 });
 
 // --- Acciones de organizador -----------------------------------------
@@ -1894,5 +1905,107 @@ exports.eliminarCuenta = onCall(async (request) => {
   for (const a of avisos) {
     await avisarAVarios(a.uids, {textos: AVISOS.plazaLibre(a.grupo), datos: {codigo: a.codigo}});
   }
+  return {ok: true};
+});
+
+// --- Condiciones de uso, denuncias y bloqueo -----------------------------
+// Diseño: locker/docs/superpowers/specs/2026-10-22-condiciones-y-moderacion-design.md
+
+/**
+ * Guarda, por separado, la aceptación de las condiciones y la autorización
+ * de tratamiento de datos, con versión y fecha: es la constancia que piden
+ * algunas leyes latinoamericanas (Habeas Data). Sin exigir correo
+ * verificado: se acepta al crear la cuenta, antes de verificarlo.
+ */
+exports.aceptarCondiciones = onCall(async (request) => {
+  const uid = uidDe(request, {exigirVerificado: false});
+  const {terminos, privacidad} = request.data || {};
+  if (terminos !== condiciones.VERSIONES.terminos || privacidad !== condiciones.VERSIONES.privacidad) {
+    throw new HttpsError("invalid-argument", "Versión de las condiciones no vigente.",
+        {clave: "version_invalida"});
+  }
+  const fecha = FieldValue.serverTimestamp();
+  await usuarioRef(uid).set({aceptaciones: {
+    terminos: {version: terminos, fecha},
+    privacidad: {version: privacidad, fecha},
+  }}, {merge: true});
+  return {ok: true};
+});
+
+/** Dejar de ver (o volver a ver) los mensajes de una máscara en un grupo. */
+exports.bloquearMascara = onCall(async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const mascara = request.data?.mascara;
+  const repeticion = request.data?.repeticion || 0;
+  if (!codigo || typeof mascara !== "number") {
+    throw new HttpsError("invalid-argument", "Falta el grupo o la máscara.", {clave: "faltan_datos"});
+  }
+  const sesion = await autorizar(codigo, uidDe(request));
+  exigirParticipante(sesion);
+  const clave = `${mascara}:${repeticion}`;
+  await participantePrivadoRef(codigo, sesion.participanteId).set({
+    bloqueadas: request.data?.bloquear === false ?
+      FieldValue.arrayRemove(clave) : FieldValue.arrayUnion(clave),
+  }, {merge: true});
+  return {ok: true};
+});
+
+exports.denunciarMensaje = onCall({secrets: [RESEND_API_KEY]}, async (request) => {
+  const codigo = (request.data?.codigo || "").trim();
+  const mensajeId = request.data?.mensajeId;
+  const motivo = request.data?.motivo;
+  if (!codigo || !mensajeId) {
+    throw new HttpsError("invalid-argument", "Falta el grupo o el mensaje.", {clave: "faltan_datos"});
+  }
+  if (!condiciones.MOTIVOS.includes(motivo)) {
+    throw new HttpsError("invalid-argument", "Motivo no válido.", {clave: "motivo_invalido"});
+  }
+  const uid = uidDe(request);
+  const sesion = await autorizar(codigo, uid);
+  exigirParticipante(sesion);
+
+  const ref = db.collection("denuncias").doc(condiciones.idDenuncia(codigo, mensajeId, uid));
+  if ((await ref.get()).exists) return {ok: true};
+
+  const mensaje = await grupoRef(codigo).collection("chat").doc(mensajeId).get();
+  if (!mensaje.exists) {
+    throw new HttpsError("not-found", "Ese mensaje ya no existe.", {clave: "faltan_datos"});
+  }
+  const {texto = "", mascara, repeticion = 0} = mensaje.data();
+  // El mensaje no guarda autor: se resuelve por la máscara en los privados,
+  // que solo lee el servidor. Los demás participantes no lo ven nunca.
+  const plazas = await grupoRef(codigo).collection("participantes").get();
+  const privados = await Promise.all(plazas.docs.map(async (d) => ({
+    id: d.id, ...(await participantePrivadoRef(codigo, d.id).get()).data(),
+  })));
+  const autorParticipanteId = condiciones.plazaDeMascara(privados, mascara, repeticion);
+  const autorCuenta = privados.find((p) => p.id === autorParticipanteId)?.cuenta || null;
+  const grupoSnap = await grupoRef(codigo).get();
+  const nombreGrupo = grupoSnap.data()?.nombreGrupo || codigo;
+
+  await ref.set({
+    codigo, nombreGrupo, mensajeId, texto, mascara, repeticion,
+    autorParticipanteId, autorCuenta,
+    denunciante: uid, motivo, estado: "pendiente",
+    fecha: FieldValue.serverTimestamp(),
+  });
+
+  // Ni el correo ni el aviso pueden tumbar una denuncia ya guardada.
+  try {
+    await correos.enviarConResend(RESEND_API_KEY.value().trim(), {
+      para: "contact@neongate.co",
+      asunto: `Denuncia en Secret Gift: ${motivo} (${nombreGrupo})`,
+      html: `<p><b>Grupo:</b> ${nombreGrupo} (${codigo})</p><p><b>Motivo:</b> ${motivo}</p>` +
+        `<p><b>Máscara:</b> ${mascara}:${repeticion}</p><p><b>Mensaje:</b></p>` +
+        `<blockquote>${texto.replace(/[&<>]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]))}</blockquote>` +
+        `<p>Denuncia <code>${ref.id}</code> en Firestore (colección <code>denuncias</code>).</p>`,
+      texto: `Grupo: ${nombreGrupo} (${codigo})\nMotivo: ${motivo}\nMáscara: ${mascara}:${repeticion}\n` +
+        `Mensaje: ${texto}\nDenuncia ${ref.id} en Firestore (denuncias).`,
+    });
+  } catch (e) {
+    logger.error("No se pudo mandar el correo de la denuncia", {motivo: e.message});
+  }
+  const directores = Object.keys((await grupoPrivadoRef(codigo).get()).data()?.directores || {});
+  await avisarAVarios(directores, {textos: AVISOS.denuncia(nombreGrupo), datos: {codigo}});
   return {ok: true};
 });

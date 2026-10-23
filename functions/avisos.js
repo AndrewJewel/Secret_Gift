@@ -38,6 +38,10 @@ const AVISOS = {
     es: {titulo: "Ahora eres administrador", cuerpo: `De «${grupo}». Ya puedes dirigir el grupo.`},
     en: {titulo: "You're now an admin", cuerpo: `Of “${grupo}”. You can now run the group.`},
   }),
+  denuncia: (grupo) => ({
+    es: {titulo: "Mensaje denunciado", cuerpo: `En «${grupo}» alguien denunció un mensaje del chat. Revísalo.`},
+    en: {titulo: "Message reported", cuerpo: `In “${grupo}” someone reported a chat message. Take a look.`},
+  }),
   plazaLibre: (grupo) => ({
     es: {titulo: "Hay una plaza libre", cuerpo: `Alguien dejó «${grupo}». Reemplázalo desde el grupo.`},
     en: {titulo: "A spot is open", cuerpo: `Someone left “${grupo}”. Replace them from the group.`},
