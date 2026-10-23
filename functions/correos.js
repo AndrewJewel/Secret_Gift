@@ -116,7 +116,27 @@ async function enviarConResend(clave, {para, asunto, html, texto}, fetchFn = fet
   }
 }
 
+/**
+ * El aviso interno de una denuncia, para contact@neongate.co. Todo lo que
+ * escriben los usuarios (grupo, máscara, mensaje) va escapado. El nombre de
+ * la máscara lo manda la app y es solo para leerlo; quien manda es el
+ * índice `mascara:repeticion`.
+ */
+function correoDenuncia({codigo, nombreGrupo, motivo, mascara, repeticion, nombreMascara, texto, id}) {
+  const masc = nombreMascara ? `${nombreMascara} (${mascara}:${repeticion})` : `${mascara}:${repeticion}`;
+  return {
+    asunto: `Denuncia en Secret Gift: ${motivo} (${nombreGrupo})`,
+    html: `<p><b>Grupo:</b> ${escapar(nombreGrupo)} (${escapar(codigo)})</p>` +
+      `<p><b>Motivo:</b> ${escapar(motivo)}</p><p><b>Máscara:</b> ${escapar(masc)}</p>` +
+      `<p><b>Mensaje:</b></p><blockquote>${escapar(texto)}</blockquote>` +
+      `<p>Denuncia <code>${escapar(id)}</code> en Firestore (colección <code>denuncias</code>).</p>`,
+    texto: `Grupo: ${nombreGrupo} (${codigo})\nMotivo: ${motivo}\nMáscara: ${masc}\n` +
+      `Mensaje: ${texto}\nDenuncia ${id} en Firestore (denuncias).`,
+  };
+}
+
 module.exports = {
+  correoDenuncia,
   generarCodigo6, correoCodigo, correoRecuperacion, decidirEnvio, evaluarIntento,
   enviarConResend, CADUCIDAD_CODIGO_MS, MAX_INTENTOS,
 };

@@ -172,11 +172,11 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
       ),
     );
     if (!mounted) return;
-    if (eleccion == 'denunciar') await _denunciar(mensajeId);
+    if (eleccion == 'denunciar') await _denunciar(mensajeId, Mascara.nombre(t, mascara, repeticion));
     if (eleccion == 'bloquear') await _bloquear(mascara, repeticion, true);
   }
 
-  Future<void> _denunciar(String mensajeId) async {
+  Future<void> _denunciar(String mensajeId, String nombreMascara) async {
     final t = Textos.of(context);
     final motivos = {
       'ofensivo': t.motivoOfensivo,
@@ -200,6 +200,8 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
         'codigo': widget.codigo,
         'mensajeId': mensajeId,
         'motivo': motivo,
+        // Solo para que el correo de la denuncia diga «Búho» y no «1:0».
+        'nombreMascara': nombreMascara,
       });
       _avisar(t.chatDenunciado);
     } catch (e) {
@@ -486,7 +488,8 @@ class _Burbuja extends StatelessWidget {
   final MaterialColor color;
   final VoidCallback? onBorrar;
 
-  /// Pulsación larga: denunciar o bloquear. Null en los propios.
+  /// Denunciar o bloquear: pulsación larga, clic derecho o el ⋮ junto al
+  /// nombre. Null en los propios.
   final VoidCallback? onMenu;
 
   const _Burbuja({
@@ -513,6 +516,7 @@ class _Burbuja extends StatelessWidget {
           Flexible(
             child: GestureDetector(
               onLongPress: onMenu,
+              onSecondaryTap: onMenu,
               child: GlassCard(
                 color: color,
                 radius: 16,
@@ -531,6 +535,18 @@ class _Burbuja extends StatelessWidget {
                             color: Mascara.de(mascara).color,
                           ),
                         ),
+                        if (onMenu != null)
+                          Tooltip(
+                            message: MaterialLocalizations.of(context).showMenuTooltip,
+                            child: InkWell(
+                              onTap: onMenu,
+                              customBorder: const CircleBorder(),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 6),
+                                child: Icon(Icons.more_vert, size: 16, color: Colors.black45),
+                              ),
+                            ),
+                          ),
                         if (onBorrar != null)
                           InkWell(
                             onTap: onBorrar,

@@ -63,3 +63,20 @@ test("enviarConResend manda lo esperado y lanza si Resend falla", async () => {
   await assert.rejects(c.enviarConResend("k", {para: "a", asunto: "", html: "", texto: ""},
       async () => ({ok: false, status: 403, text: async () => "no"})), /403/);
 });
+
+test("correo de denuncia: nombre de la máscara y todo escapado", () => {
+  const m = c.correoDenuncia({
+    codigo: "ABCD-2345", nombreGrupo: "<b>Casa</b>", motivo: "spam",
+    mascara: 1, repeticion: 0, nombreMascara: "Búho<script>",
+    texto: "hola <i>", id: "ABCD-2345_m1_u9",
+  });
+  assert.ok(m.html.includes("Búho&lt;script&gt; (1:0)"));
+  assert.ok(m.html.includes("&lt;b&gt;Casa&lt;/b&gt;"));
+  assert.ok(m.html.includes("hola &lt;i&gt;"));
+  assert.ok(!m.html.includes("<script>"));
+  assert.ok(m.texto.includes("Máscara: Búho<script> (1:0)"));
+  // Sin nombre (app vieja) queda el índice, como antes.
+  const sin = c.correoDenuncia({codigo: "X", nombreGrupo: "G", motivo: "otro",
+    mascara: 2, repeticion: 1, texto: "", id: "i"});
+  assert.ok(sin.texto.includes("Máscara: 2:1\n"));
+});

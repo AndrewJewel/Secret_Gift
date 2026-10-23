@@ -1994,13 +1994,10 @@ exports.denunciarMensaje = onCall({secrets: [RESEND_API_KEY]}, async (request) =
   try {
     await correos.enviarConResend(RESEND_API_KEY.value().trim(), {
       para: "contact@neongate.co",
-      asunto: `Denuncia en Secret Gift: ${motivo} (${nombreGrupo})`,
-      html: `<p><b>Grupo:</b> ${nombreGrupo} (${codigo})</p><p><b>Motivo:</b> ${motivo}</p>` +
-        `<p><b>Máscara:</b> ${mascara}:${repeticion}</p><p><b>Mensaje:</b></p>` +
-        `<blockquote>${texto.replace(/[&<>]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]))}</blockquote>` +
-        `<p>Denuncia <code>${ref.id}</code> en Firestore (colección <code>denuncias</code>).</p>`,
-      texto: `Grupo: ${nombreGrupo} (${codigo})\nMotivo: ${motivo}\nMáscara: ${mascara}:${repeticion}\n` +
-        `Mensaje: ${texto}\nDenuncia ${ref.id} en Firestore (denuncias).`,
+      ...correos.correoDenuncia({
+        codigo, nombreGrupo, motivo, mascara, repeticion, texto, id: ref.id,
+        nombreMascara: String(request.data?.nombreMascara || "").slice(0, 40),
+      }),
     });
   } catch (e) {
     logger.error("No se pudo mandar el correo de la denuncia", {motivo: e.message});
