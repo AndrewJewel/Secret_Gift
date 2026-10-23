@@ -1160,4 +1160,37 @@ class TextosEs extends Textos {
 
   @override
   String get chatDesbloquear => 'Desbloquear';
+
+  @override
+  String get pagoTitulo => 'Grupo adicional';
+
+  @override
+  String get pagoTexto =>
+      'Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago.';
+
+  @override
+  String get pagoCasilla =>
+      'Acepto que el grupo se entregue de inmediato y entiendo que no hay devoluciones.';
+
+  @override
+  String get pagoBoton => 'Pagar y crear';
+
+  @override
+  String get pagoEsperando => 'Confirmando el pago…';
+
+  @override
+  String get pagoTardando =>
+      'Tu pago se está confirmando. No pagues otra vez: en unos minutos, «Crear grupo» lo usará.';
+
+  @override
+  String get pagoSoloWeb =>
+      'Por ahora los grupos adicionales se compran en la versión web de Secret Gift.';
+
+  @override
+  String get pagoNoCargo =>
+      'No se pudo abrir el pago. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get errorPagoRequerido =>
+      'Este grupo es de pago: ya tienes un grupo activo.';
 }

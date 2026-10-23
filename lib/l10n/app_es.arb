@@ -383,5 +383,14 @@
   "@chatBloqueada": {"placeholders": {"mascara": {"type": "String"}}},
   "chatBloqueadas": "Máscaras bloqueadas",
   "chatSinBloqueadas": "No has bloqueado a nadie.",
-  "chatDesbloquear": "Desbloquear"
+  "chatDesbloquear": "Desbloquear",
+  "pagoTitulo": "Grupo adicional",
+  "pagoTexto": "Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago.",
+  "pagoCasilla": "Acepto que el grupo se entregue de inmediato y entiendo que no hay devoluciones.",
+  "pagoBoton": "Pagar y crear",
+  "pagoEsperando": "Confirmando el pago…",
+  "pagoTardando": "Tu pago se está confirmando. No pagues otra vez: en unos minutos, «Crear grupo» lo usará.",
+  "pagoSoloWeb": "Por ahora los grupos adicionales se compran en la versión web de Secret Gift.",
+  "pagoNoCargo": "No se pudo abrir el pago. Revisa tu conexión e inténtalo de nuevo.",
+  "errorPagoRequerido": "Este grupo es de pago: ya tienes un grupo activo."
 }

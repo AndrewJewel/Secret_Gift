@@ -1160,4 +1160,37 @@ class TextosEn extends Textos {
 
   @override
   String get chatDesbloquear => 'Unblock';
+
+  @override
+  String get pagoTitulo => 'Extra group';
+
+  @override
+  String get pagoTexto =>
+      'You already have an active group. This new group costs USD 5, a one-time payment.';
+
+  @override
+  String get pagoCasilla =>
+      'I agree the group is delivered immediately and understand there are no refunds.';
+
+  @override
+  String get pagoBoton => 'Pay and create';
+
+  @override
+  String get pagoEsperando => 'Confirming the payment…';
+
+  @override
+  String get pagoTardando =>
+      'Your payment is being confirmed. Don\'t pay again: in a few minutes, “Create group” will use it.';
+
+  @override
+  String get pagoSoloWeb =>
+      'For now, extra groups are bought on the web version of Secret Gift.';
+
+  @override
+  String get pagoNoCargo =>
+      'The payment couldn\'t open. Check your connection and try again.';
+
+  @override
+  String get errorPagoRequerido =>
+      'This group is paid: you already have an active group.';
 }

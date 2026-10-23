@@ -486,5 +486,14 @@
   "@chatBloqueada": {"placeholders": {"mascara": {"type": "String"}}},
   "chatBloqueadas": "Blocked masks",
   "chatSinBloqueadas": "You haven't blocked anyone.",
-  "chatDesbloquear": "Unblock"
+  "chatDesbloquear": "Unblock",
+  "pagoTitulo": "Extra group",
+  "pagoTexto": "You already have an active group. This new group costs USD 5, a one-time payment.",
+  "pagoCasilla": "I agree the group is delivered immediately and understand there are no refunds.",
+  "pagoBoton": "Pay and create",
+  "pagoEsperando": "Confirming the payment…",
+  "pagoTardando": "Your payment is being confirmed. Don't pay again: in a few minutes, “Create group” will use it.",
+  "pagoSoloWeb": "For now, extra groups are bought on the web version of Secret Gift.",
+  "pagoNoCargo": "The payment couldn't open. Check your connection and try again.",
+  "errorPagoRequerido": "This group is paid: you already have an active group."
 }

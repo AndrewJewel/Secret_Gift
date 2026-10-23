@@ -2111,6 +2111,60 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'Unblock'**
   String get chatDesbloquear;
+
+  /// No description provided for @pagoTitulo.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra group'**
+  String get pagoTitulo;
+
+  /// No description provided for @pagoTexto.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have an active group. This new group costs USD 5, a one-time payment.'**
+  String get pagoTexto;
+
+  /// No description provided for @pagoCasilla.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree the group is delivered immediately and understand there are no refunds.'**
+  String get pagoCasilla;
+
+  /// No description provided for @pagoBoton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay and create'**
+  String get pagoBoton;
+
+  /// No description provided for @pagoEsperando.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming the payment…'**
+  String get pagoEsperando;
+
+  /// No description provided for @pagoTardando.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is being confirmed. Don\'t pay again: in a few minutes, “Create group” will use it.'**
+  String get pagoTardando;
+
+  /// No description provided for @pagoSoloWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'For now, extra groups are bought on the web version of Secret Gift.'**
+  String get pagoSoloWeb;
+
+  /// No description provided for @pagoNoCargo.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment couldn\'t open. Check your connection and try again.'**
+  String get pagoNoCargo;
+
+  /// No description provided for @errorPagoRequerido.
+  ///
+  /// In en, this message translates to:
+  /// **'This group is paid: you already have an active group.'**
+  String get errorPagoRequerido;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {

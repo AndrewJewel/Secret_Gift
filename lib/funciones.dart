@@ -77,6 +77,7 @@ extension MensajeLocalizado on FuncionError {
         'mensaje_largo' => t.errorMensajeLargo,
         'muy_rapido' => t.errorMuyRapido,
         'sesion_invalida' => t.errorSesionInvalida,
+        'pago_requerido' => t.errorPagoRequerido,
         'pin_formato' => t.errorPinFormato,
         'no_eres_organizador' => t.errorNoEresOrganizador,
         'plaza_sin_cuenta' => t.errorPlazaSinCuenta,
