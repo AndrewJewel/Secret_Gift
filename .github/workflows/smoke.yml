@@ -1,0 +1,25 @@
+# Smoke diario contra producción (scripts/smoke.mjs). Si falla, GitHub manda
+# un correo al dueño del repo. Existe porque el 22-oct la app estuvo caída
+# (facturación cerrada) sin que nadie lo supiera.
+#
+# Ojo: GitHub desactiva los workflows programados de un repo sin actividad
+# durante 60 días; si llega el aviso, basta con reactivarlo en Actions.
+name: Smoke diario
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # 12:00 UTC = 8:00 en Florida (7:00 en invierno)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/smoke.mjs

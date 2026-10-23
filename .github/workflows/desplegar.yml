@@ -103,3 +103,11 @@ jobs:
           --project secretgift-app
           --only hosting,functions,firestore:rules,storage
           --non-interactive --force
+
+      # Tras publicar, lo que no puede romperse (scripts/smoke.mjs). Las
+      # funciones tardan en arrancar después de un despliegue (el 22-oct,
+      # 12 minutos): se reintenta cada 30 s hasta 15 minutos.
+      - name: Smoke contra producción
+        env:
+          SMOKE_REINTENTOS: "30"
+        run: node scripts/smoke.mjs
