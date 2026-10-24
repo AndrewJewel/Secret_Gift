@@ -2121,13 +2121,13 @@ abstract class Textos {
   /// No description provided for @pagoTexto.
   ///
   /// In en, this message translates to:
-  /// **'You already have an active group. This new group costs USD 5, a one-time payment.'**
+  /// **'You already have an active group. This new group costs USD 5, a one-time payment with taxes included. You have 14 days to request a refund.'**
   String get pagoTexto;
 
   /// No description provided for @pagoCasilla.
   ///
   /// In en, this message translates to:
-  /// **'I agree the group is delivered immediately and understand there are no refunds.'**
+  /// **'I agree the group is created as soon as the payment is confirmed.'**
   String get pagoCasilla;
 
   /// No description provided for @pagoBoton.

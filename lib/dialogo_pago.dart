@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'l10n/app_localizations.dart';
 
-/// «Este grupo cuesta 5 USD». La casilla es obligatoria: cubre el derecho de
-/// desistimiento de la UE (entrega inmediata de contenido digital).
+/// «Este grupo cuesta 5 USD». La casilla es obligatoria: deja constancia de
+/// que el grupo se crea al confirmarse el pago. Reembolso: 14 días en
+/// paddle.net (Paddle no acepta «sin devoluciones»; ver /terminos).
 class DialogoPago extends StatefulWidget {
   const DialogoPago({super.key});
 

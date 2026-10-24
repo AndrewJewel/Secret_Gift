@@ -1166,11 +1166,11 @@ class TextosEs extends Textos {
 
   @override
   String get pagoTexto =>
-      'Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago.';
+      'Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago y con los impuestos incluidos. Tienes 14 días para pedir el reembolso.';
 
   @override
   String get pagoCasilla =>
-      'Acepto que el grupo se entregue de inmediato y entiendo que no hay devoluciones.';
+      'Acepto que el grupo se cree en cuanto se confirme el pago.';
 
   @override
   String get pagoBoton => 'Pagar y crear';
