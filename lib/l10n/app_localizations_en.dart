@@ -1166,7 +1166,7 @@ class TextosEn extends Textos {
 
   @override
   String get pagoTexto =>
-      'You already have an active group. This new group costs USD 5, a one-time payment with taxes included. You have 14 days to request a refund.';
+      'You already have an active group. This new group costs USD 5, a one-time payment.';
 
   @override
   String get pagoCasilla =>

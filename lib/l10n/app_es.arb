@@ -385,7 +385,7 @@
   "chatSinBloqueadas": "No has bloqueado a nadie.",
   "chatDesbloquear": "Desbloquear",
   "pagoTitulo": "Grupo adicional",
-  "pagoTexto": "Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago y con los impuestos incluidos. Tienes 14 días para pedir el reembolso.",
+  "pagoTexto": "Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago.",
   "pagoCasilla": "Acepto que el grupo se cree en cuanto se confirme el pago.",
   "pagoBoton": "Pagar y crear",
   "pagoEsperando": "Confirmando el pago…",
