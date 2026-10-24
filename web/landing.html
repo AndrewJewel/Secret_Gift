@@ -210,13 +210,16 @@
     /* ---------- Cómo funciona (sobre la tarima oscura) ---------- */
     .oscuro { background: var(--tinta); color: #F6ECE8; }
     .como { padding: clamp(40px, 8vw, 88px) 0 clamp(64px, 10vw, 120px); }
+    /* La foto termina justo en el borde de la portada: con la línea, ese corte
+       se lee como el marco de la escena y no como la persona partida. */
+    .como { border-top: 2px solid var(--oro); position: relative; z-index: 6; }
     h2 {
       font: 800 clamp(2rem, 6.4vw, 3.5rem)/1.02 var(--display); letter-spacing: -.03em;
       margin: 0 0 clamp(28px, 4vw, 48px); text-wrap: balance;
     }
     h2 .fino { font-weight: 200; }
     .pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(28px, 4vw, 40px); counter-reset: paso; }
-    .pasos li { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; counter-increment: paso; }
+    .pasos li { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; align-content: start; counter-increment: paso; }
     .pasos li::before {
       content: counter(paso); font: 800 clamp(3rem, 9vw, 5rem)/.8 var(--display);
       color: var(--oro); letter-spacing: -.04em; min-width: 1.1ch; display: block; height: .8em;
