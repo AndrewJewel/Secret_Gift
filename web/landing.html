@@ -171,7 +171,8 @@
     @media (max-width: 599px) {
       .escena { width: calc(100% - 24px); }
       .t-chat { max-width: 200px; top: 0; }
-      .t-grupo { bottom: 40%; left: 0; max-width: 168px; }
+      .t-grupo { bottom: 40%; left: 0; }
+      .t-grupo strong, .t-grupo .mas { white-space: nowrap; }
       .t-grupo .caras img { width: 28px; height: 28px; }
       .t-cuenta { bottom: 40%; right: 0; }
       .caja3d { width: 64px; right: 4px; top: 6%; }
@@ -180,10 +181,12 @@
       .tarjeta { padding: 10px 12px; }
     }
     @media (min-width: 900px) {
-      .acciones { flex-direction: row; justify-content: center; gap: 18px; }
+      .acciones { gap: 12px; }
+      /* El disco sube detrás del párrafo: sobre el dorado, el texto va en tinta (9:1). */
+      .bajada, .confianza { color: var(--tinta); }
       .escena { height: 620px; margin-top: -80px; }
       .persona { width: 340px; }
-      .disco { width: 560px; bottom: 0; }
+      .disco { width: 720px; bottom: -40px; }
       h1 { font-size: clamp(3.1rem, 7vw, 6rem); }
       .titular { margin-top: 4px; }
       .t-chat { left: 4%; top: 18%; }
