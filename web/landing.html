@@ -250,6 +250,7 @@
     .rasgo-principal { display: grid; gap: 28px; align-items: center; }
     .menores { display: grid; gap: 36px; }
     .muestra { margin-bottom: 16px; }
+    @media (max-width: 899px) { .muestra:has(.par) { display: flex; justify-content: center; } }
     @media (min-width: 900px) { .menores .muestra { min-height: 84px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-end; gap: 8px; } }
     .par { display: inline-flex; align-items: center; gap: 10px; background: var(--papel); padding: 10px 14px; border-radius: 999px; box-shadow: var(--sombra); font-weight: 800; }
     .par img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
