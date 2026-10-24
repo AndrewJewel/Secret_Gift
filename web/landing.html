@@ -124,8 +124,7 @@
     .disco {
       position: absolute; left: 50%; bottom: 13%; translate: -50% 0;
       width: min(80vw, 470px); aspect-ratio: 1; border-radius: 50%;
-      background: radial-gradient(circle at 38% 32%, #F2C45A 0%, var(--oro) 46%, #CF9220 100%);
-      box-shadow: inset 0 -22px 50px -20px rgba(140, 80, 0, .45);
+      background: var(--oro);
     }
     .persona {
       position: absolute; left: 50%; bottom: 0; translate: -50% 0; z-index: 2;
@@ -151,8 +150,6 @@
       font-size: 1.25rem; background: #F1E6DA;
     }
     .t-chat .quien { display: block; font-weight: 800; color: #7B5E3B; font-size: .8125rem; }
-    .t-chat .escribiendo { display: inline-flex; gap: 3px; margin-top: 6px; }
-    .t-chat .escribiendo i { width: 5px; height: 5px; border-radius: 50%; background: #CDB9A8; }
 
     .t-cuenta { right: 0; bottom: 30%; text-align: left; min-width: 0; }
     .t-cuenta .etiqueta { display: block; color: var(--tinta-suave); font-size: .8125rem; font-weight: 700; }
@@ -174,8 +171,9 @@
     @media (max-width: 599px) {
       .escena { width: calc(100% - 24px); }
       .t-chat { max-width: 200px; top: 0; }
-      .t-grupo { bottom: 26%; left: 0; }
-      .t-cuenta { bottom: 25%; right: 0; }
+      .t-grupo { bottom: 40%; left: 0; max-width: 168px; }
+      .t-grupo .caras img { width: 28px; height: 28px; }
+      .t-cuenta { bottom: 40%; right: 0; }
       .caja3d { width: 64px; right: 4px; top: 6%; }
       .flecha { display: none; }
       .digitos { font-size: 1.25rem; gap: 6px; }
@@ -183,10 +181,10 @@
     }
     @media (min-width: 900px) {
       .acciones { flex-direction: row; justify-content: center; gap: 18px; }
-      .escena { height: 560px; margin-top: 40px; }
-      .persona { width: 360px; }
-      .disco { width: 420px; bottom: 15%; }
-      h1 { font-size: clamp(3.1rem, 7vw, 5.4rem); }
+      .escena { height: 620px; margin-top: -80px; }
+      .persona { width: 340px; }
+      .disco { width: 560px; bottom: 0; }
+      h1 { font-size: clamp(3.1rem, 7vw, 6rem); }
       .titular { margin-top: 4px; }
       .t-chat { left: 4%; top: 18%; }
       .t-grupo { left: 6%; bottom: 30%; }
@@ -246,6 +244,7 @@
     .rasgo-principal { display: grid; gap: 28px; align-items: center; }
     .menores { display: grid; gap: 36px; }
     .muestra { margin-bottom: 16px; }
+    @media (min-width: 900px) { .menores .muestra { min-height: 84px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-end; gap: 8px; } }
     .par { display: inline-flex; align-items: center; gap: 10px; background: var(--papel); padding: 10px 14px; border-radius: 999px; box-shadow: var(--sombra); font-weight: 800; }
     .par img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
     .par svg { width: 18px; height: 18px; color: var(--carmin); }
@@ -270,10 +269,9 @@
     .precio .disco-eco {
       position: absolute; z-index: -1; right: -12vw; top: 50%; translate: 0 -50%;
       width: min(70vw, 560px); aspect-ratio: 1; border-radius: 50%;
-      background: radial-gradient(circle at 38% 32%, #F2C45A 0%, var(--oro) 46%, #CF9220 100%);
-      opacity: .9;
+      background: var(--oro);
     }
-    @media (max-width: 899px) { .precio .disco-eco { right: -38vw; top: 12%; translate: 0 0; width: 70vw; } }
+    @media (max-width: 899px) { .precio .disco-eco { right: -30vw; top: auto; bottom: -42vw; translate: 0 0; width: 80vw; } }
 
     /* ---------- Preguntas ---------- */
     .preguntas { padding: clamp(64px, 10vw, 120px) 0; }
@@ -318,7 +316,7 @@
     <header class="barra envoltura">
       <a class="marca" href="/" aria-label="Secret Gift">
         <img src="/assets/assets/logo.png" alt="" width="34" height="34">
-        <span>Secret Gift</span>
+        <span data-i18n="marca">Secret Gift</span>
       </a>
       <nav>
         <button class="idioma" id="idioma" type="button" aria-label="Español">ES</button>
@@ -348,7 +346,6 @@
         <span>
           <span class="quien" data-i18n="buho">Owl</span>
           <span data-i18n="chat1">Did you buy the gift yet? 👀</span>
-          <span class="escribiendo"><i></i><i></i><i></i></span>
         </span>
       </div>
 
@@ -490,7 +487,7 @@
     // navegador lo pide o si la persona lo eligió con el botón.
     var TEXTOS = {
       en: {
-        entrar: 'Log in', h1a: 'Meet your', h1b: 'Secret Santa',
+        marca: 'Secret Gift', entrar: 'Log in', h1a: 'Meet your', h1b: 'Secret Santa',
         bajada: 'Draw names, share wish lists and chat behind masks. Nobody knows who got whom, not even the organizer.',
         cta: 'Create my free group', confianza: 'Your first group is free · Nothing to install',
         buho: 'Owl', chat1: 'Did you buy the gift yet? 👀', unidos: '8 joined', sorteoListo: 'Draw ready',
@@ -517,7 +514,7 @@
         fTerminos: 'Terms', fPrivacidad: 'Privacy', fPrecios: 'Pricing', fEliminar: 'Delete account'
       },
       es: {
-        entrar: 'Entrar', h1a: 'Conoce a tu', h1b: 'Amigo Secreto',
+        marca: 'Regalo Secreto', entrar: 'Entrar', h1a: 'Conoce a tu', h1b: 'Amigo Secreto',
         bajada: 'Sorteo, listas de deseos y un chat con máscaras. Nadie sabe a quién le tocó quién, ni siquiera el organizador.',
         cta: 'Crear mi grupo gratis', confianza: 'Tu primer grupo es gratis · Sin instalar nada',
         buho: 'Búho', chat1: '¿Ya compraste el regalo? 👀', unidos: '8 se unieron', sorteoListo: 'Sorteo listo',
@@ -558,7 +555,8 @@
     }
     function ponerIdioma(id) {
       document.documentElement.lang = id;
-      document.title = id === 'es' ? 'Secret Gift · Amigo secreto en línea, gratis' : 'Secret Gift · Secret Santa online, free';
+      document.title = id === 'es' ? 'Regalo Secreto · Amigo secreto en línea, gratis' : 'Secret Gift · Secret Santa online, free';
+      document.querySelector('.marca').setAttribute('aria-label', TEXTOS[id].marca);
       document.querySelector('meta[name=description]').content = DESCRIPCION[id];
       document.querySelectorAll('[data-i18n]').forEach(function (el) {
         var t = TEXTOS[id][el.dataset.i18n];
