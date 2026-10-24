@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Secret Gift · Secret Santa online, free</title>
   <script>
     // Antes de pintar nada: las invitaciones (/?codigo=…) y quien ya tiene
@@ -15,9 +15,586 @@
       if (/[?&]codigo=/.test(q) || sesion) location.replace('/app' + q + location.hash);
     })();
   </script>
+  <meta name="description" content="Organize your Secret Santa online: invite with a link or QR, draw names, and chat anonymously behind masks. Your first group is free.">
+  <link rel="canonical" href="https://secretgift.app/">
+  <link rel="icon" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/icons/Icon-192.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://secretgift.app/">
+  <meta property="og:site_name" content="Secret Gift">
+  <meta property="og:title" content="Secret Gift · Secret Santa online, free">
+  <meta property="og:description" content="Invite with a link or QR, draw names, and chat anonymously. Not even the organizer knows who got whom.">
+  <meta property="og:image" content="https://secretgift.app/landing/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#F8E4E1">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Secret Gift",
+   "applicationCategory": "LifestyleApplication", "operatingSystem": "Web, Android",
+   "url": "https://secretgift.app/",
+   "offers": [{"@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "First group"},
+              {"@type": "Offer", "price": "5", "priceCurrency": "USD", "description": "Each additional group, one-time"}],
+   "publisher": {"@type": "Organization", "name": "NeonGate LLC"}}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,500;12..96,800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="/landing/persona-2.webp" imagesrcset="/landing/persona-2.webp 640w, /landing/persona-2@2x.webp 1280w" imagesizes="(min-width: 900px) 440px, 78vw">
+  <style>
+    :root {
+      --suelo: #F8E4E1;
+      --suelo-hondo: #F0D3CE;
+      --tinta: #1C1417;
+      --tinta-suave: #5B4A4F;
+      --carmin: #9B1226;
+      --carmin-hondo: #7A0E1E;
+      --oro: #E2A834;
+      --oro-hondo: #B47C14;
+      --oro-texto: #8A5D0B;
+      --papel: #FFFFFF;
+      --sombra: 0 18px 40px -18px rgba(60, 20, 30, .35), 0 4px 10px -4px rgba(60, 20, 30, .12);
+      --radio: 16px;
+      --display: 'Bricolage Grotesque', 'Nunito', sans-serif;
+      --texto: 'Nunito', system-ui, sans-serif;
+      --ancho: 1160px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--carmin) var(--suelo); }
+    body {
+      margin: 0; background: var(--suelo); color: var(--tinta);
+      font: 400 1.0625rem/1.6 var(--texto);
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+      overflow-x: clip;
+    }
+    ::selection { background: var(--carmin); color: #fff; }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-underline-offset: .2em; text-decoration-thickness: 1.5px; }
+    :focus-visible { outline: 3px solid var(--oro); outline-offset: 3px; border-radius: 6px; }
+    .envoltura { width: min(100% - 32px, var(--ancho)); margin-inline: auto; }
+
+    /* ---------- Barra ---------- */
+    .barra {
+      position: relative; z-index: 5;
+      display: flex; align-items: center; justify-content: space-between;
+      padding-block: 18px;
+    }
+    .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 800 1.15rem/1 var(--display); letter-spacing: -.02em; }
+    .marca img { width: 34px; height: 34px; }
+    .barra nav { display: flex; align-items: center; gap: 6px; }
+    .idioma, .entrar {
+      font: 700 .9375rem/1 var(--texto); color: var(--tinta);
+      background: none; border: 0; cursor: pointer; text-decoration: none;
+      padding: 12px 14px; border-radius: 999px; min-height: 44px;
+      display: inline-flex; align-items: center;
+    }
+    .idioma { letter-spacing: .04em; color: var(--tinta-suave); }
+    .entrar { background: var(--papel); box-shadow: var(--sombra); }
+    .idioma:hover, .entrar:hover { color: var(--carmin); }
+
+    /* ---------- Portada ---------- */
+    .portada { position: relative; isolation: isolate; overflow: hidden; padding-bottom: 0; }
+    .orbitas { position: absolute; inset: 34% -40% auto; height: 80%; z-index: -1; pointer-events: none; }
+    @media (min-width: 900px) { .orbitas { inset: -10% -30% auto; height: 120%; } }
+    .titular { text-align: center; position: relative; z-index: 3; margin-top: clamp(8px, 3vw, 28px); }
+    h1 {
+      margin: 0; font-family: var(--display); line-height: .92; letter-spacing: -.035em;
+      font-size: clamp(3.1rem, 11.5vw, 6rem); text-wrap: balance;
+    }
+    h1 .fino { display: block; font-weight: 200; color: var(--oro-texto); font-size: .82em; letter-spacing: -.03em; }
+    h1 .grueso { display: block; font-weight: 800; }
+    .bajada { margin: 18px auto 0; max-width: 34ch; color: var(--tinta-suave); font-size: 1.0625rem; text-wrap: pretty; }
+    .acciones { margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .boton {
+      display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+      font: 800 1.0625rem/1 var(--texto); color: #fff; background: var(--carmin);
+      padding: 18px 28px; border-radius: 999px; min-height: 56px;
+      box-shadow: 0 14px 28px -12px rgba(155, 18, 38, .65);
+      transition: transform .25s cubic-bezier(.2, .8, .2, 1), background .2s, box-shadow .25s;
+    }
+    .boton:hover { background: var(--carmin-hondo); transform: translateY(-2px); box-shadow: 0 18px 32px -12px rgba(155, 18, 38, .7); }
+    .boton:active { transform: translateY(0); }
+    .boton svg { width: 18px; height: 18px; }
+    .confianza { font-size: .875rem; color: var(--tinta-suave); margin: 0; }
+
+    .escena {
+      position: relative; margin: 28px auto 0;
+      width: min(100%, 980px); height: clamp(440px, 118vw, 640px);
+    }
+    .disco {
+      position: absolute; left: 50%; bottom: 13%; translate: -50% 0;
+      width: min(80vw, 470px); aspect-ratio: 1; border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #F2C45A 0%, var(--oro) 46%, #CF9220 100%);
+      box-shadow: inset 0 -22px 50px -20px rgba(140, 80, 0, .45);
+    }
+    .persona {
+      position: absolute; left: 50%; bottom: 0; translate: -50% 0; z-index: 2;
+      width: min(78vw, 440px); height: auto;
+      filter: drop-shadow(0 24px 30px rgba(60, 20, 30, .18));
+    }
+    .tarima {
+      position: absolute; z-index: 3; left: 50%; translate: -50% 0; bottom: -1px;
+      width: 170%; height: 22%; background: var(--tinta);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    /* La persona va delante del arco oscuro hasta la cintura: el arco la "asienta". */
+    .persona { z-index: 4; }
+
+    .tarjeta {
+      position: absolute; z-index: 5; background: var(--papel); border-radius: var(--radio);
+      box-shadow: var(--sombra); padding: 12px 14px; font-size: .875rem; line-height: 1.35;
+    }
+    .tarjeta strong { font-weight: 800; }
+    .t-chat { left: 0; top: 4%; display: flex; gap: 10px; align-items: flex-start; max-width: 230px; }
+    .mascara {
+      flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+      font-size: 1.25rem; background: #F1E6DA;
+    }
+    .t-chat .quien { display: block; font-weight: 800; color: #7B5E3B; font-size: .8125rem; }
+    .t-chat .escribiendo { display: inline-flex; gap: 3px; margin-top: 6px; }
+    .t-chat .escribiendo i { width: 5px; height: 5px; border-radius: 50%; background: #CDB9A8; }
+
+    .t-cuenta { right: 0; bottom: 30%; text-align: left; min-width: 0; }
+    .t-cuenta .etiqueta { display: block; color: var(--tinta-suave); font-size: .8125rem; font-weight: 700; }
+    .digitos { display: flex; gap: 8px; margin-top: 6px; font: 800 1.5rem/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+    .digitos span { display: flex; flex-direction: column; align-items: center; }
+    .digitos small { font: 700 .6875rem/1.4 var(--texto); color: var(--tinta-suave); letter-spacing: .02em; }
+    .digitos .s { color: var(--carmin); }
+
+    .t-grupo { left: 2%; bottom: 31%; display: flex; align-items: center; gap: 10px; }
+    .caras { display: flex; }
+    .caras img { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--papel); object-fit: cover; }
+    .caras img + img { margin-left: -10px; }
+    .t-grupo .mas { color: var(--tinta-suave); font-size: .8125rem; }
+
+    .caja3d { position: absolute; z-index: 5; right: 4%; top: 2%; width: 88px; filter: drop-shadow(0 16px 18px rgba(120, 60, 10, .28)); rotate: 9deg; }
+    .flecha { position: absolute; z-index: 5; right: 15%; bottom: 47%; width: 64px; color: var(--tinta); opacity: .85; }
+    .punto { position: absolute; border-radius: 50%; z-index: 1; }
+
+    @media (max-width: 599px) {
+      .escena { width: calc(100% - 24px); }
+      .t-chat { max-width: 200px; top: 0; }
+      .t-grupo { bottom: 26%; left: 0; }
+      .t-cuenta { bottom: 25%; right: 0; }
+      .caja3d { width: 64px; right: 4px; top: 6%; }
+      .flecha { display: none; }
+      .digitos { font-size: 1.25rem; gap: 6px; }
+      .tarjeta { padding: 10px 12px; }
+    }
+    @media (min-width: 900px) {
+      .acciones { flex-direction: row; justify-content: center; gap: 18px; }
+      .escena { height: 560px; margin-top: 40px; }
+      .persona { width: 360px; }
+      .disco { width: 420px; bottom: 15%; }
+      h1 { font-size: clamp(3.1rem, 7vw, 5.4rem); }
+      .titular { margin-top: 4px; }
+      .t-chat { left: 4%; top: 18%; }
+      .t-grupo { left: 6%; bottom: 30%; }
+      .t-cuenta { right: 5%; bottom: 33%; }
+      .caja3d { width: 112px; right: 10%; top: 6%; }
+      .tarjeta { font-size: .9375rem; padding: 14px 16px; }
+      .digitos { font-size: 1.75rem; }
+    }
+
+    /* Movimiento: las tarjetas flotan apenas; visibles desde el primer cuadro. */
+    @media (prefers-reduced-motion: no-preference) {
+      .flota { animation: flotar 7s ease-in-out infinite; }
+      .flota.b { animation-duration: 8.5s; animation-delay: -2s; }
+      .flota.c { animation-duration: 6.5s; animation-delay: -4s; }
+      .caja3d.flota { animation-name: flotarGiro; }
+      @keyframes flotar { 50% { translate: 0 -8px; } }
+      @keyframes flotarGiro { 50% { translate: 0 -10px; rotate: 4deg; } }
+    }
+
+    /* ---------- Cómo funciona (sobre la tarima oscura) ---------- */
+    .oscuro { background: var(--tinta); color: #F6ECE8; }
+    .como { padding: clamp(40px, 8vw, 88px) 0 clamp(64px, 10vw, 120px); }
+    h2 {
+      font: 800 clamp(2rem, 6.4vw, 3.5rem)/1.02 var(--display); letter-spacing: -.03em;
+      margin: 0 0 clamp(28px, 4vw, 48px); text-wrap: balance;
+    }
+    h2 .fino { font-weight: 200; }
+    .pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(28px, 4vw, 40px); counter-reset: paso; }
+    .pasos li { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; counter-increment: paso; }
+    .pasos li::before {
+      content: counter(paso); font: 800 clamp(3rem, 9vw, 5rem)/.8 var(--display);
+      color: var(--oro); letter-spacing: -.04em; min-width: 1.1ch; display: block; height: .8em;
+    }
+    .pasos h3 { margin: 4px 0 6px; font: 800 1.3rem/1.2 var(--display); letter-spacing: -.01em; }
+    .pasos p { margin: 0; color: #CDBDC1; max-width: 44ch; }
+    @media (min-width: 900px) {
+      .pasos { grid-template-columns: repeat(3, 1fr); gap: 40px; }
+      .pasos li { grid-template-columns: 1fr; }
+    }
+
+    /* ---------- Lo que la hace distinta ---------- */
+    .distinta { padding: clamp(64px, 10vw, 128px) 0; }
+    .rejilla { display: grid; gap: clamp(40px, 6vw, 72px); }
+    .chat-grande {
+      background: var(--papel); border-radius: 24px; box-shadow: var(--sombra);
+      padding: clamp(18px, 3vw, 28px); display: grid; gap: 12px; max-width: 460px; width: 100%;
+    }
+    .burbuja { display: flex; gap: 10px; align-items: flex-end; }
+    .burbuja .mascara { width: 34px; height: 34px; font-size: 1.05rem; }
+    .burbuja p { margin: 0; background: #F6EEE9; padding: 10px 14px; border-radius: 16px 16px 16px 4px; font-size: .9375rem; }
+    .burbuja .quien { display: block; font: 800 .75rem/1.4 var(--texto); }
+    .burbuja.mia { flex-direction: row-reverse; }
+    .burbuja.mia p { background: var(--carmin); color: #fff; border-radius: 16px 16px 4px 16px; }
+    .burbuja.mia .quien { color: #FFD9DF; }
+    .rasgo h3 { font: 800 clamp(1.5rem, 4vw, 2.1rem)/1.08 var(--display); letter-spacing: -.02em; margin: 0 0 10px; text-wrap: balance; }
+    .rasgo p { margin: 0; color: var(--tinta-suave); max-width: 46ch; }
+    .rasgo-principal { display: grid; gap: 28px; align-items: center; }
+    .menores { display: grid; gap: 36px; }
+    .muestra { margin-bottom: 16px; }
+    .par { display: inline-flex; align-items: center; gap: 10px; background: var(--papel); padding: 10px 14px; border-radius: 999px; box-shadow: var(--sombra); font-weight: 800; }
+    .par img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+    .par svg { width: 18px; height: 18px; color: var(--carmin); }
+    .temas { display: flex; flex-wrap: wrap; gap: 8px; }
+    .temas span { padding: 8px 14px; border-radius: 999px; font: 700 .875rem/1 var(--texto); color: #fff; }
+    .cuenta-mini { font: 800 2.4rem/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .cuenta-mini small { font: 700 .875rem var(--texto); color: var(--tinta-suave); margin-left: 6px; }
+    @media (min-width: 900px) {
+      .rasgo-principal { grid-template-columns: 1fr 1fr; gap: 64px; }
+      .menores { grid-template-columns: repeat(3, 1fr); gap: 40px; }
+    }
+
+    /* ---------- Precio (carmín a todo lo ancho) ---------- */
+    .precio { background: var(--carmin); color: #fff; padding: clamp(64px, 10vw, 120px) 0; position: relative; overflow: hidden; isolation: isolate; }
+    .precio .grande { font: 800 clamp(2.6rem, 9vw, 5.25rem)/.95 var(--display); letter-spacing: -.035em; margin: 0; text-wrap: balance; }
+    .precio .grande .fino { font-weight: 200; display: block; }
+    .precio p { margin: 22px 0 0; max-width: 46ch; color: #FFE3E7; font-size: 1.125rem; }
+    .precio p strong { color: #fff; }
+    .precio .boton { background: #fff; color: var(--carmin); margin-top: 30px; box-shadow: 0 14px 28px -14px rgba(0, 0, 0, .45); }
+    .precio .boton:hover { background: #FFF1F3; }
+    .precio a.enlace { color: #fff; font-weight: 700; }
+    .precio .disco-eco {
+      position: absolute; z-index: -1; right: -12vw; top: 50%; translate: 0 -50%;
+      width: min(70vw, 560px); aspect-ratio: 1; border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #F2C45A 0%, var(--oro) 46%, #CF9220 100%);
+      opacity: .9;
+    }
+    @media (max-width: 899px) { .precio .disco-eco { right: -38vw; top: 12%; translate: 0 0; width: 70vw; } }
+
+    /* ---------- Preguntas ---------- */
+    .preguntas { padding: clamp(64px, 10vw, 120px) 0; }
+    .preguntas .lista { max-width: 760px; }
+    details { border-bottom: 1.5px solid #E2CFC8; }
+    summary {
+      list-style: none; cursor: pointer; padding: 22px 40px 22px 0; position: relative;
+      font: 800 1.2rem/1.3 var(--display); letter-spacing: -.01em;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: ''; position: absolute; right: 6px; top: 50%; width: 12px; height: 12px;
+      border-right: 2.5px solid var(--carmin); border-bottom: 2.5px solid var(--carmin);
+      translate: 0 -70%; rotate: 45deg; transition: rotate .25s, translate .25s;
+    }
+    details[open] summary::after { rotate: 225deg; translate: 0 -20%; }
+    details p { margin: 0 0 22px; color: var(--tinta-suave); max-width: 60ch; }
+
+    /* ---------- Cierre y pie ---------- */
+    .cierre { text-align: center; padding: clamp(56px, 9vw, 104px) 0 clamp(40px, 6vw, 64px); }
+    .cierre h2 { margin-bottom: 26px; }
+    footer { padding: 40px 0 calc(40px + env(safe-area-inset-bottom)); font-size: .9375rem; }
+    footer .envoltura { display: grid; gap: 22px; }
+    footer nav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+    footer a { color: #E9DADD; text-decoration: none; padding: 6px 0; }
+    footer a:hover { color: #fff; text-decoration: underline; }
+    footer .legal { color: #A9979B; font-size: .875rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; }
+    footer .idioma { color: #E9DADD; }
+  </style>
 </head>
 <body>
-  <h1>Secret Gift</h1>
-  <p><a href="/app">Open the app</a></p>
+  <section class="portada" aria-labelledby="titulo">
+    <svg class="orbitas" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <ellipse cx="800" cy="640" rx="760" ry="520" fill="none" stroke="#E2A834" stroke-opacity=".55" stroke-width="1.5" transform="rotate(-14 800 640)"/>
+      <ellipse cx="800" cy="640" rx="640" ry="430" fill="none" stroke="#9B1226" stroke-opacity=".28" stroke-width="1.5" transform="rotate(10 800 640)"/>
+      <circle cx="210" cy="300" r="9" fill="#9B1226"/>
+      <circle cx="1390" cy="420" r="12" fill="#E2A834"/>
+      <circle cx="1240" cy="150" r="6" fill="#9B1226"/>
+      <circle cx="420" cy="760" r="7" fill="#E2A834"/>
+    </svg>
+
+    <header class="barra envoltura">
+      <a class="marca" href="/" aria-label="Secret Gift">
+        <img src="/assets/assets/logo.png" alt="" width="34" height="34">
+        <span>Secret Gift</span>
+      </a>
+      <nav>
+        <button class="idioma" id="idioma" type="button" aria-label="Español">ES</button>
+        <a class="entrar" href="/app" data-i18n="entrar">Log in</a>
+      </nav>
+    </header>
+
+    <div class="titular envoltura">
+      <h1 id="titulo"><span class="fino" data-i18n="h1a">Meet your</span><span class="grueso" data-i18n="h1b">Secret Santa</span></h1>
+      <p class="bajada" data-i18n="bajada">Draw names, share wish lists and chat behind masks. Nobody knows who got whom, not even the organizer.</p>
+      <div class="acciones">
+        <a class="boton" href="/app">
+          <span data-i18n="cta">Create my free group</span>
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
+        </a>
+        <p class="confianza" data-i18n="confianza">Your first group is free · Nothing to install</p>
+      </div>
+    </div>
+
+    <div class="escena" aria-hidden="true">
+      <div class="disco"></div>
+      <img class="persona" src="/landing/persona-2.webp" srcset="/landing/persona-2.webp 640w, /landing/persona-2@2x.webp 1280w" sizes="(min-width: 900px) 440px, 78vw" alt="" width="640" height="964" fetchpriority="high">
+      <div class="tarima"></div>
+
+      <div class="tarjeta t-chat flota">
+        <span class="mascara">🦉</span>
+        <span>
+          <span class="quien" data-i18n="buho">Owl</span>
+          <span data-i18n="chat1">Did you buy the gift yet? 👀</span>
+          <span class="escribiendo"><i></i><i></i><i></i></span>
+        </span>
+      </div>
+
+      <div class="tarjeta t-grupo flota b">
+        <span class="caras">
+          <img src="/landing/cara-1.webp" alt="" width="34" height="34">
+          <img src="/landing/cara-3.webp" alt="" width="34" height="34">
+          <img src="/landing/cara-4.webp" alt="" width="34" height="34">
+        </span>
+        <span><strong data-i18n="unidos">8 joined</strong><br><span class="mas" data-i18n="sorteoListo">Draw ready</span></span>
+      </div>
+
+      <div class="tarjeta t-cuenta flota c">
+        <span class="etiqueta" data-i18n="entrega">Gift exchange in</span>
+        <span class="digitos">
+          <span><b id="c-d">12</b><small data-i18n="dias">days</small></span>
+          <span><b id="c-h">04</b><small>h</small></span>
+          <span><b id="c-m">33</b><small>min</small></span>
+          <span class="s"><b id="c-s">00</b><small>s</small></span>
+        </span>
+      </div>
+
+      <img class="caja3d flota" src="/assets/assets/logo.png" alt="" width="112" height="112">
+      <svg class="flecha" viewBox="0 0 90 120" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8C58 14 78 44 64 104"/>
+        <path d="M52 92l12 14 11-16"/>
+      </svg>
+    </div>
+  </section>
+
+  <section class="como oscuro" aria-labelledby="t-como">
+    <div class="envoltura">
+      <h2 id="t-como"><span class="fino" data-i18n="como1">From group chat</span><br><span data-i18n="como2">to gift exchange.</span></h2>
+      <ol class="pasos">
+        <li><div><h3 data-i18n="p1t">Create the group</h3><p data-i18n="p1">Name it, pick a theme and share the link or the QR on WhatsApp, at the office, wherever.</p></div></li>
+        <li><div><h3 data-i18n="p2t">Everyone joins</h3><p data-i18n="p2">Each person signs up in a minute and writes a wish list only their Secret Santa will see.</p></div></li>
+        <li><div><h3 data-i18n="p3t">Draw names</h3><p data-i18n="p3">One tap and it's done. Each person sees who they got with their own PIN, and the secret stays a secret.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="distinta" aria-labelledby="t-distinta">
+    <div class="envoltura rejilla">
+      <h2 id="t-distinta" data-i18n="distinta">The secret is the whole point.</h2>
+
+      <div class="rasgo-principal">
+        <div class="chat-grande" aria-hidden="true">
+          <div class="burbuja"><span class="mascara">🦊</span><p><span class="quien" style="color:#C2571A" data-i18n="zorro">Fox</span><span data-i18n="m1">Is the budget still $50?</span></p></div>
+          <div class="burbuja"><span class="mascara">🐼</span><p><span class="quien" style="color:#3E3E3E" data-i18n="panda">Panda</span><span data-i18n="m2">Yes! And someone here is getting socks 🧦</span></p></div>
+          <div class="burbuja mia"><span class="mascara">🦦</span><p><span class="quien" data-i18n="nutria">Otter (you)</span><span data-i18n="m3">I won't say a word 🤐</span></p></div>
+        </div>
+        <div class="rasgo">
+          <h3 data-i18n="r1t">A group chat behind masks</h3>
+          <p data-i18n="r1">Everyone talks as an animal mask. Ask about sizes, drop hints, tease a little. Not even the organizer knows who is behind each mask.</p>
+        </div>
+      </div>
+
+      <div class="menores">
+        <div class="rasgo">
+          <div class="muestra"><span class="par"><img src="/landing/cara-1.webp" alt="" width="30" height="30"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg><img src="/landing/cara-4.webp" alt="" width="30" height="30"></span></div>
+          <h3 data-i18n="r2t">Exclusions that never fail</h3>
+          <p data-i18n="r2">Couples shouldn't get each other? Mark it. The app blocks any combination that would make the draw impossible, so it always works.</p>
+        </div>
+        <div class="rasgo">
+          <div class="muestra temas" aria-hidden="true">
+            <span style="background:#A94812" data-i18n="tm1">Cartoons</span>
+            <span style="background:#9B1226" data-i18n="tm2">Red carpet</span>
+            <span style="background:#2E6B3F" data-i18n="tm3">Christmas</span>
+            <span style="background:#3B4A63" data-i18n="tm4">Corporate</span>
+          </div>
+          <h3 data-i18n="r3t">Themes for every group</h3>
+          <p data-i18n="r3">Play as a cartoon, a movie star or a Christmas character, or just as yourself, with your name and photo.</p>
+        </div>
+        <div class="rasgo">
+          <div class="muestra cuenta-mini" aria-hidden="true"><span id="c-mini">12</span><small data-i18n="diasMini">days to go</small></div>
+          <h3 data-i18n="r4t">A countdown to the big day</h3>
+          <p data-i18n="r4">Set the exchange date and everyone sees the days tick down inside the group.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="precio" aria-labelledby="t-precio">
+    <div class="disco-eco" aria-hidden="true"></div>
+    <div class="envoltura">
+      <p class="grande" id="t-precio"><span class="fino" data-i18n="pr1">Your first group:</span><span data-i18n="pr2">free.</span></p>
+      <p><span data-i18n="pr3">Each additional group is</span> <strong data-i18n="pr4">USD 5, one-time</strong><span data-i18n="pr5">, taxes included, no subscription.</span> <a class="enlace" href="/pricing" data-ruta="pricing" data-i18n="prVer">See pricing</a></p>
+      <a class="boton" href="/app"><span data-i18n="cta">Create my free group</span></a>
+    </div>
+  </section>
+
+  <section class="preguntas" aria-labelledby="t-preguntas">
+    <div class="envoltura lista">
+      <h2 id="t-preguntas" data-i18n="preguntas">Questions</h2>
+      <details>
+        <summary data-i18n="q1">Can the organizer see who got whom?</summary>
+        <p data-i18n="a1">No. Nobody can. Each person sees only their own result, protected by a PIN. In the chat, everyone writes behind a mask.</p>
+      </details>
+      <details>
+        <summary data-i18n="q2">Do I need to install anything?</summary>
+        <p data-i18n="a2">No. It works in any browser on your phone or computer, and there's an app for Android.</p>
+      </details>
+      <details>
+        <summary data-i18n="q3">What if someone can't take part anymore?</summary>
+        <p data-i18n="a3">The organizer can replace them, even after the draw. The new person takes their place and nobody else's result changes.</p>
+      </details>
+      <details>
+        <summary data-i18n="q4">What if I change my mind after paying?</summary>
+        <p><span data-i18n="a4">You have 14 days to request a full refund.</span> <a href="/terms" data-ruta="terms" data-i18n="a4b">Read the terms</a></p>
+      </details>
+    </div>
+  </section>
+
+  <section class="cierre" aria-labelledby="t-cierre">
+    <div class="envoltura">
+      <h2 id="t-cierre"><span class="fino" data-i18n="c1">Someone is about to</span><br><span data-i18n="c2">get the perfect gift.</span></h2>
+      <a class="boton" href="/app"><span data-i18n="cta">Create my free group</span></a>
+    </div>
+  </section>
+
+  <footer class="oscuro">
+    <div class="envoltura">
+      <nav aria-label="Legal">
+        <a href="/terms" data-ruta="terms" data-i18n="fTerminos">Terms</a>
+        <a href="/privacy" data-ruta="privacy" data-i18n="fPrivacidad">Privacy</a>
+        <a href="/pricing" data-ruta="pricing" data-i18n="fPrecios">Pricing</a>
+        <a href="/delete-account" data-ruta="delete-account" data-i18n="fEliminar">Delete account</a>
+        <a href="mailto:contact@neongate.co">contact@neongate.co</a>
+      </nav>
+      <div class="legal">
+        <span>© 2026 NeonGate LLC</span>
+        <button class="idioma" id="idioma2" type="button">Español</button>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Idioma: el HTML ya está en inglés (lo que indexa Google). Español si el
+    // navegador lo pide o si la persona lo eligió con el botón.
+    var TEXTOS = {
+      en: {
+        entrar: 'Log in', h1a: 'Meet your', h1b: 'Secret Santa',
+        bajada: 'Draw names, share wish lists and chat behind masks. Nobody knows who got whom, not even the organizer.',
+        cta: 'Create my free group', confianza: 'Your first group is free · Nothing to install',
+        buho: 'Owl', chat1: 'Did you buy the gift yet? 👀', unidos: '8 joined', sorteoListo: 'Draw ready',
+        entrega: 'Gift exchange in', dias: 'days',
+        como1: 'From group chat', como2: 'to gift exchange.',
+        p1t: 'Create the group', p1: 'Name it, pick a theme and share the link or the QR on WhatsApp, at the office, wherever.',
+        p2t: 'Everyone joins', p2: 'Each person signs up in a minute and writes a wish list only their Secret Santa will see.',
+        p3t: 'Draw names', p3: "One tap and it's done. Each person sees who they got with their own PIN, and the secret stays a secret.",
+        distinta: 'The secret is the whole point.',
+        zorro: 'Fox', m1: 'Is the budget still $50?', panda: 'Panda', m2: 'Yes! And someone here is getting socks 🧦',
+        nutria: 'Otter (you)', m3: "I won't say a word 🤐",
+        r1t: 'A group chat behind masks', r1: 'Everyone talks as an animal mask. Ask about sizes, drop hints, tease a little. Not even the organizer knows who is behind each mask.',
+        r2t: 'Exclusions that never fail', r2: "Couples shouldn't get each other? Mark it. The app blocks any combination that would make the draw impossible, so it always works.",
+        tm1: 'Cartoons', tm2: 'Red carpet', tm3: 'Christmas', tm4: 'Corporate',
+        r3t: 'Themes for every group', r3: 'Play as a cartoon, a movie star or a Christmas character, or just as yourself, with your name and photo.',
+        diasMini: 'days to go', r4t: 'A countdown to the big day', r4: 'Set the exchange date and everyone sees the days tick down inside the group.',
+        pr1: 'Your first group:', pr2: 'free.', pr3: 'Each additional group is', pr4: 'USD 5, one-time', pr5: ', taxes included, no subscription.', prVer: 'See pricing',
+        preguntas: 'Questions',
+        q1: 'Can the organizer see who got whom?', a1: 'No. Nobody can. Each person sees only their own result, protected by a PIN. In the chat, everyone writes behind a mask.',
+        q2: 'Do I need to install anything?', a2: "No. It works in any browser on your phone or computer, and there's an app for Android.",
+        q3: "What if someone can't take part anymore?", a3: "The organizer can replace them, even after the draw. The new person takes their place and nobody else's result changes.",
+        q4: 'What if I change my mind after paying?', a4: 'You have 14 days to request a full refund.', a4b: 'Read the terms',
+        c1: 'Someone is about to', c2: 'get the perfect gift.',
+        fTerminos: 'Terms', fPrivacidad: 'Privacy', fPrecios: 'Pricing', fEliminar: 'Delete account'
+      },
+      es: {
+        entrar: 'Entrar', h1a: 'Conoce a tu', h1b: 'Amigo Secreto',
+        bajada: 'Sorteo, listas de deseos y un chat con máscaras. Nadie sabe a quién le tocó quién, ni siquiera el organizador.',
+        cta: 'Crear mi grupo gratis', confianza: 'Tu primer grupo es gratis · Sin instalar nada',
+        buho: 'Búho', chat1: '¿Ya compraste el regalo? 👀', unidos: '8 se unieron', sorteoListo: 'Sorteo listo',
+        entrega: 'Entrega de regalos en', dias: 'días',
+        como1: 'Del chat del grupo', como2: 'al intercambio.',
+        p1t: 'Crea el grupo', p1: 'Ponle nombre, elige una temática y comparte el enlace o el QR: por WhatsApp, en la oficina, donde sea.',
+        p2t: 'Todos se unen', p2: 'Cada quien se inscribe en un minuto y escribe su lista de deseos, que solo verá quien le regala.',
+        p3t: 'Hagan el sorteo', p3: 'Un toque y listo. Cada quien ve a quién le tocó con su propio PIN, y el secreto sigue siendo secreto.',
+        distinta: 'El secreto es lo que importa.',
+        zorro: 'Zorro', m1: '¿El presupuesto sigue siendo de $50?', panda: 'Panda', m2: '¡Sí! Y aquí alguien va a recibir medias 🧦',
+        nutria: 'Nutria (tú)', m3: 'Yo no digo nada 🤐',
+        r1t: 'Un chat de grupo con máscaras', r1: 'Cada quien habla como un animal. Pregunta tallas, deja pistas, molesta un poco: ni el organizador sabe quién está detrás de cada máscara.',
+        r2t: 'Exclusiones que nunca fallan', r2: '¿Las parejas no deben tocarse entre sí? Márcalo. La app bloquea cualquier combinación que haría imposible el sorteo, así que siempre sale.',
+        tm1: 'Caricaturas', tm2: 'Alfombra roja', tm3: 'Navidad', tm4: 'Empresarial',
+        r3t: 'Temáticas para cada grupo', r3: 'Juega como caricatura, estrella de cine o personaje navideño, o simplemente como tú, con tu nombre y tu foto.',
+        diasMini: 'días para la entrega', r4t: 'Cuenta atrás para el gran día', r4: 'Pon la fecha del intercambio y todos ven bajar los días dentro del grupo.',
+        pr1: 'Tu primer grupo:', pr2: 'gratis.', pr3: 'Cada grupo adicional cuesta', pr4: '5 USD, pago único', pr5: ', con impuestos incluidos y sin suscripción.', prVer: 'Ver precios',
+        preguntas: 'Preguntas',
+        q1: '¿El organizador ve a quién le tocó quién?', a1: 'No. Nadie puede. Cada quien ve solo su resultado, protegido con un PIN. En el chat, todos escriben detrás de una máscara.',
+        q2: '¿Hay que instalar algo?', a2: 'No. Funciona en cualquier navegador, en el celular o el computador, y hay app para Android.',
+        q3: '¿Y si alguien ya no puede participar?', a3: 'El organizador lo reemplaza, incluso después del sorteo. La persona nueva ocupa su lugar y el resultado de los demás no cambia.',
+        q4: '¿Y si me arrepiento después de pagar?', a4: 'Tienes 14 días para pedir el reembolso completo.', a4b: 'Leer las condiciones',
+        c1: 'Alguien está a punto', c2: 'de recibir el regalo perfecto.',
+        fTerminos: 'Condiciones', fPrivacidad: 'Privacidad', fPrecios: 'Precios', fEliminar: 'Eliminar cuenta'
+      }
+    };
+    var RUTAS = {
+      en: {terms: '/terms', privacy: '/privacy', pricing: '/pricing', 'delete-account': '/delete-account'},
+      es: {terms: '/terminos', privacy: '/privacidad', pricing: '/precios', 'delete-account': '/eliminar-cuenta'}
+    };
+    var DESCRIPCION = {
+      en: 'Organize your Secret Santa online: invite with a link or QR, draw names, and chat anonymously behind masks. Your first group is free.',
+      es: 'Organiza tu amigo secreto en línea: invita con un enlace o un QR, haz el sorteo y chatea con máscaras. Tu primer grupo es gratis.'
+    };
+    function idiomaInicial() {
+      try { var g = localStorage.getItem('sg_idioma'); if (g === 'es' || g === 'en') return g; } catch (e) {}
+      return (navigator.language || '').toLowerCase().indexOf('es') === 0 ? 'es' : 'en';
+    }
+    function ponerIdioma(id) {
+      document.documentElement.lang = id;
+      document.title = id === 'es' ? 'Secret Gift · Amigo secreto en línea, gratis' : 'Secret Gift · Secret Santa online, free';
+      document.querySelector('meta[name=description]').content = DESCRIPCION[id];
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        var t = TEXTOS[id][el.dataset.i18n];
+        if (t != null) el.textContent = t;
+      });
+      document.querySelectorAll('[data-ruta]').forEach(function (a) { a.href = RUTAS[id][a.dataset.ruta]; });
+      var otro = id === 'es' ? 'en' : 'es';
+      var b1 = document.getElementById('idioma'), b2 = document.getElementById('idioma2');
+      b1.textContent = otro.toUpperCase();
+      b1.setAttribute('aria-label', otro === 'es' ? 'Español' : 'English');
+      b1.lang = otro; b2.lang = otro;
+      b2.textContent = otro === 'es' ? 'Español' : 'English';
+    }
+    var actual = idiomaInicial();
+    ponerIdioma(actual);
+    function cambiar() {
+      actual = actual === 'es' ? 'en' : 'es';
+      try { localStorage.setItem('sg_idioma', actual); } catch (e) {}
+      ponerIdioma(actual);
+    }
+    document.getElementById('idioma').addEventListener('click', cambiar);
+    document.getElementById('idioma2').addEventListener('click', cambiar);
+
+    // Cuenta atrás FICTICIA: una muestra de la función, no una fecha real.
+    var fin = Date.now() + ((12 * 24 + 4) * 60 + 33) * 60 * 1000;
+    function dos(n) { return n < 10 ? '0' + n : '' + n; }
+    function tic() {
+      var s = Math.max(0, Math.floor((fin - Date.now()) / 1000));
+      document.getElementById('c-d').textContent = Math.floor(s / 86400);
+      document.getElementById('c-h').textContent = dos(Math.floor(s / 3600) % 24);
+      document.getElementById('c-m').textContent = dos(Math.floor(s / 60) % 60);
+      document.getElementById('c-s').textContent = dos(s % 60);
+      document.getElementById('c-mini').textContent = Math.floor(s / 86400);
+    }
+    tic();
+    setInterval(tic, 1000);
+  </script>
 </body>
 </html>
