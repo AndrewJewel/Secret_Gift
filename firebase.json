@@ -27,8 +27,17 @@
         ]
       },
       {
-        "comment": "La raiz se sirve por la reescritura a index.html, y la regla de arriba no la cubre porque la ruta no termina en .html.",
+        "comment": "La raiz (la landing) y /app (la app) no terminan en .html, asi que la regla de arriba no las cubre.",
         "source": "/",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/app",
         "headers": [
           {
             "key": "Cache-Control",
@@ -71,8 +80,13 @@
         "destination": "/precios.html"
       },
       {
+        "source": "/app",
+        "destination": "/app.html"
+      },
+      {
+        "comment": "Cualquier ruta desconocida abre la app, como antes de la landing. La raiz exacta la sirve index.html, que es la landing (el despliegue renombra los archivos: ver desplegar.yml).",
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/app.html"
       }
     ]
   },

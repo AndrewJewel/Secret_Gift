@@ -63,8 +63,12 @@ async function funcion(nombre, datos = {}) {
 }
 
 const portada = await texto("/");
-ok("la web responde con la app", portada.estado === 200 && portada.cuerpo.includes("flutter_bootstrap.js"),
-    `estado ${portada.estado}`);
+ok("/ sirve la landing", portada.estado === 200 && portada.cuerpo.includes("<title>Secret Gift") &&
+    !portada.cuerpo.includes("flutter_bootstrap.js"), `estado ${portada.estado}`);
+// Las invitaciones viejas (/?codigo=…) dependen de este salto, que va en el <head>.
+ok("la landing manda las invitaciones a /app", portada.cuerpo.includes("location.replace('/app'"));
+const app = await texto("/app");
+ok("/app sirve la app", app.estado === 200 && app.cuerpo.includes("flutter_bootstrap.js"), `estado ${app.estado}`);
 
 await pagina("/privacidad", "Privacidad");
 await pagina("/terminos", "Condiciones de uso");

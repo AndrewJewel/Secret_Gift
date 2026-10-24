@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'glass.dart';
 import 'idioma.dart';
 import 'l10n/app_localizations.dart';
+import 'marca_sesion.dart';
 import 'ocasion.dart';
 import 'pantalla_raiz.dart';
 import 'ruta_observer.dart';
@@ -76,6 +77,8 @@ void main() async {
   Idioma.cargar();
 
   runApp(const SantaApp());
+  // Marca para la landing de la raíz: con sesión, salta directo a /app.
+  if (kIsWeb) FirebaseAuth.instance.authStateChanges().listen((u) => marcarSesion(u != null));
   // En web Flutter no arma el árbol de accesibilidad hasta que alguien pulsa
   // un botón invisible: un lector de pantalla llegaba a una página muda.
   if (kIsWeb) SemanticsBinding.instance.ensureSemantics();

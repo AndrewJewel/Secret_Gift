@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secret Gift · Secret Santa online, free</title>
+  <script>
+    // Antes de pintar nada: las invitaciones (/?codigo=…) y quien ya tiene
+    // sesión van directo a la app. Sin esto, los QR que ya circulan
+    // abrirían la landing en vez del grupo.
+    (function () {
+      var q = location.search;
+      var sesion = false;
+      try { sesion = localStorage.getItem('sg_sesion') === '1'; } catch (e) {}
+      if (/[?&]codigo=/.test(q) || sesion) location.replace('/app' + q + location.hash);
+    })();
+  </script>
+</head>
+<body>
+  <h1>Secret Gift</h1>
+  <p><a href="/app">Open the app</a></p>
+</body>
+</html>

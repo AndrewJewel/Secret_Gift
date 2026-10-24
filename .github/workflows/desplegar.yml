@@ -42,6 +42,14 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release
+      # La raíz es la landing (web/landing.html) y la app vive en /app.
+      # Flutter exige que su plantilla se llame web/index.html (sustituye
+      # $FLUTTER_BASE_HREF), así que el cambio de nombre se hace aquí,
+      # sobre lo ya compilado. Ver firebase.json.
+      - name: Landing en la raíz, app en /app
+        run: |
+          mv build/web/index.html build/web/app.html
+          mv build/web/landing.html build/web/index.html
 
       # El APK viaja con la web: queda en build/web/secretgift.apk y
       # secretgift.app/apk redirige ahí. Antes se copiaba a mano y cada

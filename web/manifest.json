@@ -1,7 +1,7 @@
 {
     "name": "Secret Gift",
     "short_name": "Secret Gift",
-    "start_url": ".",
+    "start_url": "/app",
     "display": "standalone",
     "background_color": "#FBF6EE",
     "theme_color": "#9B1226",
