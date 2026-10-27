@@ -101,6 +101,9 @@
         visualViewport.addEventListener('resize', function () {
           anotar('vv ' + Math.round(visualViewport.height));
         });
+        visualViewport.addEventListener('scroll', function () {
+          anotar('vv top ' + Math.round(visualViewport.offsetTop));
+        });
       }
       document.addEventListener('focusin', function (e) {
         anotar('foco+ ' + e.target.tagName);
@@ -118,10 +121,15 @@
           anotar('fv ' + (alto || '(vacio)'));
           altoAnterior = alto;
         }
+        // Pegado a lo que se ve: si Chrome desplaza la vista al abrir el
+        // teclado (vv top > 0), el recuadro lo sigue en vez de escaparse.
+        caja.style.top = (vv ? Math.round(vv.offsetTop) : 0) + 'px';
         caja.textContent =
           'innerH      ' + window.innerHeight + '\n' +
           'visualH     ' + (vv ? Math.round(vv.height) : '-') + '\n' +
+          'vv top      ' + (vv ? Math.round(vv.offsetTop) : '-') + '\n' +
           'scrollY     ' + Math.round(window.scrollY) + '\n' +
+          'fv top      ' + (r ? Math.round(r.top) : '-') + '\n' +
           'fv alto     ' + (r ? Math.round(r.height) : '-') + '\n' +
           // Desde 3.38.10 el engine sí escribe aquí el alto en px en cada
           // frame; lo que importa es que coincida con visualH.
