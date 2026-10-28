@@ -139,6 +139,23 @@
     })();
   </script>
 
+  <script>
+    // Chrome de Android, al abrir el teclado, desplaza la vista (visual
+    // viewport) para mostrar el campo enfocado. Flutter ya sube su contenido
+    // por encima del teclado, así que los dos corrimientos se suman: la app
+    // queda corrida de más y deja una franja vacía sobre el teclado. Medido el
+    // 27-oct con ?diag=1 en Entrar: vv top 151, fv top 0. La página de
+    // Flutter es fija y nunca necesita ese corrimiento: se devuelve a cero.
+    if (window.visualViewport) {
+      visualViewport.addEventListener('scroll', function () {
+        // Con zoom el desplazamiento lo hace la persona: no tocarlo.
+        if (visualViewport.offsetTop > 0 && visualViewport.scale < 1.01) {
+          window.scrollTo(0, 0);
+        }
+      });
+    }
+  </script>
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
