@@ -40,7 +40,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,500;12..96,800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="/landing/persona-2.webp" imagesrcset="/landing/persona-2.webp 640w, /landing/persona-2@2x.webp 1280w" imagesizes="(min-width: 900px) 440px, 78vw">
+  <link rel="preload" as="image" href="/landing/persona-1.webp" imagesrcset="/landing/persona-1.webp 640w, /landing/persona-1@2x.webp 1280w" imagesizes="(min-width: 900px) 440px, 78vw">
   <style>
     :root {
       --suelo: #F8E4E1;
@@ -138,6 +138,8 @@
     }
     /* La persona va delante del arco oscuro hasta la cintura: el arco la "asienta". */
     .persona { z-index: 4; }
+    /* Cuatro personas apiladas; solo se ve la activa (fundido en el script). */
+    .persona:not(.activa) { opacity: 0; }
 
     .tarjeta {
       position: absolute; z-index: 5; background: var(--papel); border-radius: var(--radio);
@@ -203,6 +205,7 @@
       .flota.b { animation-duration: 8.5s; animation-delay: -2s; }
       .flota.c { animation-duration: 6.5s; animation-delay: -4s; }
       .caja3d.flota { animation-name: flotarGiro; }
+      .persona { transition: opacity 1s ease; }
       @keyframes flotar { 50% { translate: 0 -8px; } }
       @keyframes flotarGiro { 50% { translate: 0 -10px; rotate: 4deg; } }
     }
@@ -345,7 +348,10 @@
 
     <div class="escena" aria-hidden="true">
       <div class="disco"></div>
-      <img class="persona" src="/landing/persona-2.webp" srcset="/landing/persona-2.webp 640w, /landing/persona-2@2x.webp 1280w" sizes="(min-width: 900px) 440px, 78vw" alt="" width="640" height="964" fetchpriority="high">
+      <img class="persona activa" src="/landing/persona-1.webp" srcset="/landing/persona-1.webp 640w, /landing/persona-1@2x.webp 1280w" sizes="(min-width: 900px) 440px, 78vw" alt="" width="640" height="964" fetchpriority="high">
+      <img class="persona" src="/landing/persona-2.webp" srcset="/landing/persona-2.webp 640w, /landing/persona-2@2x.webp 1280w" sizes="(min-width: 900px) 440px, 78vw" alt="" width="640" height="964" fetchpriority="low" decoding="async">
+      <img class="persona" src="/landing/persona-3.webp" srcset="/landing/persona-3.webp 640w, /landing/persona-3@2x.webp 1280w" sizes="(min-width: 900px) 440px, 78vw" alt="" width="640" height="964" fetchpriority="low" decoding="async">
+      <img class="persona" src="/landing/persona-4.webp" srcset="/landing/persona-4.webp 640w, /landing/persona-4@2x.webp 1280w" sizes="(min-width: 900px) 440px, 78vw" alt="" width="640" height="964" fetchpriority="low" decoding="async">
       <div class="tarima"></div>
 
       <div class="tarjeta t-chat flota">
@@ -358,7 +364,7 @@
 
       <div class="tarjeta t-grupo flota b">
         <span class="caras">
-          <img src="/landing/cara-1.webp" alt="" width="34" height="34">
+          <img src="/landing/cara-2.webp" alt="" width="34" height="34">
           <img src="/landing/cara-3.webp" alt="" width="34" height="34">
           <img src="/landing/cara-4.webp" alt="" width="34" height="34">
         </span>
@@ -600,6 +606,32 @@
     }
     tic();
     setInterval(tic, 1000);
+
+    // Fundido de las personas: la principal (la primera) se queda 6 s y las
+    // demás 2 s cada una; luego vuelve a la principal. Pausado con la pestaña
+    // oculta; con movimiento reducido se queda la principal, quieta.
+    var fotos = document.querySelectorAll('.persona');
+    if (fotos.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var actualFoto = 0, reloj;
+      var espera = function () { return actualFoto === 0 ? 6000 : 2000; };
+      var siguiente = function () {
+        // Si la próxima aún no cargó (red lenta), esperar: si no, el fundido
+        // dejaría la escena vacía.
+        if (!fotos[(actualFoto + 1) % fotos.length].complete) {
+          reloj = setTimeout(siguiente, 500);
+          return;
+        }
+        fotos[actualFoto].classList.remove('activa');
+        actualFoto = (actualFoto + 1) % fotos.length;
+        fotos[actualFoto].classList.add('activa');
+        reloj = setTimeout(siguiente, espera());
+      };
+      reloj = setTimeout(siguiente, espera());
+      document.addEventListener('visibilitychange', function () {
+        clearTimeout(reloj);
+        if (!document.hidden) reloj = setTimeout(siguiente, espera());
+      });
+    }
   </script>
 </body>
 </html>
