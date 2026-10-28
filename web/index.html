@@ -105,8 +105,13 @@
           anotar('vv top ' + Math.round(visualViewport.offsetTop));
         });
       }
+      // Dónde está el campo oculto que Chrome intenta mostrar al abrir el
+      // teclado, y dentro de qué vive (FORM con autocompletado).
       document.addEventListener('focusin', function (e) {
-        anotar('foco+ ' + e.target.tagName);
+        var r = e.target.getBoundingClientRect();
+        anotar('foco+ ' + e.target.tagName + ' en ' +
+          (e.target.parentElement ? e.target.parentElement.tagName : '-') +
+          ' top ' + Math.round(r.top) + ' alto ' + Math.round(r.height));
       });
       document.addEventListener('focusout', function (e) {
         anotar('foco- ' + e.target.tagName);
@@ -134,6 +139,7 @@
           // Desde 3.38.10 el engine sí escribe aquí el alto en px en cada
           // frame; lo que importa es que coincida con visualH.
           'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)') + '\n' +
+          'scrollTo    ' + (window.sgScrollTo || 0) + '\n' +
           '---\n' + eventos.join('\n');
       }, 50);
     })();
@@ -151,6 +157,7 @@
         // Con zoom el desplazamiento lo hace la persona: no tocarlo.
         if (visualViewport.offsetTop > 0 && visualViewport.scale < 1.01) {
           window.scrollTo(0, 0);
+          window.sgScrollTo = (window.sgScrollTo || 0) + 1;  // para ?diag=1
         }
       });
     }
