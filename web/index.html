@@ -139,7 +139,7 @@
           // Desde 3.38.10 el engine sí escribe aquí el alto en px en cada
           // frame; lo que importa es que coincida con visualH.
           'fv inline   ' + (fv && fv.style.height ? fv.style.height : '(vacio)') + '\n' +
-          'scrollTo    ' + (window.sgScrollTo || 0) + '\n' +
+          'fv transf   ' + (fv && fv.style.transform ? fv.style.transform : '(vacio)') + '\n' +
           '---\n' + eventos.join('\n');
       }, 50);
     })();
@@ -147,19 +147,29 @@
 
   <script>
     // Chrome de Android, al abrir el teclado, desplaza la vista (visual
-    // viewport) para mostrar el campo enfocado. Flutter ya sube su contenido
-    // por encima del teclado, así que los dos corrimientos se suman: la app
-    // queda corrida de más y deja una franja vacía sobre el teclado. Medido el
-    // 27-oct con ?diag=1 en Entrar: vv top 151, fv top 0. La página de
-    // Flutter es fija y nunca necesita ese corrimiento: se devuelve a cero.
+    // viewport) para mostrar el campo enfocado si quedaba debajo. Pero el
+    // engine encoge la app con `alto - visualViewport.height` sin mirar
+    // offsetTop: Flutter dibuja desde arriba de la página y Chrome enseña una
+    // franja más abajo. Resultado: la app corrida de más y un hueco sobre el
+    // teclado. Medido el 27-oct con ?diag=1 en Entrar: vv top 151, fv top 0.
+    //
+    // window.scrollTo(0, 0) NO sirve: se probó (10 llamadas) y Chrome no
+    // devuelve la vista. Lo que sí: bajar <flutter-view> lo mismo que Chrome
+    // subió la vista, para que lo que dibuja Flutter caiga en lo visible. Los
+    // toques siguen bien: el engine usa offsetX/Y, que respetan el transform.
     if (window.visualViewport) {
-      visualViewport.addEventListener('scroll', function () {
-        // Con zoom el desplazamiento lo hace la persona: no tocarlo.
-        if (visualViewport.offsetTop > 0 && visualViewport.scale < 1.01) {
-          window.scrollTo(0, 0);
-          window.sgScrollTo = (window.sgScrollTo || 0) + 1;  // para ?diag=1
-        }
-      });
+      var acompanar = function () {
+        var fv = document.querySelector('flutter-view');
+        if (!fv) return;
+        var y = Math.round(visualViewport.offsetTop);
+        // Con zoom el desplazamiento lo hace la persona: no acompañarlo.
+        fv.style.transform = y > 0 && visualViewport.scale < 1.01
+          ? 'translateY(' + y + 'px)' : '';
+      };
+      // También en resize: al cerrar el teclado la vista puede volver a 0
+      // sin evento scroll, y la app quedaría corrida hacia abajo.
+      visualViewport.addEventListener('scroll', acompanar);
+      visualViewport.addEventListener('resize', acompanar);
     }
   </script>
 
