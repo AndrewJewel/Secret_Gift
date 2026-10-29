@@ -49,4 +49,24 @@ function leerEvento(evento) {
   return null;
 }
 
-module.exports = {decidirCobro, firmaValida, leerEvento, TOLERANCIA_FIRMA_S};
+/**
+ * Una compra de `purchases.products.get` de la Play Developer API.
+ * `purchaseState`: 0 comprada, 1 cancelada, 2 pendiente (efectivo o
+ * transferencia: aún no hay dinero). `obfuscatedExternalAccountId` es el uid
+ * que la app pasó como `applicationUserName` al comprar: si no coincide,
+ * alguien intenta cobrar el token de otra cuenta.
+ */
+function leerCompraPlay(compra, uid) {
+  if (!compra || !compra.orderId) return {ok: false, motivo: "invalida"};
+  if (compra.purchaseState === 2) return {ok: false, motivo: "pendiente"};
+  if (compra.purchaseState !== 0) return {ok: false, motivo: "cancelada"};
+  if (!uid || compra.obfuscatedExternalAccountId !== uid) return {ok: false, motivo: "otra_cuenta"};
+  return {ok: true, id: compra.orderId};
+}
+
+/** Los `orderId` de `voidedpurchases.list` (devueltas, anuladas o con contracargo). */
+function leerAnuladasPlay(lista) {
+  return (lista || []).map((v) => v?.orderId).filter(Boolean);
+}
+
+module.exports = {decidirCobro, firmaValida, leerEvento, leerCompraPlay, leerAnuladasPlay, TOLERANCIA_FIRMA_S};

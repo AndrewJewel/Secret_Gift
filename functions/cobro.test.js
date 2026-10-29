@@ -53,3 +53,21 @@ test("leer eventos de Paddle", () => {
   assert.strictEqual(c.leerEvento({event_type: "customer.created", data: {}}), null);
   assert.strictEqual(c.leerEvento(undefined), null);
 });
+
+test("leer una compra de Play", () => {
+  const base = {purchaseState: 0, orderId: "GPA.1", obfuscatedExternalAccountId: "u"};
+  assert.deepStrictEqual(c.leerCompraPlay(base, "u"), {ok: true, id: "GPA.1"});
+  assert.deepStrictEqual(c.leerCompraPlay({...base, purchaseState: 2}, "u"), {ok: false, motivo: "pendiente"});
+  assert.deepStrictEqual(c.leerCompraPlay({...base, purchaseState: 1}, "u"), {ok: false, motivo: "cancelada"});
+  assert.deepStrictEqual(c.leerCompraPlay(base, "otro"), {ok: false, motivo: "otra_cuenta"});
+  assert.deepStrictEqual(
+      c.leerCompraPlay({...base, obfuscatedExternalAccountId: undefined}, "u"), {ok: false, motivo: "otra_cuenta"});
+  assert.deepStrictEqual(c.leerCompraPlay({...base, orderId: undefined}, "u"), {ok: false, motivo: "invalida"});
+  assert.deepStrictEqual(c.leerCompraPlay(undefined, "u"), {ok: false, motivo: "invalida"});
+});
+
+test("leer las compras anuladas de Play", () => {
+  assert.deepStrictEqual(c.leerAnuladasPlay([{orderId: "GPA.1"}, {orderId: ""}, {}, {orderId: "GPA.2"}]),
+      ["GPA.1", "GPA.2"]);
+  assert.deepStrictEqual(c.leerAnuladasPlay(undefined), []);
+});
