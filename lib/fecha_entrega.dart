@@ -164,11 +164,11 @@ class _TarjetaCuentaAtrasState extends State<TarjetaCuentaAtras> {
       contenido = Column(children: [
         Text(t.entregaEn, style: TextStyle(color: widget.color.shade900, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        // Las unidades son iguales en es y en: d, h, min, s.
+        // Las unidades son iguales en es y en: d, h, m, s.
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           _cifra('${r.inDays}', 'd'),
           _cifra(dos(r.inHours % 24), 'h'),
-          _cifra(dos(r.inMinutes % 60), 'min'),
+          _cifra(dos(r.inMinutes % 60), 'm'),
           _cifra(dos(r.inSeconds % 60), 's'),
         ]),
         const SizedBox(height: 4),
