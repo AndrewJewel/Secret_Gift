@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
+import 'marca.dart';
 
 // Fecha de entrega de regalos: solo el día, sin hora. La cuenta atrás llega
 // a cero a las 00:00 de ese día en la zona de quien la mira.
@@ -129,26 +130,31 @@ class _TarjetaCuentaAtrasState extends State<TarjetaCuentaAtras> {
   }
 
   /// Cada número en su ficha, como un reloj de tablero (variante B del
-  /// mockup del 28-oct): el vidrio de la tarjeta, un punto más tintado.
-  Widget _cifra(String valor, String unidad) => Container(
-        constraints: const BoxConstraints(minWidth: 52),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        decoration: BoxDecoration(
-          color: widget.color.shade100.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: widget.color.shade200, width: 1.5),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(valor,
-              style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: widget.color.shade900,
-                  fontFeatures: const [FontFeature.tabularFigures()])),
-          Text(unidad, style: const TextStyle(fontSize: 11, color: Colors.black54)),
-        ]),
-      );
+  /// mockup del 28-oct), con los colores del botón «Hacer el sorteo»
+  /// (`GlassButton` con `color.shade600`): mismo fondo legible y texto
+  /// blanco, para que la pantalla quede equilibrada.
+  Widget _cifra(String valor, String unidad) {
+    final fondo = legibleSobreBlanco(widget.color.shade600);
+    return Container(
+      constraints: const BoxConstraints(minWidth: 52),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      decoration: BoxDecoration(
+        color: fondo,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: fondo.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(valor,
+            style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                fontFeatures: [FontFeature.tabularFigures()])),
+        Text(unidad, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
