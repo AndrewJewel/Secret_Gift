@@ -11,6 +11,11 @@ rules_version = '2';
 // verificación del PIN — igual que todo lo demás en esta app. Sin esto,
 // un bucket sin Auth quedaría abierto a que cualquiera suba lo que
 // quiera con solo conocer la URL.
+// CORS (storage-cors.json, aparte de estas reglas): Flutter web descarga
+// las imágenes desde el navegador, y sin `Access-Control-Allow-Origin` para
+// secretgift.app no las puede pintar (la APK sí: no pasa por esa regla).
+// Se aplica a mano en Cloud Shell:
+//   gcloud storage buckets update gs://secretgift-app.firebasestorage.app --cors-file=storage-cors.json
 service firebase.storage {
   match /b/{bucket}/o {
     match /avatares/{codigo}/{archivo} {
