@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 
 import 'almacen_local.dart';
+import 'compra_play.dart';
 import 'dialogo_pago.dart';
 import 'fecha_entrega.dart';
 import 'funciones.dart';
@@ -96,12 +97,16 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     await _continuar(datos['codigo'] as String);
   }
 
-  /// Grupo de pago: casilla → checkout de Paddle → esperar el crédito que
+  /// En la web: casilla → checkout de Paddle → esperar el crédito que
   /// suma el webhook → crear. Si se corta en cualquier punto, el crédito
   /// pagado se queda en la cuenta y el próximo «Crear grupo» lo usa.
   Future<void> _pagarYCrear(Textos t) async {
     if (!kIsWeb) {
-      _avisar(t.pagoSoloWeb);
+      if (defaultTargetPlatform != TargetPlatform.android) {
+        _avisar(t.pagoSoloWeb);
+        return;
+      }
+      await _comprarEnPlayYCrear(t);
       return;
     }
     if (!await DialogoPago.mostrar(context) || !mounted) return;
@@ -126,6 +131,27 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
     }
     if (!mounted) return;
     await _crearYContinuar(t);
+  }
+
+  /// Android: casilla → hoja de compra de Google Play → el servidor verifica
+  /// y suma el crédito antes de responder → crear. Un pago pendiente llega
+  /// solo al confirmarse (ver compra_play_android.dart).
+  Future<void> _comprarEnPlayYCrear(Textos t) async {
+    if (!await DialogoPago.mostrar(context) || !mounted) return;
+    final usuario = FirebaseAuth.instance.currentUser;
+    if (usuario == null) return;
+    final resultado = await comprarGrupoExtra(usuario.uid);
+    if (!mounted) return;
+    switch (resultado) {
+      case 'completado':
+        await _crearYContinuar(t);
+      case 'pendiente':
+        _avisar(t.pagoPendiente);
+      case 'cancelado':
+        break;
+      default:
+        _avisar(t.pagoNoCargo);
+    }
   }
 
   Future<void> _continuar(String codigo) async {

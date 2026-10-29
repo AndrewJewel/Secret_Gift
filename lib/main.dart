@@ -4,6 +4,7 @@ import 'package:flutter/semantics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'compra_play.dart';
 import 'glass.dart';
 import 'idioma.dart';
 import 'l10n/app_localizations.dart';
@@ -79,6 +80,13 @@ void main() async {
   runApp(const SantaApp());
   // Marca para la landing de la raíz: con sesión, salta directo a /app.
   if (kIsWeb) FirebaseAuth.instance.authStateChanges().listen((u) => marcarSesion(u != null));
+  // Android: las compras de Play que llegan tarde (pago pendiente que se
+  // confirmó, app cerrada a mitad) se verifican en cuanto hay sesión.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    FirebaseAuth.instance.authStateChanges().listen((u) {
+      if (u != null) escucharComprasPlay();
+    });
+  }
   // En web Flutter no arma el árbol de accesibilidad hasta que alguien pulsa
   // un botón invisible: un lector de pantalla llegaba a una página muda.
   if (kIsWeb) SemanticsBinding.instance.ensureSemantics();

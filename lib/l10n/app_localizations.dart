@@ -2160,6 +2160,12 @@ abstract class Textos {
   /// **'The payment couldn\'t open. Check your connection and try again.'**
   String get pagoNoCargo;
 
+  /// No description provided for @pagoPendiente.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is pending. You\'ll be able to create the group as soon as it\'s confirmed.'**
+  String get pagoPendiente;
+
   /// No description provided for @errorPagoRequerido.
   ///
   /// In en, this message translates to:

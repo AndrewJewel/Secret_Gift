@@ -1191,6 +1191,10 @@ class TextosEs extends Textos {
       'No se pudo abrir el pago. Revisa tu conexión e inténtalo de nuevo.';
 
   @override
+  String get pagoPendiente =>
+      'Tu pago está pendiente. El grupo se podrá crear en cuanto se confirme.';
+
+  @override
   String get errorPagoRequerido =>
       'Este grupo es de pago: ya tienes un grupo activo.';
 

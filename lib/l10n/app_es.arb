@@ -392,6 +392,7 @@
   "pagoTardando": "Tu pago se está confirmando. No pagues otra vez: en unos minutos, «Crear grupo» lo usará.",
   "pagoSoloWeb": "Por ahora los grupos adicionales se compran en la versión web de Secret Gift.",
   "pagoNoCargo": "No se pudo abrir el pago. Revisa tu conexión e inténtalo de nuevo.",
+  "pagoPendiente": "Tu pago está pendiente. El grupo se podrá crear en cuanto se confirme.",
   "errorPagoRequerido": "Este grupo es de pago: ya tienes un grupo activo.",
   "fechaEntregaCampo": "Fecha de entrega de regalos (opcional)",
   "fechaEntregaElegir": "Elegir fecha",

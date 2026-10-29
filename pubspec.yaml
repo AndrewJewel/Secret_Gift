@@ -62,6 +62,7 @@ dependencies:
   # Abre la política de privacidad en el navegador (Google Play exige que
   # se pueda consultar desde dentro de la app).
   url_launcher: ^6.3.2
+  in_app_purchase: ^3.3.1
 
 dev_dependencies:
   flutter_test:

@@ -1191,6 +1191,10 @@ class TextosEn extends Textos {
       'The payment couldn\'t open. Check your connection and try again.';
 
   @override
+  String get pagoPendiente =>
+      'Your payment is pending. You\'ll be able to create the group as soon as it\'s confirmed.';
+
+  @override
   String get errorPagoRequerido =>
       'This group is paid: you already have an active group.';
 
