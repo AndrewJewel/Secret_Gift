@@ -7,7 +7,7 @@ import 'l10n/app_localizations.dart';
 
 /// Versión vigente de cada documento. Debe coincidir con
 /// functions/condiciones.js: el servidor rechaza cualquier otra.
-const versionTerminos = '2026-10-23';
+const versionTerminos = '2026-10-28';
 const versionPrivacidad = '2026-10-22';
 
 /// Las dos aceptaciones, por separado, en la versión vigente.

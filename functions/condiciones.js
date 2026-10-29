@@ -3,7 +3,7 @@
 // docs/superpowers/specs/2026-10-22-condiciones-y-moderacion-design.md
 
 /** Versión vigente de cada documento. Debe coincidir con lib/condiciones.dart. */
-const VERSIONES = {terminos: "2026-10-23", privacidad: "2026-10-22"};
+const VERSIONES = {terminos: "2026-10-28", privacidad: "2026-10-22"};
 
 const MOTIVOS = ["ofensivo", "sexual", "spam", "otro"];
 
