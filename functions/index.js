@@ -27,6 +27,7 @@ const {planDeEliminacion} = require("./cuenta");
 const condiciones = require("./condiciones");
 const cobro = require("./cobro");
 const entrega = require("./entrega");
+const play = require("./play");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
@@ -2065,7 +2066,7 @@ async function registrarPago(ev) {
     if ((await tx.get(ref)).exists) return;
     tx.set(ref, {
       uid: ev.uid, estado: ev.uid ? "completado" : "sin_uid", cantidad: ev.cantidad,
-      importe: ev.importe, moneda: ev.moneda, origen: "paddle", fecha: FieldValue.serverTimestamp(),
+      importe: ev.importe, moneda: ev.moneda, origen: ev.origen || "paddle", fecha: FieldValue.serverTimestamp(),
     });
     if (ev.uid) tx.set(usuarioRef(ev.uid), {creditosGrupo: FieldValue.increment(ev.cantidad)}, {merge: true});
   });
@@ -2103,6 +2104,60 @@ exports.webhookPaddle = onRequest({secrets: [PADDLE_WEBHOOK_SECRET]}, async (req
   if (ev?.tipo === "pago") await registrarPago(ev);
   if (ev?.tipo === "reembolso") await registrarReembolso(ev);
   res.status(200).send("ok");
+});
+
+// --- Cobro con Google Play ---------------------------------------------------
+// Diseño: locker/docs/superpowers/specs/2026-10-28-cobro-google-play-design.md
+
+/**
+ * La app entrega el token de una compra de `grupo_extra`. Se comprueba con
+ * Google (comprada y de esta cuenta), se suma el crédito una sola vez por
+ * `orderId` y se consume. Repetirla con el mismo token no suma nada, así que
+ * la app puede reintentar sin miedo (también al arrancar).
+ */
+exports.verificarCompraPlay = onCall(async (request) => {
+  const uid = uidDe(request);
+  const token = typeof request.data?.token === "string" ? request.data.token : "";
+  if (!token || token.length > 4096) {
+    throw new HttpsError("invalid-argument", "Falta la compra.", {clave: "datos_invalidos"});
+  }
+  let compra;
+  try {
+    compra = await play.obtenerCompra(token);
+  } catch (e) {
+    logger.error("Play no devolvió la compra", {uid, error: e.message});
+    throw new HttpsError("failed-precondition", "No se pudo comprobar la compra.", {clave: "compra_invalida"});
+  }
+  const r = cobro.leerCompraPlay(compra, uid);
+  if (!r.ok) {
+    if (r.motivo === "pendiente") {
+      throw new HttpsError("failed-precondition", "El pago está pendiente.", {clave: "pago_pendiente"});
+    }
+    logger.warn("Compra de Play rechazada", {uid, motivo: r.motivo});
+    throw new HttpsError("failed-precondition", "La compra no es válida.", {clave: "compra_invalida"});
+  }
+  await registrarPago({id: r.id, uid, cantidad: 1, importe: null, moneda: null, origen: "play"});
+  // Si consumir falla, el crédito ya está: Google vuelve a entregar la compra
+  // al arrancar la app, se verifica otra vez (sin sumar) y se consume entonces.
+  try {
+    await play.consumir(token);
+  } catch (e) {
+    logger.error("No se pudo consumir la compra de Play", {orderId: r.id, error: e.message});
+  }
+  return {ok: true};
+});
+
+/**
+ * Una vez al día: las compras de Play devueltas o anuladas restan el crédito
+ * si sigue sin usar (la misma regla que los reembolsos de Paddle). Mira tres
+ * días hacia atrás para no perder ninguna si una ejecución falla;
+ * `registrarReembolso` no resta dos veces.
+ */
+exports.revisarReembolsosPlay = onSchedule("every day 04:00", async () => {
+  const desde = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  const ids = cobro.leerAnuladasPlay(await play.anuladas(desde));
+  for (const id of ids) await registrarReembolso({transaccion: id});
+  logger.info("Revisión de devoluciones de Play", {anuladas: ids.length});
 });
 
 // --- Fecha de entrega --------------------------------------------------------
