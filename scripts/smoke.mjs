@@ -36,8 +36,8 @@ async function texto(ruta) {
   return {estado: r.status, cuerpo: await r.text()};
 }
 
-/** Las páginas legales se reconocen por su título: el 200 no basta, la
- * reescritura de la app devuelve 200 con index.html para cualquier ruta. */
+/** Las páginas legales se reconocen por su título: el 200 no basta, una
+ * reescritura mal puesta podría servir otra página con 200. */
 async function pagina(ruta, titulo) {
   const {estado, cuerpo} = await texto(ruta);
   ok(`${ruta} sirve «${titulo}»`, estado === 200 && cuerpo.includes(`<title>${titulo}`), `estado ${estado}`);
@@ -69,6 +69,12 @@ ok("/ sirve la landing", portada.estado === 200 && portada.cuerpo.includes("<tit
 ok("la landing manda las invitaciones a /app", portada.cuerpo.includes("location.replace('/app'"));
 const app = await texto("/app");
 ok("/app sirve la app", app.estado === 200 && app.cuerpo.includes("flutter_bootstrap.js"), `estado ${app.estado}`);
+// Una ruta inventada da un 404 de verdad con la página propia (web/404.html),
+// que también salta a la app si trae una invitación.
+const perdida = await texto("/esta-ruta-no-existe");
+ok("una ruta inventada da la página 404", perdida.estado === 404 &&
+    perdida.cuerpo.includes("<title>Page not found") && perdida.cuerpo.includes("location.replace('/app'"),
+    `estado ${perdida.estado}`);
 
 await pagina("/privacidad", "Privacidad");
 await pagina("/terminos", "Condiciones de uso");

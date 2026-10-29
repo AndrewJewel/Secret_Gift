@@ -84,8 +84,8 @@
         "destination": "/app.html"
       },
       {
-        "comment": "Cualquier ruta desconocida abre la app, como antes de la landing. La raiz exacta la sirve index.html, que es la landing (el despliegue renombra los archivos: ver desplegar.yml).",
-        "source": "**",
+        "comment": "Solo /app/... abre la app (la app navega con #, asi que no necesita rutas propias). Cualquier otra ruta desconocida da un 404 de verdad con web/404.html, que Hosting sirve solo. La raiz exacta la sirve index.html, que es la landing (el despliegue renombra los archivos: ver desplegar.yml).",
+        "source": "/app/**",
         "destination": "/app.html"
       }
     ]

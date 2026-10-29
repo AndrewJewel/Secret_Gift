@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Page not found · Secret Gift</title>
+  <script>
+    // Firebase sirve esta página en cualquier ruta que no existe. Si la URL
+    // trae una invitación (?codigo=…), que llegue a la app igual que desde la
+    // landing: ninguna invitación debe acabar en un 404.
+    (function () {
+      var q = location.search;
+      if (/[?&]codigo=/.test(q)) location.replace('/app' + q + location.hash);
+    })();
+  </script>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,800&family=Gentium+Book+Plus&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Los mismos tokens que la landing (web/landing.html). */
+    :root {
+      --suelo: #F8E4E1;
+      --tinta: #1C1417;
+      --tinta-suave: #5B4A4F;
+      --carmin: #9B1226;
+      --carmin-hondo: #7A0E1E;
+      --oro: #E2A834;
+      --oro-texto: #8A5D0B;
+      --papel: #FFFFFF;
+      --sombra: 0 18px 40px -18px rgba(60, 20, 30, .35), 0 4px 10px -4px rgba(60, 20, 30, .12);
+      --display: 'Bricolage Grotesque', 'Nunito', sans-serif;
+      --texto: 'Nunito', system-ui, sans-serif;
+      --tarjeta: 'Gentium Book Plus', Georgia, serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100vh; min-height: 100dvh; background: var(--suelo); color: var(--tinta);
+      font: 400 1.0625rem/1.6 var(--texto);
+      -webkit-font-smoothing: antialiased; overflow-x: clip;
+      display: flex; flex-direction: column;
+    }
+    ::selection { background: var(--carmin); color: #fff; }
+    img { display: block; max-width: 100%; }
+    :focus-visible { outline: 3px solid var(--oro); outline-offset: 3px; border-radius: 6px; }
+    .envoltura { width: min(100% - 32px, 1160px); margin-inline: auto; }
+
+    .barra { display: flex; align-items: center; justify-content: space-between; padding-block: 18px; }
+    .marca { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font: 800 1.15rem/1 var(--display); letter-spacing: -.02em; }
+    .marca img { width: 34px; height: 34px; }
+    .idioma {
+      font: 700 .9375rem/1 var(--texto); letter-spacing: .04em; color: var(--tinta-suave);
+      background: none; border: 0; cursor: pointer; padding: 12px 14px; border-radius: 999px; min-height: 44px;
+    }
+    .idioma:hover { color: var(--carmin); }
+
+    main {
+      flex: 1; display: grid; justify-items: center; align-content: center;
+      gap: clamp(20px, 4vw, 40px); padding-block: 8px 48px; text-align: center;
+    }
+
+    /* La caja de la revelación de la app (assets/plates/caja.webp) sobre el
+       disco dorado. El texto se escribe sobre la tarjeta en blanco con las
+       mismas medidas que lib/pantalla_secreta.dart: centro (48,9 %, 53,5 %),
+       giro -10° y Gentium Book Plus en carmín. */
+    .escena { position: relative; width: min(74vw, 340px); }
+    .disco {
+      position: absolute; left: 50%; top: 54%; translate: -50% -50%; z-index: -1;
+      width: 128%; aspect-ratio: 1; border-radius: 50%; background: var(--oro);
+    }
+    .caja { position: relative; container-type: inline-size; filter: drop-shadow(0 26px 30px rgba(60, 20, 30, .22)); }
+    .caja img { position: relative; width: 100%; height: auto; }
+    /* El papel de seda del dibujo es semitransparente: en la app va sobre
+       fondo claro. Aquí, sin este fondo, el disco dorado se vería a través. */
+    .caja::before {
+      content: ""; position: absolute; inset: 22% 8% 18%; background: #FBF8F3;
+    }
+    .tarjeta {
+      position: absolute; left: 48.9%; top: 53.5%; width: 50.6%;
+      translate: -50% -50%; rotate: -10deg;
+      margin: 0; text-align: center;
+      font-family: var(--tarjeta); color: var(--carmin); line-height: 1;
+    }
+    .tarjeta .te-toco { display: block; font-size: 6.2cqw; }
+    .tarjeta .numero { display: block; font-size: 21cqw; letter-spacing: -.02em; margin-top: 1cqw; }
+
+    h1 {
+      margin: 0; font-family: var(--display); line-height: .98; letter-spacing: -.03em;
+      font-size: clamp(2.25rem, 8vw, 4rem); text-wrap: balance;
+    }
+    h1 .fino { display: block; font-weight: 200; color: var(--oro-texto); }
+    h1 .grueso { display: block; font-weight: 800; }
+    .bajada { margin: 14px auto 0; max-width: 36ch; color: var(--tinta-suave); text-wrap: pretty; }
+
+    .acciones { margin-top: 24px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .boton, .secundario {
+      display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+      font: 800 1.0625rem/1 var(--texto); padding: 18px 28px; border-radius: 999px; min-height: 56px;
+      transition: transform .25s cubic-bezier(.2, .8, .2, 1), background .2s, box-shadow .25s, color .2s;
+    }
+    .boton { color: #fff; background: var(--carmin); box-shadow: 0 14px 28px -12px rgba(155, 18, 38, .65); }
+    .boton:hover { background: var(--carmin-hondo); transform: translateY(-2px); }
+    .secundario { color: var(--tinta); background: var(--papel); box-shadow: var(--sombra); }
+    .secundario:hover { color: var(--carmin); transform: translateY(-2px); }
+    .boton:active, .secundario:active { transform: none; }
+    .boton svg { width: 18px; height: 18px; }
+
+    @media (min-width: 900px) {
+      main { grid-template-columns: auto minmax(0, 520px); justify-content: center; align-items: center; gap: 72px; text-align: left; }
+      .escena { width: 380px; }
+      .bajada { margin-inline: 0; }
+      .acciones { justify-content: flex-start; }
+    }
+
+    /* El único momento: la caja se asienta y el texto aparece en la tarjeta,
+       como al abrirla en la app. Visible desde el primer cuadro sin movimiento. */
+    @media (prefers-reduced-motion: no-preference) {
+      .caja { animation: asentar .9s cubic-bezier(.16, 1, .3, 1) both; }
+      .tarjeta { animation: escribir .8s cubic-bezier(.16, 1, .3, 1) .5s both; }
+      @keyframes asentar { from { translate: 0 -18px; } }
+      @keyframes escribir { from { opacity: 0; scale: 1.08; } }
+    }
+  </style>
+</head>
+<body>
+  <header class="barra envoltura">
+    <a class="marca" href="/" aria-label="Secret Gift">
+      <img src="/assets/assets/logo.png" alt="" width="34" height="34">
+      <span data-i18n="marca">Secret Gift</span>
+    </a>
+    <button class="idioma" id="idioma" type="button" aria-label="Español">ES</button>
+  </header>
+
+  <main class="envoltura">
+    <div class="escena" aria-hidden="true">
+      <div class="disco"></div>
+      <div class="caja">
+        <img src="/landing/caja.webp" srcset="/landing/caja.webp 520w, /landing/caja@2x.webp 1038w" sizes="(min-width: 900px) 380px, 74vw" alt="" width="520" height="651">
+        <p class="tarjeta"><span class="te-toco" data-i18n="teToco">You got</span><span class="numero">404</span></p>
+      </div>
+    </div>
+
+    <div>
+      <h1><span class="fino" data-i18n="h1a">This page got drawn…</span><span class="grueso" data-i18n="h1b">but nobody has it</span></h1>
+      <p class="bajada" data-i18n="bajada">The link may be mistyped, or the page no longer exists.</p>
+      <div class="acciones">
+        <a class="boton" href="/">
+          <span data-i18n="inicio">Back to home</span>
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
+        </a>
+        <a class="secundario" href="/app" data-i18n="app">Open the app</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Mismo criterio que la landing: lo elegido con el botón (sg_idioma) y si
+    // no, el idioma del navegador.
+    var TEXTOS = {
+      en: { marca: 'Secret Gift', teToco: 'You got', h1a: 'This page got drawn…', h1b: 'but nobody has it',
+            bajada: 'The link may be mistyped, or the page no longer exists.', inicio: 'Back to home', app: 'Open the app',
+            titulo: 'Page not found · Secret Gift', boton: 'ES', botonEtiqueta: 'Español' },
+      es: { marca: 'Regalo Secreto', teToco: 'Te tocó', h1a: 'Esta página salió en el sorteo…', h1b: 'pero nadie la tiene',
+            bajada: 'Puede que el enlace esté mal escrito o que la página ya no exista.', inicio: 'Ir al inicio', app: 'Abrir la app',
+            titulo: 'Página no encontrada · Regalo Secreto', boton: 'EN', botonEtiqueta: 'English' }
+    };
+    var actual = 'en';
+    try { actual = localStorage.getItem('sg_idioma') || ''; } catch (e) {}
+    if (!TEXTOS[actual]) actual = /^es\b/i.test(navigator.language || '') ? 'es' : 'en';
+    function ponerIdioma(idioma) {
+      var t = TEXTOS[idioma];
+      document.documentElement.lang = idioma;
+      document.title = t.titulo;
+      document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t[el.dataset.i18n]; });
+      var b = document.getElementById('idioma');
+      b.textContent = t.boton;
+      b.setAttribute('aria-label', t.botonEtiqueta);
+    }
+    ponerIdioma(actual);
+    document.getElementById('idioma').addEventListener('click', function () {
+      actual = actual === 'es' ? 'en' : 'es';
+      try { localStorage.setItem('sg_idioma', actual); } catch (e) {}
+      ponerIdioma(actual);
+    });
+  </script>
+</body>
+</html>
