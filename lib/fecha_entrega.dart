@@ -128,8 +128,17 @@ class _TarjetaCuentaAtrasState extends State<TarjetaCuentaAtras> {
     super.dispose();
   }
 
-  Widget _cifra(String valor, String unidad) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
+  /// Cada número en su ficha, como un reloj de tablero (variante B del
+  /// mockup del 28-oct): el vidrio de la tarjeta, un punto más tintado.
+  Widget _cifra(String valor, String unidad) => Container(
+        constraints: const BoxConstraints(minWidth: 52),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        decoration: BoxDecoration(
+          color: widget.color.shade100.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: widget.color.shade200, width: 1.5),
+        ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(valor,
               style: TextStyle(

@@ -6,7 +6,8 @@
 #
 # Usa el secreto FIREBASE_SERVICE_ACCOUNT: la llave JSON de la cuenta de
 # servicio github-deploy@secretgift-app (roles: Administrador de Firebase,
-# de Cloud Functions, de Artifact Registry y Usuario de cuenta de servicio).
+# de Cloud Functions, de Artifact Registry, de Cloud Scheduler —para las
+# funciones programadas— y Usuario de cuenta de servicio).
 # Y, para el APK, ANDROID_KEYSTORE_BASE64 y ANDROID_KEYSTORE_PASSWORD.
 name: Desplegar a producción
 
