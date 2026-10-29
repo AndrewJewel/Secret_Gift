@@ -46,6 +46,14 @@ const AVISOS = {
     es: {titulo: "Hay una plaza libre", cuerpo: `Alguien dejó «${grupo}». Reemplázalo desde el grupo.`},
     en: {titulo: "A spot is open", cuerpo: `Someone left “${grupo}”. Replace them from the group.`},
   }),
+  entregaVispera: (grupo) => ({
+    es: {titulo: "Mañana es el intercambio", cuerpo: `De «${grupo}». ¿Ya tienes el regalo? 🎁`},
+    en: {titulo: "The gift exchange is tomorrow", cuerpo: `In “${grupo}”. Got the gift yet? 🎁`},
+  }),
+  entregaDia: (grupo) => ({
+    es: {titulo: "¡Hoy es el intercambio!", cuerpo: `De «${grupo}». 🎁`},
+    en: {titulo: "Today's the gift exchange!", cuerpo: `In “${grupo}”. 🎁`},
+  }),
 };
 
 module.exports = {AVISOS, IDIOMAS, IDIOMA_POR_DEFECTO, idiomaValido};

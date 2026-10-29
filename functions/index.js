@@ -26,6 +26,8 @@ const correos = require("./correos");
 const {planDeEliminacion} = require("./cuenta");
 const condiciones = require("./condiciones");
 const cobro = require("./cobro");
+const entrega = require("./entrega");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 // Secreto de la notificación de Paddle (Events → Notifications). Lo pone el
@@ -417,6 +419,7 @@ exports.misGrupos = onCall(async (request) => {
       nombreGrupo: gs.data().nombreGrupo || "",
       tematica: gs.data().tematica || "",
       sorteado: gs.data().sorteado === true,
+      fechaEntrega: gs.data().fechaEntrega || null,
     };
   }))).filter(Boolean);
 
@@ -511,6 +514,20 @@ async function vincularComoParticipante(uid, codigo, participanteId) {
   await ref.set({grupos: {[codigo]: {rol, participanteId}}}, {merge: true});
 }
 
+/**
+ * `fechaEntrega` y `zonaEntrega` de la petición, ya validadas, o null si no
+ * vino fecha. Vacía = quitarla (solo tiene sentido al editar).
+ */
+function fechaEntregaDe(data) {
+  if (typeof data?.fechaEntrega !== "string") return null;
+  const fecha = data.fechaEntrega.trim();
+  if (fecha === "") return {fecha: ""};
+  if (!entrega.fechaValidaEntrega(fecha, data.zonaEntrega, Date.now())) {
+    throw new HttpsError("invalid-argument", "La fecha de entrega no es válida.", {clave: "fecha_entrega_invalida"});
+  }
+  return {fecha, zona: data.zonaEntrega};
+}
+
 // El color lo pinta el cliente tal cual: solo se acepta '#RRGGBB' o vacío.
 function exigirColorValido(color) {
   if (color !== "" && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
@@ -528,12 +545,18 @@ exports.crearGrupo = onCall(async (request) => {
   const reglas = (request.data?.reglas || "").trim();
   // Color propio del grupo sin temática, '#RRGGBB'. Vacío = el de la ocasión.
   const color = (request.data?.color || "").trim();
+  // Opcional: la fecha de entrega de regalos y la zona del organizador.
+  const fechaEntrega = fechaEntregaDe(request.data);
 
   if (!ocasion || !nombreGrupo) {
     throw new HttpsError("invalid-argument", "Falta la ocasión o el nombre del grupo.", {clave: "faltan_datos_grupo"});
   }
 
   exigirColorValido(color);
+  // Al crear, una fecha vacía no tiene sentido: el cliente simplemente no la manda.
+  if (fechaEntrega?.fecha === "") {
+    throw new HttpsError("invalid-argument", "La fecha de entrega no es válida.", {clave: "fecha_entrega_invalida"});
+  }
 
   // La cuenta ya no es opcional: sin ella el grupo quedaría huérfano, sin
   // organizador y sin aparecer en "Mis grupos" de nadie.
@@ -575,6 +598,7 @@ exports.crearGrupo = onCall(async (request) => {
           tematica,
           color,
           reglas,
+          ...(fechaEntrega ? {fechaEntrega: fechaEntrega.fecha, zonaEntrega: fechaEntrega.zona} : {}),
           fecha: FieldValue.serverTimestamp(),
         });
         // Quien crea el grupo se inscribe después, como todo el mundo: aún
@@ -1661,6 +1685,14 @@ exports.editarGrupo = onCall(async (request) => {
       cambios[campo] = request.data[campo].trim();
     }
   }
+  // La fecha va aparte: puede quitarse, y cambiarla reinicia los avisos (los
+  // de la fecha vieja ya no valen). El cliente solo la manda si cambió.
+  const fechaEntrega = fechaEntregaDe(request.data);
+  if (fechaEntrega) {
+    cambios.fechaEntrega = fechaEntrega.fecha === "" ? FieldValue.delete() : fechaEntrega.fecha;
+    cambios.zonaEntrega = fechaEntrega.fecha === "" ? FieldValue.delete() : fechaEntrega.zona;
+    cambios.avisosEntrega = FieldValue.delete();
+  }
 
   if (Object.keys(cambios).length === 0) {
     throw new HttpsError("invalid-argument", "No hay nada que cambiar.", {clave: "nada_que_cambiar"});
@@ -1678,7 +1710,9 @@ exports.editarGrupo = onCall(async (request) => {
   }
 
   await grupoRef(codigo).update(cambios);
-  return {ok: true, cambios};
+  // Sin `cambios`: puede llevar FieldValue.delete(), que no se puede
+  // devolver, y el cliente no lo lee.
+  return {ok: true};
 });
 
 // Irreversible: borra el grupo y todos los participantes con sus datos
@@ -2069,4 +2103,37 @@ exports.webhookPaddle = onRequest({secrets: [PADDLE_WEBHOOK_SECRET]}, async (req
   if (ev?.tipo === "pago") await registrarPago(ev);
   if (ev?.tipo === "reembolso") await registrarReembolso(ev);
   res.status(200).send("ok");
+});
+
+// --- Fecha de entrega --------------------------------------------------------
+// Diseño: locker/docs/superpowers/specs/2026-10-28-fecha-entrega-design.md
+
+/**
+ * Cada hora en punto: avisa la víspera y el día de la entrega, a las 10:00 de
+ * la zona del organizador. Solo se miran los grupos cuya fecha es ayer, hoy o
+ * mañana en UTC, que cubren el «hoy» y el «mañana» de cualquier zona. Cada
+ * aviso se marca en una transacción antes de mandarlo: si dos ejecuciones se
+ * cruzan, solo una lo manda.
+ */
+exports.avisarEntregas = onSchedule("every 1 hours", async () => {
+  const ahora = Date.now();
+  const snap = await db.collection("grupos")
+      .where("fechaEntrega", "in", entrega.fechasCercanas(ahora)).get();
+  for (const doc of snap.docs) {
+    const tipo = await db.runTransaction(async (tx) => {
+      const g = (await tx.get(doc.ref)).data();
+      const t = entrega.avisoPendiente(g, ahora);
+      if (t) tx.update(doc.ref, {[`avisosEntrega.${t}`]: true});
+      return t;
+    });
+    if (!tipo) continue;
+    const participantes = await doc.ref.collection("participantes").get();
+    const privados = await Promise.all(
+        participantes.docs.map((p) => participantePrivadoRef(doc.id, p.id).get()));
+    const nombre = doc.data().nombreGrupo || doc.id;
+    await avisarAVarios(privados.map((p) => p.data()?.cuenta), {
+      textos: tipo === "vispera" ? AVISOS.entregaVispera(nombre) : AVISOS.entregaDia(nombre),
+      datos: {codigo: doc.id},
+    });
+  }
 });
