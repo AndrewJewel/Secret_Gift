@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'avatar.dart';
 import 'dialogo_editar_participante.dart';
 import 'exclusiones.dart';
+import 'fecha_entrega.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'hoja_exclusiones.dart';
@@ -33,6 +34,9 @@ class InfoGrupo {
   final Color? colorPersonal;
   final String reglas;
 
+  /// "YYYY-MM-DD" o null: la fecha de entrega de regalos (fecha_entrega.dart).
+  final String? fechaEntrega;
+
   const InfoGrupo({
     required this.ocasion,
     required this.nombreGrupo,
@@ -40,6 +44,7 @@ class InfoGrupo {
     required this.tematica,
     this.colorPersonal,
     required this.reglas,
+    this.fechaEntrega,
   });
 
   factory InfoGrupo.desdeDoc(Map<String, dynamic> d) => InfoGrupo(
@@ -49,6 +54,7 @@ class InfoGrupo {
         tematica: Tematica.desdeId(d['tematica'] as String?),
         colorPersonal: colorDesdeHex(d['color'] as String?),
         reglas: d['reglas'] as String? ?? '',
+        fechaEntrega: d['fechaEntrega'] as String?,
       );
 
   MaterialColor get color => tematica.colorDe(ocasion, colorPersonal);
@@ -540,6 +546,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
           tematica: _info.tematica,
           colorPersonal: _info.colorPersonal,
           reglas: _info.reglas,
+          fechaEntrega: _info.fechaEntrega,
         ),
       ),
     );
@@ -940,6 +947,25 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: _tarjetaCabecera(t),
                 ),
+                if (fechaDeTexto(_info.fechaEntrega) case final entrega?)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                    child: TarjetaCuentaAtras(entrega: entrega, color: _color),
+                  )
+                else if (_dirige)
+                  // Sin fecha: solo quien dirige ve cómo ponerla.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _abrirEdicionGrupo,
+                        icon: Icon(Icons.event, color: _color.shade800),
+                        label: Text(t.entregaPoner,
+                            style: TextStyle(color: _color.shade900, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ),
                 if (_info.reglas.trim().isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),

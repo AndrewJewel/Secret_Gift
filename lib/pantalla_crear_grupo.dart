@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'almacen_local.dart';
 import 'dialogo_pago.dart';
+import 'fecha_entrega.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
@@ -31,6 +32,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   final TextEditingController _nombreGrupoController = TextEditingController();
   final TextEditingController _valorMinimoController = TextEditingController();
   bool _creando = false;
+  DateTime? _fechaEntrega;
 
   /// El color y el fondo los manda la temática; sin temática, el color
   /// elegido o, si no hay, el de la ocasión.
@@ -84,6 +86,11 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       // Arranca con las reglas propias de la temática; el organizador
       // las puede reescribir después desde "Editar grupo".
       'reglas': _tematica.reglasPorDefecto(t),
+      if (_fechaEntrega != null) ...{
+        'fechaEntrega': textoDeFecha(_fechaEntrega!),
+        // La zona del organizador: los avisos salen a las 10:00 de su hora.
+        'zonaEntrega': DateTime.now().timeZoneOffset.inMinutes,
+      },
     });
     if (!mounted) return;
     await _continuar(datos['codigo'] as String);
@@ -190,6 +197,12 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
                   labelText: t.crearValorMinimo,
                   hintText: t.crearValorMinimoPista,
                   icon: Icons.attach_money,
+                ),
+                const SizedBox(height: 16),
+                CampoFechaEntrega(
+                  valor: _fechaEntrega,
+                  color: _color,
+                  onCambio: (f) => setState(() => _fechaEntrega = f),
                 ),
                 const SizedBox(height: 24),
                 GlassButton(

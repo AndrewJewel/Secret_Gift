@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'fecha_entrega.dart';
 import 'funciones.dart';
 import 'glass.dart';
 import 'l10n/app_localizations.dart';
@@ -23,6 +24,9 @@ class PantallaEditarGrupo extends StatefulWidget {
   final Color? colorPersonal;
   final String reglas;
 
+  /// "YYYY-MM-DD" o null: la fecha de entrega que tiene el grupo ahora.
+  final String? fechaEntrega;
+
   const PantallaEditarGrupo({
     super.key,
     required this.codigo,
@@ -32,6 +36,7 @@ class PantallaEditarGrupo extends StatefulWidget {
     required this.tematica,
     this.colorPersonal,
     required this.reglas,
+    this.fechaEntrega,
   });
 
   @override
@@ -47,6 +52,7 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
   late final TextEditingController _reglas = TextEditingController(text: widget.reglas);
   late Tematica _tematica = widget.tematica;
   late Color? _colorPersonal = widget.colorPersonal;
+  late DateTime? _fechaEntrega = fechaDeTexto(widget.fechaEntrega);
   bool _guardando = false;
 
   @override
@@ -103,6 +109,11 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
         // Vacío = vuelve al color de la ocasión.
         'color': _colorPersonal == null ? '' : hexDe(_colorPersonal!),
         'reglas': _reglas.text.trim(),
+        // Solo si cambió: cambiarla reinicia los avisos de la entrega.
+        if ((_fechaEntrega == null ? null : textoDeFecha(_fechaEntrega!)) != widget.fechaEntrega) ...{
+          'fechaEntrega': _fechaEntrega == null ? '' : textoDeFecha(_fechaEntrega!),
+          'zonaEntrega': DateTime.now().timeZoneOffset.inMinutes,
+        },
       });
       if (!mounted) return;
       Navigator.pop(context, ResultadoEdicion.guardado);
@@ -171,6 +182,12 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
                   labelText: t.crearValorMinimo,
                   hintText: t.crearValorMinimoPista,
                   icon: Icons.attach_money,
+                ),
+                const SizedBox(height: 16),
+                CampoFechaEntrega(
+                  valor: _fechaEntrega,
+                  color: _color,
+                  onCambio: (f) => setState(() => _fechaEntrega = f),
                 ),
                 const SizedBox(height: 16),
                 SelectorTematica(

@@ -5,6 +5,7 @@ import 'glass.dart';
 import 'hoja_configuracion.dart';
 import 'l10n/app_localizations.dart';
 import 'condiciones.dart';
+import 'fecha_entrega.dart';
 import 'mi_vinculo.dart';
 import 'ocasion.dart';
 import 'pantalla_crear_grupo.dart';
@@ -145,6 +146,9 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                             'administrador' => t.misGruposAdministrador,
                             _ => t.misGruposParticipante,
                           };
+                          final entrega = fechaDeTexto(g['fechaEntrega'] as String?);
+                          final cuando =
+                              entrega == null ? null : etiquetaEntrega(t, entrega, DateTime.now());
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: GlassCard(
@@ -161,7 +165,7 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                                       color: Colors.black87, fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
-                                  '$etiquetaRol · ${g['codigo']}',
+                                  [etiquetaRol, g['codigo'], if (cuando != null) '🎁 $cuando'].join(' · '),
                                   style: const TextStyle(color: Colors.black54),
                                 ),
                                 trailing: Icon(Icons.chevron_right,
