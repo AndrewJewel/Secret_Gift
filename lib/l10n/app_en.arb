@@ -495,5 +495,18 @@
   "pagoTardando": "Your payment is being confirmed. Don't pay again: in a few minutes, “Create group” will use it.",
   "pagoSoloWeb": "For now, extra groups are bought on the web version of Secret Gift.",
   "pagoNoCargo": "The payment couldn't open. Check your connection and try again.",
-  "errorPagoRequerido": "This group is paid: you already have an active group."
+  "errorPagoRequerido": "This group is paid: you already have an active group.",
+  "fechaEntregaCampo": "Gift exchange date (optional)",
+  "fechaEntregaElegir": "Choose a date",
+  "fechaEntregaQuitar": "Remove the date",
+  "entregaEn": "Gift exchange in",
+  "entregaHoy": "Today's the gift exchange! 🎁",
+  "entregaFue": "The gift exchange was on {fecha}",
+  "@entregaFue": {"placeholders": {"fecha": {"type": "String"}}},
+  "entregaPoner": "Set the exchange date",
+  "entregaEtiquetaHoy": "Today",
+  "entregaEtiquetaManana": "Tomorrow",
+  "entregaEtiquetaDias": "In {dias} days",
+  "@entregaEtiquetaDias": {"placeholders": {"dias": {"type": "int"}}},
+  "errorFechaEntregaInvalida": "The exchange date isn't valid: choose today or a day within the next two years."
 }

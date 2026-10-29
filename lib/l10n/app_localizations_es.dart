@@ -1193,4 +1193,42 @@ class TextosEs extends Textos {
   @override
   String get errorPagoRequerido =>
       'Este grupo es de pago: ya tienes un grupo activo.';
+
+  @override
+  String get fechaEntregaCampo => 'Fecha de entrega de regalos (opcional)';
+
+  @override
+  String get fechaEntregaElegir => 'Elegir fecha';
+
+  @override
+  String get fechaEntregaQuitar => 'Quitar la fecha';
+
+  @override
+  String get entregaEn => 'Entrega de regalos en';
+
+  @override
+  String get entregaHoy => '¡Hoy es el intercambio! 🎁';
+
+  @override
+  String entregaFue(String fecha) {
+    return 'El intercambio fue el $fecha';
+  }
+
+  @override
+  String get entregaPoner => 'Poner la fecha de entrega';
+
+  @override
+  String get entregaEtiquetaHoy => 'Hoy';
+
+  @override
+  String get entregaEtiquetaManana => 'Mañana';
+
+  @override
+  String entregaEtiquetaDias(int dias) {
+    return 'En $dias días';
+  }
+
+  @override
+  String get errorFechaEntregaInvalida =>
+      'La fecha de entrega no es válida: elige hoy o un día de los próximos dos años.';
 }

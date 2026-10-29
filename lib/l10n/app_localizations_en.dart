@@ -1193,4 +1193,42 @@ class TextosEn extends Textos {
   @override
   String get errorPagoRequerido =>
       'This group is paid: you already have an active group.';
+
+  @override
+  String get fechaEntregaCampo => 'Gift exchange date (optional)';
+
+  @override
+  String get fechaEntregaElegir => 'Choose a date';
+
+  @override
+  String get fechaEntregaQuitar => 'Remove the date';
+
+  @override
+  String get entregaEn => 'Gift exchange in';
+
+  @override
+  String get entregaHoy => 'Today\'s the gift exchange! 🎁';
+
+  @override
+  String entregaFue(String fecha) {
+    return 'The gift exchange was on $fecha';
+  }
+
+  @override
+  String get entregaPoner => 'Set the exchange date';
+
+  @override
+  String get entregaEtiquetaHoy => 'Today';
+
+  @override
+  String get entregaEtiquetaManana => 'Tomorrow';
+
+  @override
+  String entregaEtiquetaDias(int dias) {
+    return 'In $dias days';
+  }
+
+  @override
+  String get errorFechaEntregaInvalida =>
+      'The exchange date isn\'t valid: choose today or a day within the next two years.';
 }

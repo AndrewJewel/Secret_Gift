@@ -2165,6 +2165,72 @@ abstract class Textos {
   /// In en, this message translates to:
   /// **'This group is paid: you already have an active group.'**
   String get errorPagoRequerido;
+
+  /// No description provided for @fechaEntregaCampo.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift exchange date (optional)'**
+  String get fechaEntregaCampo;
+
+  /// No description provided for @fechaEntregaElegir.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a date'**
+  String get fechaEntregaElegir;
+
+  /// No description provided for @fechaEntregaQuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the date'**
+  String get fechaEntregaQuitar;
+
+  /// No description provided for @entregaEn.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift exchange in'**
+  String get entregaEn;
+
+  /// No description provided for @entregaHoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s the gift exchange! 🎁'**
+  String get entregaHoy;
+
+  /// No description provided for @entregaFue.
+  ///
+  /// In en, this message translates to:
+  /// **'The gift exchange was on {fecha}'**
+  String entregaFue(String fecha);
+
+  /// No description provided for @entregaPoner.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the exchange date'**
+  String get entregaPoner;
+
+  /// No description provided for @entregaEtiquetaHoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get entregaEtiquetaHoy;
+
+  /// No description provided for @entregaEtiquetaManana.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get entregaEtiquetaManana;
+
+  /// No description provided for @entregaEtiquetaDias.
+  ///
+  /// In en, this message translates to:
+  /// **'In {dias} days'**
+  String entregaEtiquetaDias(int dias);
+
+  /// No description provided for @errorFechaEntregaInvalida.
+  ///
+  /// In en, this message translates to:
+  /// **'The exchange date isn\'t valid: choose today or a day within the next two years.'**
+  String get errorFechaEntregaInvalida;
 }
 
 class _TextosDelegate extends LocalizationsDelegate<Textos> {
