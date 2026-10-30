@@ -973,16 +973,19 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                     child: _tarjetaReglas(t),
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  // El formulario de alta solo aparece si NO estás dentro.
-                  // Ya no hace falta un estado de "cargando identidad": el
-                  // vínculo llega con el widget, no del disco, así que se
-                  // conoce desde el primer frame.
-                  child: _vinculo?.estoyDentro == true
-                      ? _tarjetaYaDentro(t)
-                      : _formularioRegistro(t),
-                ),
+                // El formulario de alta solo aparece si NO estás dentro.
+                // Ya no hace falta un estado de "cargando identidad": el
+                // vínculo llega con el widget, no del disco, así que se
+                // conoce desde el primer frame. Dentro ya no hay tarjeta de
+                // «Estás en este grupo como…»: tu fila de la lista dice
+                // «(tú)» y lleva el lápiz (29-oct, a pedido del usuario).
+                if (_vinculo?.estoyDentro == true)
+                  const SizedBox(height: 10)
+                else
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: _formularioRegistro(t),
+                  ),
                 _listaParticipantes(t),
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -1162,42 +1165,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
 
   /// Lo que ve quien YA está dentro, en el sitio donde antes salía el
   /// formulario de alta.
-  Widget _tarjetaYaDentro(Textos t) {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: participantesRef
-          .doc(_vinculo!.participanteId)
-          .snapshots()
-          .cast<DocumentSnapshot<Map<String, dynamic>>>(),
-      builder: (context, snapshot) {
-        final data = snapshot.data?.data();
-        final nombre = data?['nombre'] as String? ?? '';
-        return GlassCard(
-          color: _color,
-          child: Row(
-            children: [
-              AvatarParticipante(
-                  url: data?['avatarUrl'] as String?, color: _color, radio: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(t.grupoYaDentro(nombre),
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: _color.shade900)),
-                    const SizedBox(height: 2),
-                    Text(t.grupoYaDentroAyuda,
-                        style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _formularioRegistro(Textos t) {
     final tematica = _info.tematica;
     return GlassCard(

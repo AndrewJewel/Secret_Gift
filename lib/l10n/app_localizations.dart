@@ -1254,18 +1254,6 @@ abstract class Textos {
   /// **'e.g. The Naughty Elf'**
   String get tematicaPistaNavidad;
 
-  /// No description provided for @grupoYaDentro.
-  ///
-  /// In en, this message translates to:
-  /// **'You are in this group as {nombre}'**
-  String grupoYaDentro(String nombre);
-
-  /// No description provided for @grupoYaDentroAyuda.
-  ///
-  /// In en, this message translates to:
-  /// **'Use the pencil to change your photo or wish list.'**
-  String get grupoYaDentroAyuda;
-
   /// No description provided for @grupoTuEtiqueta.
   ///
   /// In en, this message translates to:

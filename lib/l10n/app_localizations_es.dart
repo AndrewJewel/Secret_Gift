@@ -658,15 +658,6 @@ class TextosEs extends Textos {
   String get tematicaPistaNavidad => 'Ej: El Duende Travieso';
 
   @override
-  String grupoYaDentro(String nombre) {
-    return 'Ya estás en este grupo como $nombre';
-  }
-
-  @override
-  String get grupoYaDentroAyuda =>
-      'Con el lápiz cambias tu foto o tu lista de deseos.';
-
-  @override
   String get grupoTuEtiqueta => 'tú';
 
   @override

@@ -293,9 +293,6 @@
   "tematicaPistaAlfombraRoja": "e.g. The Movie Diva",
   "tematicaPistaNavidad": "e.g. The Naughty Elf",
 
-  "grupoYaDentro": "You are in this group as {nombre}",
-  "@grupoYaDentro": { "placeholders": { "nombre": { "type": "String" } } },
-  "grupoYaDentroAyuda": "Use the pencil to change your photo or wish list.",
   "grupoTuEtiqueta": "you",
 
   "chatTitulo": "Anonymous chat",

@@ -661,15 +661,6 @@ class TextosEn extends Textos {
   String get tematicaPistaNavidad => 'e.g. The Naughty Elf';
 
   @override
-  String grupoYaDentro(String nombre) {
-    return 'You are in this group as $nombre';
-  }
-
-  @override
-  String get grupoYaDentroAyuda =>
-      'Use the pencil to change your photo or wish list.';
-
-  @override
   String get grupoTuEtiqueta => 'you';
 
   @override
