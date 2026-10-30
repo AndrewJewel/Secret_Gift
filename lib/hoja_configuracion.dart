@@ -114,6 +114,8 @@ class _HojaConfiguracionState extends State<HojaConfiguracion> {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
+        // Desplazable: con el teclado abierto no cabe (ver DialogoEliminarGrupo).
+        scrollable: true,
         title: Text(t.cambiarPinTitulo),
         content: Column(
           mainAxisSize: MainAxisSize.min,

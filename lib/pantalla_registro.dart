@@ -475,6 +475,8 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     final pin = await showDialog<String>(
       context: context,
       builder: (c) => AlertDialog(
+        // Desplazable: con el teclado abierto no cabe (ver DialogoEliminarGrupo).
+        scrollable: true,
         icon: Icon(Icons.lock_outline, color: _color.shade700, size: 36),
         title: Text(t.verAmigoPinTitulo),
         content: Column(

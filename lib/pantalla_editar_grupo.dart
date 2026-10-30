@@ -398,6 +398,9 @@ class _DialogoEliminarGrupoState extends State<DialogoEliminarGrupo> {
   Widget build(BuildContext context) {
     final t = Textos.of(context);
     return AlertDialog(
+      // scrollable: con el teclado abierto el diálogo se encoge y la columna no
+      // cabía: el campo se salía por debajo, encima de los botones (29-oct).
+      scrollable: true,
       icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
       title: Text(t.editarEliminarTitulo),
       content: Column(
@@ -420,7 +423,14 @@ class _DialogoEliminarGrupoState extends State<DialogoEliminarGrupo> {
         TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.cancelar)),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
-          onPressed: _coincide ? () => Navigator.pop(context, true) : null,
+          // Teclado cerrado antes de navegar (ver pantalla_unirse_grupo.dart):
+          // después de borrar se salen dos pantallas de golpe.
+          onPressed: _coincide
+              ? () {
+                  FocusScope.of(context).unfocus();
+                  Navigator.pop(context, true);
+                }
+              : null,
           child: Text(t.editarEliminarConfirmar),
         ),
       ],
