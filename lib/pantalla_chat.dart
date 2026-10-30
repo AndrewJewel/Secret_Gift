@@ -45,6 +45,16 @@ class PantallaChat extends StatefulWidget {
 
 class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<PantallaChat> {
   final TextEditingController _mensajeController = TextEditingController();
+
+  /// El botón de enviar no puede tomar el foco. En la web (ensureSemantics)
+  /// tocarlo le pasaba el foco del DOM al botón: el campo lo perdía, el
+  /// teclado empezaba a cerrarse, `_enviando` desactivaba el botón y el foco
+  /// rebotaba al campo, todo en el mismo milisegundo. El engine se quedaba
+  /// con la altura de la app con teclado y abajo quedaba una franja vacía
+  /// (medido con ?diag=1 el 30-oct: `fv 377.6px` con `vv 721`). Sin foco en
+  /// el botón, el campo sigue enfocado y el teclado abierto tras enviar,
+  /// como en cualquier chat.
+  final FocusNode _focoEnviar = FocusNode(canRequestFocus: false, skipTraversal: true);
   final ScrollController _scroll = ScrollController();
 
   int? _miMascara;
@@ -81,6 +91,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
   @override
   void dispose() {
     _mensajeController.dispose();
+    _focoEnviar.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -456,6 +467,7 @@ class _PantallaChatState extends State<PantallaChat> with ConGrupoALaVista<Panta
             width: 52,
             height: 52,
             child: FilledButton(
+              focusNode: _focoEnviar,
               onPressed: (_enviando || widget.vinculo?.estoyDentro != true) ? null : _enviar,
               style: FilledButton.styleFrom(
                 backgroundColor: legibleSobreBlanco(_color.shade600),
