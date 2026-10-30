@@ -2121,8 +2121,14 @@ abstract class Textos {
   /// No description provided for @pagoTexto.
   ///
   /// In en, this message translates to:
-  /// **'You already have an active group. This new group costs USD 5, a one-time payment.'**
-  String get pagoTexto;
+  /// **'You already have an active group. This new group costs {precio}, a one-time payment.'**
+  String pagoTexto(String precio);
+
+  /// No description provided for @pagoPrecioWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'USD 4.99'**
+  String get pagoPrecioWeb;
 
   /// No description provided for @pagoCasilla.
   ///

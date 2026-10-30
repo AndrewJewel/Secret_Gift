@@ -109,7 +109,7 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       await _comprarEnPlayYCrear(t);
       return;
     }
-    if (!await DialogoPago.mostrar(context) || !mounted) return;
+    if (!await DialogoPago.mostrar(context, precio: t.pagoPrecioWeb) || !mounted) return;
     final usuario = FirebaseAuth.instance.currentUser;
     if (usuario == null) return;
     final String resultado;
@@ -137,7 +137,13 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
   /// y suma el crédito antes de responder → crear. Un pago pendiente llega
   /// solo al confirmarse (ver compra_play_android.dart).
   Future<void> _comprarEnPlayYCrear(Textos t) async {
-    if (!await DialogoPago.mostrar(context) || !mounted) return;
+    final precio = await precioGrupoExtra();
+    if (!mounted) return;
+    if (precio == null) {
+      _avisar(t.pagoNoCargo);
+      return;
+    }
+    if (!await DialogoPago.mostrar(context, precio: precio) || !mounted) return;
     final usuario = FirebaseAuth.instance.currentUser;
     if (usuario == null) return;
     final resultado = await comprarGrupoExtra(usuario.uid);

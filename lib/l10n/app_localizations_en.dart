@@ -1165,8 +1165,12 @@ class TextosEn extends Textos {
   String get pagoTitulo => 'Extra group';
 
   @override
-  String get pagoTexto =>
-      'You already have an active group. This new group costs USD 5, a one-time payment.';
+  String pagoTexto(String precio) {
+    return 'You already have an active group. This new group costs $precio, a one-time payment.';
+  }
+
+  @override
+  String get pagoPrecioWeb => 'USD 4.99';
 
   @override
   String get pagoCasilla =>

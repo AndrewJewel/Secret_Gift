@@ -1165,8 +1165,12 @@ class TextosEs extends Textos {
   String get pagoTitulo => 'Grupo adicional';
 
   @override
-  String get pagoTexto =>
-      'Ya tienes un grupo activo. Este nuevo grupo cuesta 5 USD, un solo pago.';
+  String pagoTexto(String precio) {
+    return 'Ya tienes un grupo activo. Este nuevo grupo cuesta $precio, un solo pago.';
+  }
+
+  @override
+  String get pagoPrecioWeb => '4,99 USD';
 
   @override
   String get pagoCasilla =>

@@ -42,6 +42,15 @@ Future<String> _verificar(PurchaseDetails compra) async {
   }
 }
 
+/// El precio de `grupo_extra` tal como lo cobra Google Play, en la moneda de
+/// quien compra (p. ej. «US$4.99»). Null si Play no está disponible.
+Future<String?> precioGrupoExtra() async {
+  final iap = InAppPurchase.instance;
+  if (!await iap.isAvailable()) return null;
+  final r = await iap.queryProductDetails({productoGrupoExtra});
+  return r.productDetails.isEmpty ? null : r.productDetails.first.price;
+}
+
 /// Abre la hoja de compra de Google Play. Devuelve 'completado' cuando el
 /// crédito ya está en la cuenta: quien llama puede volver a `crearGrupo`.
 Future<String> comprarGrupoExtra(String uid) async {

@@ -2,3 +2,5 @@
 void escucharComprasPlay() {}
 
 Future<String> comprarGrupoExtra(String uid) async => 'no_disponible';
+
+Future<String?> precioGrupoExtra() async => null;
