@@ -173,6 +173,23 @@
     }
   </script>
 
+  <script>
+    // Teclado numérico para el PIN. Con ensureSemantics (main.dart) los campos
+    // son los <input> del árbol de accesibilidad, y el engine (semantics/
+    // text_field.dart, _updateInputType) a un campo oculto solo le pone
+    // type="password": nunca inputmode="numeric", aunque la app pida
+    // TextInputType.number. Resultado: teclado completo para un PIN de 4
+    // cifras (visto el 29-oct en Crear cuenta). Se reconoce el campo por su
+    // etiqueta: todas las de PIN lo dicen («PIN de 4 dígitos», «Confirm
+    // PIN»...), ninguna de contraseña. En la APK el teclado ya es numérico.
+    new MutationObserver(function () {
+      document.querySelectorAll('input:not([inputmode])').forEach(function (i) {
+        if (/\bPIN\b/.test(i.getAttribute('aria-label') || '')) i.setAttribute('inputmode', 'numeric');
+      });
+    }).observe(document.documentElement,
+      {subtree: true, childList: true, attributes: true, attributeFilter: ['type', 'aria-label']});
+  </script>
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
