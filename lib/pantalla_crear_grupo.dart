@@ -87,6 +87,8 @@ class _PantallaCrearGrupoState extends State<PantallaCrearGrupo> {
       // Arranca con las reglas propias de la temática; el organizador
       // las puede reescribir después desde "Editar grupo".
       'reglas': _tematica.reglasPorDefecto(t),
+      // El servidor puede cobrar solo en Android (config/cobro.plataformas).
+      'plataforma': !kIsWeb && defaultTargetPlatform == TargetPlatform.android ? 'android' : 'web',
       if (_fechaEntrega != null) ...{
         'fechaEntrega': textoDeFecha(_fechaEntrega!),
         // La zona del organizador: los avisos salen a las 10:00 de su hora.

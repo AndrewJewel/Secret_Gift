@@ -165,7 +165,10 @@ class _PantallaMisGruposState extends State<PantallaMisGrupos> with RouteAware {
                                       color: Colors.black87, fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
-                                  [etiquetaRol, g['codigo'], if (cuando != null) '🎁 $cuando'].join(' · '),
+                                  // Espacios duros: «🎁 In 56 days» baja entero
+                                  // de línea, no partido tras «In».
+                                  [etiquetaRol, g['codigo'], if (cuando != null) '🎁 $cuando'.replaceAll(' ', ' ')]
+                                      .join(' · '),
                                   style: const TextStyle(color: Colors.black54),
                                 ),
                                 trailing: Icon(Icons.chevron_right,

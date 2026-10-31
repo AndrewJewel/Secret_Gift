@@ -5,11 +5,17 @@ const {createHmac, timingSafeEqual} = require("node:crypto");
 /**
  * Gratis, con un crédito ya pagado, o hay que pagar. `config` es
  * `config/cobro`: sin él nadie paga; con `para: "probadores"` solo pagan
- * esos uids (fase de sandbox); con `para: "todos"`, todo el mundo.
+ * esos uids (fase de sandbox); con `para: "todos"`, todo el mundo, o solo
+ * desde `plataformas` si la lista existe (p. ej. `["android"]` mientras la
+ * web espera a Paddle live). Los probadores pagan siempre, en todas.
+ * `plataforma` la manda la app; las versiones viejas no la mandan y cuentan
+ * como "web". Mentir no da nada: la web ya es la vía gratis.
  */
-function decidirCobro({config, uid, gruposPropiosActivos, creditos}) {
-  const aplica = config?.para === "todos" ||
-    (config?.para === "probadores" && (config.probadores || []).includes(uid));
+function decidirCobro({config, uid, plataforma = "web", gruposPropiosActivos, creditos}) {
+  const probador = ["todos", "probadores"].includes(config?.para) &&
+    (config.probadores || []).includes(uid);
+  const aplica = probador || (config?.para === "todos" &&
+    (!config.plataformas || config.plataformas.includes(plataforma)));
   if (!aplica || gruposPropiosActivos === 0) return "gratis";
   return creditos > 0 ? "credito" : "pago_requerido";
 }

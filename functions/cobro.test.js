@@ -19,6 +19,16 @@ test("con cobro: primero gratis, luego crédito, luego pago", () => {
   assert.strictEqual(c.decidirCobro({config: prueba, uid: "u", gruposPropiosActivos: 1, creditos: 0}), "pago_requerido");
 });
 
+test("con plataformas: solo pagan esas; sin plataforma cuenta como web", () => {
+  const config = {para: "todos", plataformas: ["android"], probadores: ["p"]};
+  const base = {config, gruposPropiosActivos: 1, creditos: 0};
+  assert.strictEqual(c.decidirCobro({...base, uid: "u", plataforma: "android"}), "pago_requerido");
+  assert.strictEqual(c.decidirCobro({...base, uid: "u", plataforma: "web"}), "gratis");
+  assert.strictEqual(c.decidirCobro({...base, uid: "u"}), "gratis");
+  // Los probadores pagan en todas, para seguir probando Paddle sandbox.
+  assert.strictEqual(c.decidirCobro({...base, uid: "p", plataforma: "web"}), "pago_requerido");
+});
+
 function firmar(cuerpo, secreto, ts) {
   return `ts=${ts};h1=${createHmac("sha256", secreto).update(`${ts}:${cuerpo}`).digest("hex")}`;
 }

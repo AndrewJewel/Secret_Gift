@@ -587,7 +587,8 @@ exports.crearGrupo = onCall(async (request) => {
         const activos = propios.length ?
           (await tx.getAll(...propios)).filter((s) => s.exists).length : 0;
         const decision = cobro.decidirCobro({
-          config, uid, gruposPropiosActivos: activos, creditos: usuario.creditosGrupo || 0,
+          config, uid, plataforma: request.data?.plataforma === "android" ? "android" : "web",
+          gruposPropiosActivos: activos, creditos: usuario.creditosGrupo || 0,
         });
         if (decision === "pago_requerido") {
           throw new HttpsError("failed-precondition", "Este grupo es de pago.", {clave: "pago_requerido"});

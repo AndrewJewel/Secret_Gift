@@ -64,5 +64,10 @@ Future<String> comprarGrupoExtra(String uid) async {
     purchaseParam: PurchaseParam(productDetails: r.productDetails.first, applicationUserName: uid),
     autoConsume: false,
   );
-  return lanzada ? resultado : 'error';
+  if (lanzada) return resultado;
+  // No se abrió la hoja. La causa típica es `itemAlreadyOwned`: una compra
+  // anterior sin consumir. El `restorePurchases` de escucharComprasPlay() la
+  // vuelve a entregar y se verifica, así que se espera ese resultado en vez de
+  // decir «no se pudo abrir el pago» a quien ya pagó.
+  return resultado.timeout(const Duration(seconds: 15), onTimeout: () => 'error');
 }
