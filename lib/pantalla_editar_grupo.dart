@@ -140,7 +140,7 @@ class _PantallaEditarGrupoState extends State<PantallaEditarGrupo> {
         'codigo': widget.codigo,
       });
       if (!mounted) return;
-      Navigator.pop(context, ResultadoEdicion.eliminado);
+      cerrarSiSigueArriba(context, ResultadoEdicion.eliminado);
     } on FuncionError catch (e) {
       _avisar(e.texto(t));
       if (mounted) setState(() => _guardando = false);
@@ -374,6 +374,14 @@ class SelectorTematica extends StatelessWidget {
 /// la cuenta a propósito: acostumbrar a la gente a teclear su contraseña
 /// dentro de la app para acciones corrientes es el hábito del que viven
 /// los engaños.
+/// `Navigator.pop` cierra la ruta de ARRIBA, no la de este context. Tras
+/// borrar el grupo, la pantalla de grupo ya volvió a Mis grupos al ver
+/// desaparecer el documento; un pop a ciegas cerraba Mis grupos y dejaba la
+/// pila vacía: pantalla rosa hasta recargar (31-oct).
+void cerrarSiSigueArriba(BuildContext context, [Object? resultado]) {
+  if (ModalRoute.of(context)?.isCurrent ?? false) Navigator.pop(context, resultado);
+}
+
 class DialogoEliminarGrupo extends StatefulWidget {
   final String nombreGrupo;
 
@@ -398,26 +406,29 @@ class _DialogoEliminarGrupoState extends State<DialogoEliminarGrupo> {
   Widget build(BuildContext context) {
     final t = Textos.of(context);
     return AlertDialog(
-      // scrollable: con el teclado abierto el diálogo se encoge y la columna no
-      // cabía: el campo se salía por debajo, encima de los botones (29-oct).
-      scrollable: true,
       icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
       title: Text(t.editarEliminarTitulo),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(t.editarEliminarTexto(widget.nombreGrupo)),
-          const SizedBox(height: 16),
-          Text(t.editarEliminarEscribeNombre(widget.nombreGrupo),
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _confirmacion,
-            autofocus: true,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-          ),
-        ],
+      // Con el teclado abierto el diálogo se encoge: el contenido se desplaza
+      // (29-oct) y va anclado ABAJO (`reverse`), para que lo que quede a la
+      // vista sea el campo y no el texto de arriba (31-oct).
+      content: SingleChildScrollView(
+        reverse: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(t.editarEliminarTexto(widget.nombreGrupo)),
+            const SizedBox(height: 16),
+            Text(t.editarEliminarEscribeNombre(widget.nombreGrupo),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _confirmacion,
+              autofocus: true,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.cancelar)),
